@@ -1,4 +1,7 @@
 .vscode/
+.cache/
+.idea/
+cmake-build-*/
 build/
 lib/
 bin/

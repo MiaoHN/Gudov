@@ -146,6 +146,8 @@ class LogFormatter {
 };
 
 class LogAppender {
+  friend class Logger;
+
  public:
   using ptr = std::shared_ptr<LogAppender>;
   virtual ~LogAppender() {}
@@ -154,7 +156,7 @@ class LogAppender {
                    LogEvent::ptr event) = 0;
   virtual std::string toYamlString() = 0;
 
-  void setFormatter(LogFormatter::ptr formatter) { formatter_ = formatter; }
+  void setFormatter(LogFormatter::ptr formatter);
   LogFormatter::ptr getFormatter() const { return formatter_; }
 
   LogLevel::Level getLevel() const { return level_; }
@@ -162,6 +164,7 @@ class LogAppender {
 
  protected:
   LogLevel::Level level_ = LogLevel::DEBUG;
+  bool hasFormatter_ = false;
   LogFormatter::ptr formatter_;
 };
 

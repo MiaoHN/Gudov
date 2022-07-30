@@ -1,7 +1,5 @@
 #include "log.h"
 
-#include <yaml-cpp/null.h>
-
 #include <cstring>
 #include <ctime>
 #include <functional>
@@ -76,6 +74,15 @@ void LogEvent::format(const char* fmt, va_list al) {
 }
 
 std::stringstream& LogEventWrap::getSS() { return event_->getSS(); }
+
+void LogAppender::setFormatter(LogFormatter::ptr formatter) {
+  formatter_ = formatter;
+  if (formatter_) {
+    hasFormatter_ = true;
+  } else {
+    hasFormatter_ = false;
+  }
+}
 
 class MessageFormatItem : public LogFormatter::FormatItem {
  public:
@@ -219,7 +226,15 @@ Logger::Logger(const std::string& name) : name_(name), level_(LogLevel::DEBUG) {
       "%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
 }
 
-void Logger::setFormatter(LogFormatter::ptr val) { formatter_ = val; }
+void Logger::setFormatter(LogFormatter::ptr val) {
+  formatter_ = val;
+
+  for (auto& i : appenders_) {
+    if (!i->hasFormatter_) {
+      i->formatter_ = formatter_;
+    }
+  }
+}
 
 void Logger::setFormatter(const std::string& val) {
   LogFormatter::ptr newVal(new LogFormatter(val));
@@ -228,7 +243,7 @@ void Logger::setFormatter(const std::string& val) {
               << " invalid formatter" << std::endl;
     return;
   }
-  formatter_ = newVal;
+  setFormatter(newVal);
 }
 
 std::string Logger::toYamlString() {
@@ -253,7 +268,7 @@ LogFormatter::ptr Logger::getFormatter() { return formatter_; }
 
 void Logger::addAppender(LogAppender::ptr appender) {
   if (!appender->getFormatter()) {
-    appender->setFormatter(formatter_);
+    appender->formatter_ = formatter_;
   }
   appenders_.push_back(appender);
 }
@@ -311,7 +326,7 @@ std::string FileLogAppender::toYamlString() {
   if (level_ != LogLevel::UNKNOWN) {
     node["level"] = LogLevel::ToString(level_);
   }
-  if (formatter_) {
+  if (hasFormatter_ && formatter_) {
     node["formatter"] = formatter_->getPattern();
   }
   std::stringstream ss;
@@ -340,7 +355,7 @@ std::string StdoutLogAppender::toYamlString() {
   if (level_ != LogLevel::UNKNOWN) {
     node["level"] = LogLevel::ToString(level_);
   }
-  if (formatter_) {
+  if (hasFormatter_ && formatter_) {
     node["formatter"] = formatter_->getPattern();
   }
   std::stringstream ss;
@@ -519,7 +534,6 @@ class LexicalCast<std::string, std::set<LogDefine> > {
   std::set<LogDefine> operator()(const std::string& v) {
     YAML::Node node = YAML::Load(v);
     std::set<LogDefine> vec;
-    // node["name"].IsDefined()
     for (size_t i = 0; i < node.size(); ++i) {
       auto n = node[i];
       if (!n["name"].IsDefined()) {
@@ -536,8 +550,6 @@ class LexicalCast<std::string, std::set<LogDefine> > {
       }
 
       if (n["appenders"].IsDefined()) {
-        std::cout << "==" << ld.name << " = " << n["appenders"].size()
-                  << std::endl;
         for (size_t x = 0; x < n["appenders"].size(); ++x) {
           auto a = n["appenders"][x];
           if (!a["type"].IsDefined()) {
@@ -569,8 +581,6 @@ class LexicalCast<std::string, std::set<LogDefine> > {
           ld.appenders.push_back(lad);
         }
       }
-      std::cout << "---" << ld.name << " - " << ld.appenders.size()
-                << std::endl;
       vec.insert(ld);
     }
     return vec;
@@ -653,6 +663,17 @@ struct LogIniter {
                 ap.reset(new StdoutLogAppender);
               }
               ap->setLevel(a.level);
+              if (!a.formatter.empty()) {
+                LogFormatter::ptr fmt(new LogFormatter(a.formatter));
+                if (!fmt->isError()) {
+                  ap->setFormatter(fmt);
+                } else {
+                  std::cout << "log.name=" << i.name
+                            << " appender type=" << a.type
+                            << " formatter=" << a.formatter << " is invalid"
+                            << std::endl;
+                }
+              }
               logger->addAppender(ap);
             }
           }
@@ -662,7 +683,7 @@ struct LogIniter {
             if (it == new_value.end()) {
               //删除logger
               auto logger = GUDOV_LOG_NAME(i.name);
-              logger->setLevel((LogLevel::Level)100);
+              logger->setLevel((LogLevel::Level)0);
               logger->clearAppenders();
             }
           }

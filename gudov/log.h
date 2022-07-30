@@ -49,10 +49,12 @@
   GUDOV_LOG_FMT_LEVEL(logger, gudov::LogLevel::FATAL, fmt, __VA_ARGS__)
 
 #define GUDOV_LOG_ROOT() gudov::LoggerMgr::getInstance()->getRoot()
+#define GUDOV_LOG_NAME(name) gudov::LoggerMgr::getInstance()->getLogger(name)
 
 namespace gudov {
 
 class Logger;
+class LoggerManager;
 
 class LogLevel {
  public:
@@ -66,6 +68,7 @@ class LogLevel {
   };
 
   static const char* ToString(LogLevel::Level level);
+  static LogLevel::Level FromString(const std::string& str);
 };
 
 class LogEvent {
@@ -133,9 +136,13 @@ class LogFormatter {
 
   void init();
 
+  bool isError() const { return error_; }
+  const std::string getPattern() const { return pattern_; }
+
  private:
   std::string pattern_;
   std::vector<FormatItem::ptr> items_;
+  bool error_ = false;
 };
 
 class LogAppender {
@@ -145,6 +152,7 @@ class LogAppender {
 
   virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
                    LogEvent::ptr event) = 0;
+  virtual std::string toYamlString() = 0;
 
   void setFormatter(LogFormatter::ptr formatter) { formatter_ = formatter; }
   LogFormatter::ptr getFormatter() const { return formatter_; }
@@ -158,6 +166,8 @@ class LogAppender {
 };
 
 class Logger : public std::enable_shared_from_this<Logger> {
+  friend class LoggerManager;
+
  public:
   using ptr = std::shared_ptr<Logger>;
 
@@ -172,16 +182,24 @@ class Logger : public std::enable_shared_from_this<Logger> {
 
   void addAppender(LogAppender::ptr appender);
   void delAppender(LogAppender::ptr appender);
+  void clearAppenders();
   LogLevel::Level getLevel() const { return level_; }
   void setLevel(LogLevel::Level level) { level_ = level; }
 
   const std::string& getName() const { return name_; }
+
+  void setFormatter(LogFormatter::ptr val);
+  void setFormatter(const std::string& val);
+  LogFormatter::ptr getFormatter();
+
+  std::string toYamlString();
 
  private:
   std::string name_;
   LogLevel::Level level_;
   std::list<LogAppender::ptr> appenders_;
   LogFormatter::ptr formatter_;
+  Logger::ptr root_;
 };
 
 class StdoutLogAppender : public LogAppender {
@@ -189,6 +207,8 @@ class StdoutLogAppender : public LogAppender {
   typedef std::shared_ptr<StdoutLogAppender> ptr;
   void log(Logger::ptr logger, LogLevel::Level level,
            LogEvent::ptr event) override;
+
+  std::string toYamlString() override;
 };
 
 class FileLogAppender : public LogAppender {
@@ -197,6 +217,8 @@ class FileLogAppender : public LogAppender {
   FileLogAppender(const std::string& filename);
   void log(Logger::ptr logger, LogLevel::Level level,
            LogEvent::ptr event) override;
+
+  std::string toYamlString() override;
 
   bool reopen();
 
@@ -212,6 +234,8 @@ class LoggerManager {
 
   void init();
   Logger::ptr getRoot() const { return root_; }
+
+  std::string toYamlString();
 
  private:
   std::map<std::string, Logger::ptr> loggers_;

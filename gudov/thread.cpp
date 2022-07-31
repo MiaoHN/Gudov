@@ -1,5 +1,7 @@
 #include "thread.h"
 
+#include <semaphore.h>
+
 #include "log.h"
 #include "util.h"
 
@@ -9,6 +11,26 @@ static thread_local Thread* t_thread = nullptr;
 static thread_local std::string t_threadName = "UNKNOWN";
 
 static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+
+Semaphore::Semaphore(uint32_t count) {
+  if (sem_init(&semaphore_, 0, count)) {
+    throw std::logic_error("sem_init error");
+  }
+}
+
+Semaphore::~Semaphore() { sem_destroy(&semaphore_); }
+
+void Semaphore::wait() {
+  if (sem_wait(&semaphore_)) {
+    throw std::logic_error("sem_wait error");
+  }
+}
+
+void Semaphore::notify() {
+  if (sem_post(&semaphore_)) {
+    throw std::logic_error("sem_post error");
+  }
+}
 
 Thread* Thread::GetThis() { return t_thread; }
 
@@ -32,6 +54,7 @@ Thread::Thread(std::function<void()> cb, const std::string& name)
         << "pthread_create thread fail, rt=" << rt << " name=" << name;
     throw std::logic_error("pthread_create error");
   }
+  semaphore_.wait();
 }
 
 Thread::~Thread() {
@@ -61,6 +84,8 @@ void* Thread::run(void* arg) {
 
   std::function<void()> cb;
   cb.swap(thread->cb_);
+
+  thread->semaphore_.notify();
 
   cb();
   return 0;

@@ -1,13 +1,11 @@
 #include <unistd.h>
 
-#include <string>
-#include <vector>
-
 #include "gudov/gudov.h"
-#include "gudov/log.h"
-#include "gudov/util.h"
 
 gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+
+int count = 0;
+gudov::RWMutex s_mutex;
 
 void fun1() {
   GUDOV_LOG_INFO(g_logger) << "name: " << gudov::Thread::GetName()
@@ -15,6 +13,11 @@ void fun1() {
                            << gudov::Thread::GetThis()->getName()
                            << " id: " << gudov::GetThreadId()
                            << " this.id: " << gudov::Thread::GetThis()->getId();
+
+  for (int i = 0; i < 100000; ++i) {
+    gudov::RWMutex::WriteLock lock(s_mutex);
+    ++count;
+  }
 }
 
 void fun2() {}
@@ -33,5 +36,6 @@ int main(int argc, char *argv[]) {
   }
 
   GUDOV_LOG_INFO(g_logger) << "thread test end";
+  GUDOV_LOG_INFO(g_logger) << "count=" << count;
   return 0;
 }

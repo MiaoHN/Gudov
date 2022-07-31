@@ -16,28 +16,28 @@ gudov::ConfigVar<float>::ptr g_int_valuex_config =
 gudov::ConfigVar<float>::ptr g_float_value_config =
     gudov::Config::Lookup("system.value", (float)10.2f, "system value");
 
-gudov::ConfigVar<std::vector<int> >::ptr g_int_vec_value_config =
+gudov::ConfigVar<std::vector<int>>::ptr g_int_vec_value_config =
     gudov::Config::Lookup("system.int_vec", std::vector<int>{1, 2},
                           "system int vec");
 
-gudov::ConfigVar<std::list<int> >::ptr g_int_list_value_config =
+gudov::ConfigVar<std::list<int>>::ptr g_int_list_value_config =
     gudov::Config::Lookup("system.int_list", std::list<int>{1, 2},
                           "system int list");
 
-gudov::ConfigVar<std::set<int> >::ptr g_int_set_value_config =
+gudov::ConfigVar<std::set<int>>::ptr g_int_set_value_config =
     gudov::Config::Lookup("system.int_set", std::set<int>{1, 2},
                           "system int set");
 
-gudov::ConfigVar<std::unordered_set<int> >::ptr g_int_uset_value_config =
+gudov::ConfigVar<std::unordered_set<int>>::ptr g_int_uset_value_config =
     gudov::Config::Lookup("system.int_uset", std::unordered_set<int>{1, 2},
                           "system int uset");
 
-gudov::ConfigVar<std::map<std::string, int> >::ptr g_str_int_map_value_config =
+gudov::ConfigVar<std::map<std::string, int>>::ptr g_str_int_map_value_config =
     gudov::Config::Lookup("system.str_int_map",
                           std::map<std::string, int>{{"k", 2}},
                           "system str int map");
 
-gudov::ConfigVar<std::unordered_map<std::string, int> >::ptr
+gudov::ConfigVar<std::unordered_map<std::string, int>>::ptr
     g_str_int_umap_value_config = gudov::Config::Lookup(
         "system.str_int_umap", std::unordered_map<std::string, int>{{"k", 2}},
         "system str int map");
@@ -184,13 +184,13 @@ class LexicalCast<Person, std::string> {
 gudov::ConfigVar<Person>::ptr g_person =
     gudov::Config::Lookup("class.person", Person(), "system person");
 
-gudov::ConfigVar<std::map<std::string, Person> >::ptr g_person_map =
+gudov::ConfigVar<std::map<std::string, Person>>::ptr g_person_map =
     gudov::Config::Lookup("class.map", std::map<std::string, Person>(),
                           "system person");
 
-gudov::ConfigVar<std::map<std::string, std::vector<Person> > >::ptr
+gudov::ConfigVar<std::map<std::string, std::vector<Person>>>::ptr
     g_person_vec_map = gudov::Config::Lookup(
-        "class.vec_map", std::map<std::string, std::vector<Person> >(),
+        "class.vec_map", std::map<std::string, std::vector<Person>>(),
         "system person");
 
 void test_class() {

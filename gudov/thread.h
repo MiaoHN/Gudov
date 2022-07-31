@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -107,6 +108,20 @@ class WriteScopedLockImpl {
   bool locked_ = false;
 };
 
+class Mutex {
+ public:
+  using Lock = ScopedLockImpl<Mutex>;
+
+  Mutex() { pthread_mutex_init(&mutex_, nullptr); }
+  ~Mutex() { pthread_mutex_destroy(&mutex_); }
+
+  void lock() { pthread_mutex_lock(&mutex_); }
+  void unlock() { pthread_mutex_unlock(&mutex_); }
+
+ private:
+  pthread_mutex_t mutex_;
+};
+
 class RWMutex {
  public:
   using ReadLock = ReadScopedLockImpl<RWMutex>;
@@ -121,6 +136,39 @@ class RWMutex {
 
  private:
   pthread_rwlock_t lock_;
+};
+
+class Spinlock {
+ public:
+  using Lock = ScopedLockImpl<Spinlock>;
+  Spinlock() { pthread_spin_init(&mutex_, 0); }
+  ~Spinlock() { pthread_spin_destroy(&mutex_); }
+
+  void lock() { pthread_spin_lock(&mutex_); }
+  void unlock() { pthread_spin_unlock(&mutex_); }
+
+ private:
+  pthread_spinlock_t mutex_;
+};
+
+class CASLock {
+ public:
+  typedef ScopedLockImpl<CASLock> Lock;
+  CASLock() { mutex_.clear(); }
+  ~CASLock() {}
+
+  void lock() {
+    while (std::atomic_flag_test_and_set_explicit(&mutex_,
+                                                  std::memory_order_acquire))
+      ;
+  }
+
+  void unlock() {
+    std::atomic_flag_clear_explicit(&mutex_, std::memory_order_release);
+  }
+
+ private:
+  volatile std::atomic_flag mutex_;
 };
 
 class Thread {

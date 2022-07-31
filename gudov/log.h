@@ -11,7 +11,9 @@
 #include <string>
 #include <vector>
 
+#include "gudov/thread.h"
 #include "singleton.h"
+#include "thread"
 #include "util.h"
 
 #define GUDOV_LOG_LEVEL(logger, level)                                \
@@ -150,6 +152,7 @@ class LogAppender {
 
  public:
   using ptr = std::shared_ptr<LogAppender>;
+  using MutexType = Spinlock;
   virtual ~LogAppender() {}
 
   virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
@@ -157,7 +160,7 @@ class LogAppender {
   virtual std::string toYamlString() = 0;
 
   void setFormatter(LogFormatter::ptr formatter);
-  LogFormatter::ptr getFormatter() const { return formatter_; }
+  LogFormatter::ptr getFormatter();
 
   LogLevel::Level getLevel() const { return level_; }
   void setLevel(LogLevel::Level level) { level_ = level; }
@@ -165,6 +168,7 @@ class LogAppender {
  protected:
   LogLevel::Level level_ = LogLevel::DEBUG;
   bool hasFormatter_ = false;
+  MutexType mutex_;
   LogFormatter::ptr formatter_;
 };
 
@@ -173,6 +177,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
 
  public:
   using ptr = std::shared_ptr<Logger>;
+  using MutexType = Spinlock;
 
   Logger(const std::string& name = "root");
   void log(LogLevel::Level level, LogEvent::ptr event);
@@ -200,6 +205,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
  private:
   std::string name_;
   LogLevel::Level level_;
+  MutexType mutex_;
   std::list<LogAppender::ptr> appenders_;
   LogFormatter::ptr formatter_;
   Logger::ptr root_;
@@ -228,10 +234,13 @@ class FileLogAppender : public LogAppender {
  private:
   std::string filename_;
   std::ofstream filestream_;
+  uint64_t lastTime_ = 0;
 };
 
 class LoggerManager {
  public:
+  using MutexType = Spinlock;
+
   LoggerManager();
   Logger::ptr getLogger(const std::string& name);
 
@@ -241,6 +250,7 @@ class LoggerManager {
   std::string toYamlString();
 
  private:
+  MutexType mutex_;
   std::map<std::string, Logger::ptr> loggers_;
   Logger::ptr root_;
 };

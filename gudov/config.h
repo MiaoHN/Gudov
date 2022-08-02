@@ -16,7 +16,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "gudov/log.h"
+#include "log.h"
+#include "thread.h"
 
 namespace gudov {
 
@@ -233,6 +234,7 @@ template <typename T, typename FromStr = LexicalCast<std::string, T>,
           typename ToStr = LexicalCast<T, std::string>>
 class ConfigVar : public ConfigVarBase {
  public:
+  using RWMutexType = RWMutex;
   using ptr = std::shared_ptr<ConfigVar>;
   using onChangeCb = std::function<void(const T& oldValue, const T& newValue)>;
 
@@ -242,6 +244,7 @@ class ConfigVar : public ConfigVarBase {
 
   std::string toString() override {
     try {
+      RWMutexType::ReadLock lock(mutex_);
       return ToStr()(val_);
     } catch (std::exception& e) {
       GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())
@@ -262,43 +265,66 @@ class ConfigVar : public ConfigVarBase {
     return false;
   };
 
-  const T getValue() const { return val_; }
+  const T getValue() {
+    RWMutexType::ReadLock lock(mutex_);
+    return val_;
+  }
   void setValue(const T& v) {
-    if (v == val_) {
-      return;
+    {
+      RWMutexType::ReadLock lock(mutex_);
+      if (v == val_) {
+        return;
+      }
+      for (auto& i : cbs_) {
+        i.second(val_, v);
+      }
     }
-    for (auto& i : cbs_) {
-      i.second(val_, v);
-    }
+    RWMutexType::ReadLock lock(mutex_);
     val_ = v;
   }
 
   std::string getTypeName() const override { return typeid(T).name(); }
 
-  void addListener(uint64_t key, onChangeCb cb) { cbs_[key] = cb; }
+  uint64_t addListener(onChangeCb cb) {
+    static uint64_t s_funId = 0;
+    RWMutexType::WriteLock lock(mutex_);
+    ++s_funId;
+    cbs_[s_funId] = cb;
+    return s_funId;
+  }
 
-  void delListener(uint64_t key) { cbs_.erase(key); }
+  void delListener(uint64_t key) {
+    RWMutexType::WriteLock lock(mutex_);
+    cbs_.erase(key);
+  }
 
   onChangeCb getListener(uint64_t key) {
+    RWMutexType::ReadLock lock(mutex_);
     auto it = cbs_.find(key);
     return it == cbs_.end() ? nullptr : it->second;
   }
 
-  void clearListener() { cbs_.clear(); }
+  void clearListener() {
+    RWMutexType::WriteLock lock(mutex_);
+    cbs_.clear();
+  }
 
  private:
   T val_;
+  RWMutexType mutex_;
   std::map<uint64_t, onChangeCb> cbs_;
 };
 
 class Config {
  public:
   using ConfigVarMap = std::unordered_map<std::string, ConfigVarBase::ptr>;
+  using RWMutexType = RWMutex;
 
   template <typename T>
   static typename ConfigVar<T>::ptr Lookup(
       const std::string& name, const T& defaultValue,
       const std::string& description = "") {
+    RWMutexType::WriteLock lock(GetMutex());
     auto it = GetDatas().find(name);
     if (it != GetDatas().end()) {
       auto tmp = std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
@@ -328,6 +354,7 @@ class Config {
 
   template <typename T>
   static typename ConfigVar<T>::ptr Lookup(const std::string& name) {
+    RWMutexType::ReadLock lock(GetMutex());
     auto it = GetDatas().find(name);
     if (it == GetDatas().end()) {
       return nullptr;
@@ -338,10 +365,17 @@ class Config {
   static void LoadFromYaml(const YAML::Node& root);
   static ConfigVarBase::ptr LookupBase(const std::string& name);
 
+  static void Visit(std::function<void(ConfigVarBase::ptr)> cb);
+
  private:
   static ConfigVarMap& GetDatas() {
     static ConfigVarMap s_datas;
     return s_datas;
+  }
+
+  static RWMutexType& GetMutex() {
+    static RWMutexType s_mutex;
+    return s_mutex;
   }
 };
 

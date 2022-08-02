@@ -40,13 +40,10 @@ int main(int argc, char *argv[]) {
   gudov::Config::LoadFromYaml(root);
 
   std::vector<gudov::Thread::ptr> threads;
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 1; ++i) {
     gudov::Thread::ptr thread1(
         new gudov::Thread(&fun2, "name_" + std::to_string(i * 2)));
-    gudov::Thread::ptr thread2(
-        new gudov::Thread(&fun3, "name_" + std::to_string(i * 2 + 1)));
     threads.push_back(thread1);
-    threads.push_back(thread2);
   }
 
   for (size_t i = 0; i < threads.size(); ++i) {

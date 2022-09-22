@@ -24,7 +24,7 @@ static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 static std::atomic<uint64_t> s_fiberId{0};
 static std::atomic<uint64_t> s_fiberCount{0};
 
-static thread_local Fiber* t_fiber = nullptr;
+static thread_local Fiber*     t_fiber       = nullptr;
 static thread_local Fiber::ptr t_threadFiber = nullptr;
 
 static ConfigVar<uint32_t>::ptr g_fiberStackSize = Config::Lookup<uint32_t>(
@@ -33,7 +33,7 @@ static ConfigVar<uint32_t>::ptr g_fiberStackSize = Config::Lookup<uint32_t>(
 class MallocStackAllocator {
  public:
   static void* Alloc(size_t size) { return malloc(size); }
-  static void Dealloc(void* vp, size_t size) { return free(vp); }
+  static void  Dealloc(void* vp, size_t size) { return free(vp); }
 };
 
 using StackAllocator = MallocStackAllocator;
@@ -67,8 +67,8 @@ Fiber::Fiber(std::function<void()> cb, size_t stackSize, bool useCaller)
   if (getcontext(&ctx_)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
-  ctx_.uc_link = nullptr;
-  ctx_.uc_stack.ss_sp = stack_;
+  ctx_.uc_link          = nullptr;
+  ctx_.uc_stack.ss_sp   = stack_;
   ctx_.uc_stack.ss_size = stackSize_;
 
   if (!useCaller) {
@@ -105,8 +105,8 @@ void Fiber::reset(std::function<void()> cb) {
     GUDOV_ASSERT2(false, "getcontext");
   }
 
-  ctx_.uc_link = nullptr;
-  ctx_.uc_stack.ss_sp = stack_;
+  ctx_.uc_link          = nullptr;
+  ctx_.uc_stack.ss_sp   = stack_;
   ctx_.uc_stack.ss_size = stackSize_;
 
   makecontext(&ctx_, &Fiber::MainFunc, 0);
@@ -166,13 +166,13 @@ Fiber::ptr Fiber::GetThis() {
 
 void Fiber::YieldToReady() {
   Fiber::ptr cur = GetThis();
-  cur->state_ = READY;
+  cur->state_    = READY;
   cur->swapOut();
 }
 
 void Fiber::YieldToHold() {
   Fiber::ptr cur = GetThis();
-  cur->state_ = HOLD;
+  cur->state_    = HOLD;
   cur->swapOut();
 }
 
@@ -183,7 +183,7 @@ void Fiber::MainFunc() {
   GUDOV_ASSERT(cur);
   try {
     cur->cb_();
-    cur->cb_ = nullptr;
+    cur->cb_    = nullptr;
     cur->state_ = TERM;
   } catch (std::exception& ex) {
     cur->state_ = EXCEPT;
@@ -210,7 +210,7 @@ void Fiber::CallerMainFunc() {
   GUDOV_ASSERT(cur);
   try {
     cur->cb_();
-    cur->cb_ = nullptr;
+    cur->cb_    = nullptr;
     cur->state_ = TERM;
   } catch (std::exception& ex) {
     cur->state_ = EXCEPT;

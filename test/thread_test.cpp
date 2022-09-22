@@ -6,7 +6,7 @@
 
 gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
 
-int count = 0;
+int          count = 0;
 gudov::Mutex s_mutex;
 
 void fun1() {

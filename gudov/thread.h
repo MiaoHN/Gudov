@@ -22,7 +22,7 @@ class Semaphore {
   void notify();
 
  private:
-  Semaphore(const Semaphore&) = delete;
+  Semaphore(const Semaphore&)  = delete;
   Semaphore(const Semaphore&&) = delete;
   Semaphore& operator=(const Semaphore&) = delete;
 
@@ -52,7 +52,7 @@ class ScopedLockImpl {
   }
 
  private:
-  T& mutex_;
+  T&   mutex_;
   bool locked_ = false;
 };
 
@@ -78,7 +78,7 @@ class ReadScopedLockImpl {
   }
 
  private:
-  T& mutex_;
+  T&   mutex_;
   bool locked_ = false;
 };
 
@@ -104,7 +104,7 @@ class WriteScopedLockImpl {
   }
 
  private:
-  T& mutex_;
+  T&   mutex_;
   bool locked_ = false;
 };
 
@@ -124,7 +124,7 @@ class Mutex {
 
 class RWMutex {
  public:
-  using ReadLock = ReadScopedLockImpl<RWMutex>;
+  using ReadLock  = ReadScopedLockImpl<RWMutex>;
   using WriteLock = WriteScopedLockImpl<RWMutex>;
 
   RWMutex() { pthread_rwlock_init(&lock_, nullptr); }
@@ -177,27 +177,27 @@ class Thread {
   Thread(std::function<void()> cb, const std::string& name);
   ~Thread();
 
-  pid_t getId() const { return id_; }
+  pid_t              getId() const { return id_; }
   const std::string& getName() const { return name_; }
 
   void join();
 
-  static Thread* GetThis();
+  static Thread*            GetThis();
   static const std::string& GetName();
-  static void SetName(const std::string& name);
+  static void               SetName(const std::string& name);
 
  private:
-  Thread(const Thread&) = delete;
+  Thread(const Thread&)  = delete;
   Thread(const Thread&&) = delete;
   Thread& operator=(const Thread&) = delete;
 
   static void* run(void* args);
 
  private:
-  pid_t id_ = -1;
-  pthread_t thread_ = 0;
+  pid_t                 id_     = -1;
+  pthread_t             thread_ = 0;
   std::function<void()> cb_;
-  std::string name_;
+  std::string           name_;
 
   Semaphore semaphore_;
 };

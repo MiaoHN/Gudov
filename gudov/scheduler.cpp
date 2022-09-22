@@ -11,7 +11,7 @@ namespace gudov {
 static gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 static thread_local Scheduler* t_scheduler = nullptr;
-static thread_local Fiber* t_fiber = nullptr;
+static thread_local Fiber*     t_fiber     = nullptr;
 
 Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     : name_(name) {
@@ -27,7 +27,7 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     rootFiber_.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
     gudov::Thread::SetName(name_);
 
-    t_fiber = rootFiber_.get();
+    t_fiber     = rootFiber_.get();
     rootThread_ = gudov::GetThreadId();
     threadIds_.push_back(rootThread_);
   } else {
@@ -119,7 +119,7 @@ void Scheduler::run() {
     bool tickleMe = false;
     {
       MutexType::Lock lock(mutex_);
-      auto it = fibers_.begin();
+      auto            it = fibers_.begin();
       while (it != fibers_.end()) {
         if (it->thread != -1 && it->thread != gudov::GetThreadId()) {
           ++it;

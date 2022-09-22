@@ -7,7 +7,7 @@
 
 namespace gudov {
 
-static thread_local Thread* t_thread = nullptr;
+static thread_local Thread*     t_thread     = nullptr;
 static thread_local std::string t_threadName = "UNKNOWN";
 
 static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
@@ -77,9 +77,9 @@ void Thread::join() {
 
 void* Thread::run(void* arg) {
   Thread* thread = (Thread*)arg;
-  t_thread = thread;
-  t_threadName = thread->name_;
-  thread->id_ = GetThreadId();
+  t_thread       = thread;
+  t_threadName   = thread->name_;
+  thread->id_    = GetThreadId();
   pthread_setname_np(pthread_self(), thread->name_.substr(0, 15).c_str());
 
   std::function<void()> cb;

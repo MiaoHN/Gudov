@@ -14,7 +14,7 @@ namespace gudov {
 
 class Scheduler {
  public:
-  using ptr = std::shared_ptr<Scheduler>;
+  using ptr       = std::shared_ptr<Scheduler>;
   using MutexType = Mutex;
 
   Scheduler(size_t threads = 1, bool useCaller = true,
@@ -24,7 +24,7 @@ class Scheduler {
   const std::string& getName() const { return name_; }
 
   static Scheduler* GetThis();
-  static Fiber* GetMainFiber();
+  static Fiber*     GetMainFiber();
 
   void start();
   void stop();
@@ -59,7 +59,7 @@ class Scheduler {
 
  protected:
   virtual void tickle();
-  void run();
+  void         run();
   virtual bool stopping();
   virtual void idle();
 
@@ -68,7 +68,7 @@ class Scheduler {
  private:
   template <typename FiberOrCb>
   bool scheduleNoLock(FiberOrCb fc, int thread) {
-    bool needTickle = fibers_.empty();
+    bool           needTickle = fibers_.empty();
     FiberAndThread ft(fc, thread);
     if (ft.fiber || ft.cb) {
       fibers_.push_back(ft);
@@ -79,9 +79,9 @@ class Scheduler {
 
  private:
   struct FiberAndThread {
-    Fiber::ptr fiber;
+    Fiber::ptr            fiber;
     std::function<void()> cb;
-    int thread;
+    int                   thread;
 
     FiberAndThread(Fiber::ptr f, int thr) : fiber(f), thread(thr) {}
     FiberAndThread(Fiber::ptr* f, int thr) : thread(thr) { fiber.swap(*f); }
@@ -93,27 +93,27 @@ class Scheduler {
     FiberAndThread() : thread(-1) {}
 
     void reset() {
-      fiber = nullptr;
-      cb = nullptr;
+      fiber  = nullptr;
+      cb     = nullptr;
       thread = -1;
     }
   };
 
  private:
-  MutexType mutex_;
-  std::vector<Thread::ptr> threads_;
+  MutexType                 mutex_;
+  std::vector<Thread::ptr>  threads_;
   std::list<FiberAndThread> fibers_;
-  Fiber::ptr rootFiber_;
-  std::string name_;
+  Fiber::ptr                rootFiber_;
+  std::string               name_;
 
  protected:
-  std::vector<int> threadIds_;
-  size_t threadCount_;
+  std::vector<int>    threadIds_;
+  size_t              threadCount_;
   std::atomic<size_t> activeThreadCount_ = {0};
-  std::atomic<size_t> idleThreadCount_ = {0};
-  bool stopping_ = true;
-  bool autoStop_ = false;
-  int rootThread_ = 0;
+  std::atomic<size_t> idleThreadCount_   = {0};
+  bool                stopping_          = true;
+  bool                autoStop_          = false;
+  int                 rootThread_        = 0;
 };
 
 }  // namespace gudov

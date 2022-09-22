@@ -18,7 +18,7 @@ uint32_t GetFiberId() { return Fiber::GetFiberId(); }
 
 void BackTrace(std::vector<std::string>& bt, int size, int skip) {
   void** array = (void**)malloc(sizeof(void*) * size);
-  size_t s = ::backtrace(array, size);
+  size_t s     = ::backtrace(array, size);
 
   char** strings = backtrace_symbols(array, s);
   if (strings == nullptr) {

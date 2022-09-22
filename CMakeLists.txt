@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.16)
 
 project(gudov)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

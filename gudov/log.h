@@ -81,42 +81,42 @@ class LogEvent {
            const char* filename, int32_t line, uint32_t elapse,
            uint32_t threadId, uint32_t fiberId, uint64_t time);
 
-  const char*             getFile() const { return file_; }
-  int32_t                 getLine() const { return line_; }
-  uint32_t                getElapse() const { return elapse_; }
-  uint32_t                getThreadId() const { return threadId_; }
-  uint32_t                getFiberId() const { return fiberId_; }
-  uint64_t                getTime() const { return time_; }
-  std::string             getContent() const { return ss_.str(); }
-  std::shared_ptr<Logger> getLogger() const { return logger_; }
-  LogLevel::Level         getLevel() const { return level_; }
+  const char*             getFile() const { return _file; }
+  int32_t                 getLine() const { return _line; }
+  uint32_t                getElapse() const { return _elapse; }
+  uint32_t                getThreadId() const { return _threadId; }
+  uint32_t                getFiberId() const { return _fiberId; }
+  uint64_t                getTime() const { return _time; }
+  std::string             getContent() const { return _ss.str(); }
+  std::shared_ptr<Logger> getLogger() const { return _logger; }
+  LogLevel::Level         getLevel() const { return _level; }
 
-  std::stringstream& getSS() { return ss_; }
+  std::stringstream& getSS() { return _ss; }
   void               format(const char* fmt, ...);
   void               format(const char* fmt, va_list al);
 
  private:
-  const char*       file_     = nullptr;
-  int32_t           line_     = 0;
-  uint32_t          elapse_   = 0;
-  uint32_t          threadId_ = 0;
-  uint32_t          fiberId_  = 0;
-  uint64_t          time_     = 0;
-  std::stringstream ss_;
+  const char*       _file     = nullptr;
+  int32_t           _line     = 0;
+  uint32_t          _elapse   = 0;
+  uint32_t          _threadId = 0;
+  uint32_t          _fiberId  = 0;
+  uint64_t          _time     = 0;
+  std::stringstream _ss;
 
-  std::shared_ptr<Logger> logger_;
-  LogLevel::Level         level_;
+  std::shared_ptr<Logger> _logger;
+  LogLevel::Level         _level;
 };
 
 class LogEventWrap {
  public:
   LogEventWrap(LogEvent::ptr e);
   ~LogEventWrap();
-  LogEvent::ptr      getEvent() const { return event_; }
+  LogEvent::ptr      getEvent() const { return _event; }
   std::stringstream& getSS();
 
  private:
-  LogEvent::ptr event_;
+  LogEvent::ptr _event;
 };
 
 class LogFormatter {
@@ -138,13 +138,13 @@ class LogFormatter {
 
   void init();
 
-  bool              isError() const { return error_; }
-  const std::string getPattern() const { return pattern_; }
+  bool              isError() const { return _error; }
+  const std::string getPattern() const { return _pattern; }
 
  private:
-  std::string                  pattern_;
-  std::vector<FormatItem::ptr> items_;
-  bool                         error_ = false;
+  std::string                  _pattern;
+  std::vector<FormatItem::ptr> _items;
+  bool                         _error = false;
 };
 
 class LogAppender {
@@ -162,14 +162,14 @@ class LogAppender {
   void              setFormatter(LogFormatter::ptr formatter);
   LogFormatter::ptr getFormatter();
 
-  LogLevel::Level getLevel() const { return level_; }
-  void            setLevel(LogLevel::Level level) { level_ = level; }
+  LogLevel::Level getLevel() const { return _level; }
+  void            setLevel(LogLevel::Level level) { _level = level; }
 
  protected:
-  LogLevel::Level   level_        = LogLevel::DEBUG;
-  bool              hasFormatter_ = false;
-  MutexType         mutex_;
-  LogFormatter::ptr formatter_;
+  LogLevel::Level   _level        = LogLevel::DEBUG;
+  bool              _hasFormatter = false;
+  MutexType         _mutex;
+  LogFormatter::ptr _formatter;
 };
 
 class Logger : public std::enable_shared_from_this<Logger> {
@@ -191,10 +191,10 @@ class Logger : public std::enable_shared_from_this<Logger> {
   void            addAppender(LogAppender::ptr appender);
   void            delAppender(LogAppender::ptr appender);
   void            clearAppenders();
-  LogLevel::Level getLevel() const { return level_; }
-  void            setLevel(LogLevel::Level level) { level_ = level; }
+  LogLevel::Level getLevel() const { return _level; }
+  void            setLevel(LogLevel::Level level) { _level = level; }
 
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const { return _name; }
 
   void              setFormatter(LogFormatter::ptr val);
   void              setFormatter(const std::string& val);
@@ -203,12 +203,12 @@ class Logger : public std::enable_shared_from_this<Logger> {
   std::string toYamlString();
 
  private:
-  std::string                 name_;
-  LogLevel::Level             level_;
-  MutexType                   mutex_;
-  std::list<LogAppender::ptr> appenders_;
-  LogFormatter::ptr           formatter_;
-  Logger::ptr                 root_;
+  std::string                 _name;
+  LogLevel::Level             _level;
+  MutexType                   _mutex;
+  std::list<LogAppender::ptr> _appenders;
+  LogFormatter::ptr           _formatter;
+  Logger::ptr                 _root;
 };
 
 class StdoutLogAppender : public LogAppender {
@@ -232,9 +232,9 @@ class FileLogAppender : public LogAppender {
   bool reopen();
 
  private:
-  std::string   filename_;
-  std::ofstream filestream_;
-  uint64_t      lastTime_ = 0;
+  std::string   _filename;
+  std::ofstream _filestream;
+  uint64_t      _lastTime = 0;
 };
 
 class LoggerManager {
@@ -245,14 +245,14 @@ class LoggerManager {
   Logger::ptr getLogger(const std::string& name);
 
   void        init();
-  Logger::ptr getRoot() const { return root_; }
+  Logger::ptr getRoot() const { return _root; }
 
   std::string toYamlString();
 
  private:
-  MutexType                          mutex_;
-  std::map<std::string, Logger::ptr> loggers_;
-  Logger::ptr                        root_;
+  MutexType                          _mutex;
+  std::map<std::string, Logger::ptr> _loggers;
+  Logger::ptr                        _root;
 };
 
 using LoggerMgr = gudov::Singleton<LoggerManager>;

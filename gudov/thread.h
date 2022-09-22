@@ -27,99 +27,99 @@ class Semaphore {
   Semaphore& operator=(const Semaphore&) = delete;
 
  private:
-  sem_t semaphore_;
+  sem_t _semaphore;
 };
 
 template <typename T>
 class ScopedLockImpl {
  public:
-  ScopedLockImpl(T& mutex) : mutex_(mutex) { lock(); }
+  ScopedLockImpl(T& mutex) : _mutex(mutex) { lock(); }
 
   ~ScopedLockImpl() { unlock(); }
 
   void lock() {
-    if (!locked_) {
-      mutex_.lock();
-      locked_ = true;
+    if (!_locked) {
+      _mutex.lock();
+      _locked = true;
     }
   }
 
   void unlock() {
-    if (locked_) {
-      mutex_.unlock();
-      locked_ = false;
+    if (_locked) {
+      _mutex.unlock();
+      _locked = false;
     }
   }
 
  private:
-  T&   mutex_;
-  bool locked_ = false;
+  T&   _mutex;
+  bool _locked = false;
 };
 
 template <typename T>
 class ReadScopedLockImpl {
  public:
-  ReadScopedLockImpl(T& mutex) : mutex_(mutex) { lock(); }
+  ReadScopedLockImpl(T& mutex) : _mutex(mutex) { lock(); }
 
   ~ReadScopedLockImpl() { unlock(); }
 
   void lock() {
-    if (!locked_) {
-      mutex_.rdlock();
-      locked_ = true;
+    if (!_locked) {
+      _mutex.rdlock();
+      _locked = true;
     }
   }
 
   void unlock() {
-    if (locked_) {
-      mutex_.unlock();
-      locked_ = false;
+    if (_locked) {
+      _mutex.unlock();
+      _locked = false;
     }
   }
 
  private:
-  T&   mutex_;
-  bool locked_ = false;
+  T&   _mutex;
+  bool _locked = false;
 };
 
 template <typename T>
 class WriteScopedLockImpl {
  public:
-  WriteScopedLockImpl(T& mutex) : mutex_(mutex) { lock(); }
+  WriteScopedLockImpl(T& mutex) : _mutex(mutex) { lock(); }
 
   ~WriteScopedLockImpl() { unlock(); }
 
   void lock() {
-    if (!locked_) {
-      mutex_.wrlock();
-      locked_ = true;
+    if (!_locked) {
+      _mutex.wrlock();
+      _locked = true;
     }
   }
 
   void unlock() {
-    if (locked_) {
-      mutex_.unlock();
-      locked_ = false;
+    if (_locked) {
+      _mutex.unlock();
+      _locked = false;
     }
   }
 
  private:
-  T&   mutex_;
-  bool locked_ = false;
+  T&   _mutex;
+  bool _locked = false;
 };
 
 class Mutex {
  public:
   using Lock = ScopedLockImpl<Mutex>;
 
-  Mutex() { pthread_mutex_init(&mutex_, nullptr); }
-  ~Mutex() { pthread_mutex_destroy(&mutex_); }
+  Mutex() { pthread_mutex_init(&_mutex, nullptr); }
+  ~Mutex() { pthread_mutex_destroy(&_mutex); }
 
-  void lock() { pthread_mutex_lock(&mutex_); }
-  void unlock() { pthread_mutex_unlock(&mutex_); }
+  void lock() { pthread_mutex_lock(&_mutex); }
+  void unlock() { pthread_mutex_unlock(&_mutex); }
 
  private:
-  pthread_mutex_t mutex_;
+  pthread_mutex_t _mutex;
 };
 
 class RWMutex {
@@ -127,48 +127,48 @@ class RWMutex {
   using ReadLock  = ReadScopedLockImpl<RWMutex>;
   using WriteLock = WriteScopedLockImpl<RWMutex>;
 
-  RWMutex() { pthread_rwlock_init(&lock_, nullptr); }
-  ~RWMutex() { pthread_rwlock_destroy(&lock_); }
+  RWMutex() { pthread_rwlock_init(&_lock, nullptr); }
+  ~RWMutex() { pthread_rwlock_destroy(&_lock); }
 
-  void rdlock() { pthread_rwlock_rdlock(&lock_); }
-  void wrlock() { pthread_rwlock_wrlock(&lock_); }
-  void unlock() { pthread_rwlock_unlock(&lock_); }
+  void rdlock() { pthread_rwlock_rdlock(&_lock); }
+  void wrlock() { pthread_rwlock_wrlock(&_lock); }
+  void unlock() { pthread_rwlock_unlock(&_lock); }
 
  private:
-  pthread_rwlock_t lock_;
+  pthread_rwlock_t _lock;
 };
 
 class Spinlock {
  public:
   using Lock = ScopedLockImpl<Spinlock>;
-  Spinlock() { pthread_spin_init(&mutex_, 0); }
-  ~Spinlock() { pthread_spin_destroy(&mutex_); }
+  Spinlock() { pthread_spin_init(&_mutex, 0); }
+  ~Spinlock() { pthread_spin_destroy(&_mutex); }
 
-  void lock() { pthread_spin_lock(&mutex_); }
-  void unlock() { pthread_spin_unlock(&mutex_); }
+  void lock() { pthread_spin_lock(&_mutex); }
+  void unlock() { pthread_spin_unlock(&_mutex); }
 
  private:
-  pthread_spinlock_t mutex_;
+  pthread_spinlock_t _mutex;
 };
 
 class CASLock {
  public:
   typedef ScopedLockImpl<CASLock> Lock;
-  CASLock() { mutex_.clear(); }
+  CASLock() { _mutex.clear(); }
   ~CASLock() {}
 
   void lock() {
-    while (std::atomic_flag_test_and_set_explicit(&mutex_,
+    while (std::atomic_flag_test_and_set_explicit(&_mutex,
                                                   std::memory_order_acquire))
       ;
   }
 
   void unlock() {
-    std::atomic_flag_clear_explicit(&mutex_, std::memory_order_release);
+    std::atomic_flag_clear_explicit(&_mutex, std::memory_order_release);
   }
 
  private:
-  volatile std::atomic_flag mutex_;
+  volatile std::atomic_flag _mutex;
 };
 
 class Thread {
@@ -177,8 +177,8 @@ class Thread {
   Thread(std::function<void()> cb, const std::string& name);
   ~Thread();
 
-  pid_t              getId() const { return id_; }
-  const std::string& getName() const { return name_; }
+  pid_t              getId() const { return _id; }
+  const std::string& getName() const { return _name; }
 
   void join();
 
@@ -194,12 +194,12 @@ class Thread {
   static void* run(void* args);
 
  private:
-  pid_t                 id_     = -1;
-  pthread_t             thread_ = 0;
-  std::function<void()> cb_;
-  std::string           name_;
+  pid_t                 _id     = -1;
+  pthread_t             _thread = 0;
+  std::function<void()> _cb;
+  std::string           _name;
 
-  Semaphore semaphore_;
+  Semaphore _semaphore;
 };
 
 }  // namespace gudov

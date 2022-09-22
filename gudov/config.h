@@ -25,21 +25,21 @@ class ConfigVarBase {
  public:
   using ptr = std::shared_ptr<ConfigVarBase>;
   ConfigVarBase(const std::string& name, const std::string& description = "")
-      : name_(name), description_(description) {
-    std::transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
+      : _name(name), _description(description) {
+    std::transform(_name.begin(), _name.end(), _name.begin(), ::tolower);
   }
   virtual ~ConfigVarBase() {}
 
-  const std::string& getName() const { return name_; }
-  const std::string& getDescription() const { return description_; }
+  const std::string& getName() const { return _name; }
+  const std::string& getDescription() const { return _description; }
 
   virtual std::string toString()                         = 0;
   virtual bool        fromString(const std::string& val) = 0;
   virtual std::string getTypeName() const                = 0;
 
  private:
-  std::string name_;
-  std::string description_;
+  std::string _name;
+  std::string _description;
 };
 
 template <typename F, typename T>
@@ -240,16 +240,16 @@ class ConfigVar : public ConfigVarBase {
 
   ConfigVar(const std::string& name, const T& defaultValue,
             const std::string& description = "")
-      : ConfigVarBase(name, description), val_(defaultValue) {}
+      : ConfigVarBase(name, description), _val(defaultValue) {}
 
   std::string toString() override {
     try {
-      RWMutexType::ReadLock lock(mutex_);
-      return ToStr()(val_);
+      RWMutexType::ReadLock lock(_mutex);
+      return ToStr()(_val);
     } catch (std::exception& e) {
       GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())
           << "ConfigVar::toString exception" << e.what()
-          << " convert: " << typeid(val_).name() << " to string";
+          << " convert: " << typeid(_val).name() << " to string";
     }
     return "";
   }
@@ -260,59 +260,59 @@ class ConfigVar : public ConfigVarBase {
     } catch (std::exception& e) {
       GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())
           << "ConfigVar::toString exception" << e.what()
-          << " convert: string to " << typeid(val_).name() << " - " << val;
+          << " convert: string to " << typeid(_val).name() << " - " << val;
     }
     return false;
   };
 
   const T getValue() {
-    RWMutexType::ReadLock lock(mutex_);
-    return val_;
+    RWMutexType::ReadLock lock(_mutex);
+    return _val;
   }
   void setValue(const T& v) {
     {
-      RWMutexType::ReadLock lock(mutex_);
-      if (v == val_) {
+      RWMutexType::ReadLock lock(_mutex);
+      if (v == _val) {
         return;
       }
-      for (auto& i : cbs_) {
-        i.second(val_, v);
+      for (auto& i : _cbs) {
+        i.second(_val, v);
       }
     }
-    RWMutexType::ReadLock lock(mutex_);
-    val_ = v;
+    RWMutexType::ReadLock lock(_mutex);
+    _val = v;
   }
 
   std::string getTypeName() const override { return typeid(T).name(); }
 
   uint64_t addListener(onChangeCb cb) {
     static uint64_t        s_funId = 0;
-    RWMutexType::WriteLock lock(mutex_);
+    RWMutexType::WriteLock lock(_mutex);
     ++s_funId;
-    cbs_[s_funId] = cb;
+    _cbs[s_funId] = cb;
     return s_funId;
   }
 
   void delListener(uint64_t key) {
-    RWMutexType::WriteLock lock(mutex_);
-    cbs_.erase(key);
+    RWMutexType::WriteLock lock(_mutex);
+    _cbs.erase(key);
   }
 
   onChangeCb getListener(uint64_t key) {
-    RWMutexType::ReadLock lock(mutex_);
-    auto                  it = cbs_.find(key);
-    return it == cbs_.end() ? nullptr : it->second;
+    RWMutexType::ReadLock lock(_mutex);
+    auto                  it = _cbs.find(key);
+    return it == _cbs.end() ? nullptr : it->second;
   }
 
   void clearListener() {
-    RWMutexType::WriteLock lock(mutex_);
-    cbs_.clear();
+    RWMutexType::WriteLock lock(_mutex);
+    _cbs.clear();
   }
 
  private:
-  T                              val_;
-  RWMutexType                    mutex_;
-  std::map<uint64_t, onChangeCb> cbs_;
+  T                              _val;
+  RWMutexType                    _mutex;
+  std::map<uint64_t, onChangeCb> _cbs;
 };
 
 class Config {

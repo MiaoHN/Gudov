@@ -13,21 +13,21 @@ static thread_local std::string t_threadName = "UNKNOWN";
 static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 Semaphore::Semaphore(uint32_t count) {
-  if (sem_init(&semaphore_, 0, count)) {
+  if (sem_init(&_semaphore, 0, count)) {
     throw std::logic_error("sem_init error");
   }
 }
 
-Semaphore::~Semaphore() { sem_destroy(&semaphore_); }
+Semaphore::~Semaphore() { sem_destroy(&_semaphore); }
 
 void Semaphore::wait() {
-  if (sem_wait(&semaphore_)) {
+  if (sem_wait(&_semaphore)) {
     throw std::logic_error("sem_wait error");
   }
 }
 
 void Semaphore::notify() {
-  if (sem_post(&semaphore_)) {
+  if (sem_post(&_semaphore)) {
     throw std::logic_error("sem_post error");
   }
 }
@@ -38,54 +38,54 @@ const std::string& Thread::GetName() { return t_threadName; }
 
 void Thread::SetName(const std::string& name) {
   if (t_thread) {
-    t_thread->name_ = name;
+    t_thread->_name = name;
   }
   t_threadName = name;
 }
 
 Thread::Thread(std::function<void()> cb, const std::string& name)
-    : cb_(cb), name_(name) {
+    : _cb(cb), _name(name) {
   if (name.empty()) {
-    name_ = "UNKNOWN";
+    _name = "UNKNOWN";
   }
-  int rt = pthread_create(&thread_, nullptr, &Thread::run, this);
+  int rt = pthread_create(&_thread, nullptr, &Thread::run, this);
   if (rt) {
     GUDOV_LOG_ERROR(g_logger)
         << "pthread_create thread fail, rt=" << rt << " name=" << name;
     throw std::logic_error("pthread_create error");
   }
-  semaphore_.wait();
+  _semaphore.wait();
 }
 
 Thread::~Thread() {
-  if (thread_) {
-    pthread_detach(thread_);
+  if (_thread) {
+    pthread_detach(_thread);
   }
 }
 
 void Thread::join() {
-  if (thread_) {
-    int rt = pthread_join(thread_, nullptr);
+  if (_thread) {
+    int rt = pthread_join(_thread, nullptr);
     if (rt) {
       GUDOV_LOG_ERROR(g_logger)
-          << "pthread_join thread fail, rt=" << rt << " name=" << name_;
+          << "pthread_join thread fail, rt=" << rt << " name=" << _name;
       throw std::logic_error("pthread_join error");
     }
-    thread_ = 0;
+    _thread = 0;
   }
 }
 
 void* Thread::run(void* arg) {
   Thread* thread = (Thread*)arg;
   t_thread       = thread;
-  t_threadName   = thread->name_;
-  thread->id_    = GetThreadId();
-  pthread_setname_np(pthread_self(), thread->name_.substr(0, 15).c_str());
+  t_threadName   = thread->_name;
+  thread->_id    = GetThreadId();
+  pthread_setname_np(pthread_self(), thread->_name.substr(0, 15).c_str());
 
   std::function<void()> cb;
-  cb.swap(thread->cb_);
+  cb.swap(thread->_cb);
 
-  thread->semaphore_.notify();
+  thread->_semaphore.notify();
 
   cb();
   return 0;

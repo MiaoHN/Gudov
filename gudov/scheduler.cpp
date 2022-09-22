@@ -14,7 +14,7 @@ static thread_local Scheduler* t_scheduler = nullptr;
 static thread_local Fiber*     t_fiber     = nullptr;
 
 Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
-    : name_(name) {
+    : _name(name) {
   GUDOV_ASSERT(threads > 0);
 
   if (useCaller) {
@@ -24,20 +24,20 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     GUDOV_ASSERT(GetThis() == nullptr);
     t_scheduler = this;
 
-    rootFiber_.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
-    gudov::Thread::SetName(name_);
+    _rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
+    gudov::Thread::SetName(_name);
 
-    t_fiber     = rootFiber_.get();
-    rootThread_ = gudov::GetThreadId();
-    threadIds_.push_back(rootThread_);
+    t_fiber     = _rootFiber.get();
+    _rootThread = gudov::GetThreadId();
+    _threadIds.push_back(_rootThread);
   } else {
-    rootThread_ = -1;
+    _rootThread = -1;
   }
-  threadCount_ = threads;
+  _threadCount = threads;
 }
 
 Scheduler::~Scheduler() {
-  GUDOV_ASSERT(stopping_);
+  GUDOV_ASSERT(_stopping);
   if (GetThis() == this) {
     t_scheduler = nullptr;
   }
@@ -48,52 +48,52 @@ Scheduler* Scheduler::GetThis() { return t_scheduler; }
 Fiber* Scheduler::GetMainFiber() { return t_fiber; }
 
 void Scheduler::start() {
-  MutexType::Lock lock(mutex_);
-  if (!stopping_) {
+  MutexType::Lock lock(_mutex);
+  if (!_stopping) {
     return;
   }
-  stopping_ = false;
-  GUDOV_ASSERT(threads_.empty());
+  _stopping = false;
+  GUDOV_ASSERT(_threads.empty());
 
-  threads_.resize(threadCount_);
-  for (size_t i = 0; i < threadCount_; ++i) {
-    threads_[i].reset(new Thread(std::bind(&Scheduler::run, this),
-                                 name_ + "_" + std::to_string(i)));
-    threadIds_.push_back(threads_[i]->getId());
+  _threads.resize(_threadCount);
+  for (size_t i = 0; i < _threadCount; ++i) {
+    _threads[i].reset(new Thread(std::bind(&Scheduler::run, this),
+                                 _name + "_" + std::to_string(i)));
+    _threadIds.push_back(_threads[i]->getId());
   }
   lock.unlock();
 
-  if (rootFiber_) {
-    rootFiber_->call();
-    GUDOV_LOG_INFO(g_logger) << "call out " << rootFiber_->getState();
+  if (_rootFiber) {
+    _rootFiber->call();
+    GUDOV_LOG_INFO(g_logger) << "call out " << _rootFiber->getState();
   }
 }
 
 void Scheduler::stop() {
-  autoStop_ = true;
-  if (rootFiber_ && threadCount_ == 0 &&
-      (rootFiber_->getState() == Fiber::TERM ||
-       rootFiber_->getState() == Fiber::INIT)) {
+  _autoStop = true;
+  if (_rootFiber && _threadCount == 0 &&
+      (_rootFiber->getState() == Fiber::TERM ||
+       _rootFiber->getState() == Fiber::INIT)) {
     GUDOV_LOG_INFO(g_logger) << this << " stopped";
-    stopping_ = true;
+    _stopping = true;
 
     if (stopping()) {
       return;
     }
   }
 
-  if (rootThread_ != -1) {
+  if (_rootThread != -1) {
     GUDOV_ASSERT(GetThis() == this);
   } else {
     GUDOV_ASSERT(GetThis() != this);
   }
 
-  stopping_ = true;
-  for (size_t i = 0; i < threadCount_; ++i) {
+  _stopping = true;
+  for (size_t i = 0; i < _threadCount; ++i) {
     tickle();
   }
 
-  if (rootFiber_) {
+  if (_rootFiber) {
     tickle();
   }
 
@@ -106,7 +106,7 @@ void Scheduler::setThis() { t_scheduler = this; }
 
 void Scheduler::run() {
   setThis();
-  if (gudov::GetThreadId() != rootThread_) {
+  if (gudov::GetThreadId() != _rootThread) {
     t_fiber = Fiber::GetThis().get();
   }
 
@@ -118,9 +118,9 @@ void Scheduler::run() {
     ft.reset();
     bool tickleMe = false;
     {
-      MutexType::Lock lock(mutex_);
-      auto            it = fibers_.begin();
-      while (it != fibers_.end()) {
+      MutexType::Lock lock(_mutex);
+      auto            it = _fibers.begin();
+      while (it != _fibers.end()) {
         if (it->thread != -1 && it->thread != gudov::GetThreadId()) {
           ++it;
           tickleMe = true;
@@ -134,7 +134,7 @@ void Scheduler::run() {
         }
 
         ft = *it;
-        fibers_.erase(it);
+        _fibers.erase(it);
         break;
       }
     }
@@ -144,15 +144,15 @@ void Scheduler::run() {
 
     if (ft.fiber && (ft.fiber->getState() != Fiber::TERM &&
                      ft.fiber->getState() != Fiber::EXCEPT)) {
-      ++activeThreadCount_;
+      ++_activeThreadCount;
       ft.fiber->swapIn();
-      --activeThreadCount_;
+      --_activeThreadCount;
 
       if (ft.fiber->getState() == Fiber::READY) {
         schedule(ft.fiber);
       } else if (ft.fiber->getState() != Fiber::TERM &&
                  ft.fiber->getState() != Fiber::EXCEPT) {
-        ft.fiber->state_ = Fiber::HOLD;
+        ft.fiber->_state = Fiber::HOLD;
       }
       ft.reset();
     } else if (ft.cb) {
@@ -162,9 +162,9 @@ void Scheduler::run() {
         cbFiber.reset(new Fiber(ft.cb));
       }
       ft.reset();
-      ++activeThreadCount_;
+      ++_activeThreadCount;
       cbFiber->swapIn();
-      --activeThreadCount_;
+      --_activeThreadCount;
       if (cbFiber->getState() == Fiber::READY) {
         schedule(cbFiber);
         cbFiber.reset();
@@ -172,7 +172,7 @@ void Scheduler::run() {
                  cbFiber->getState() == Fiber::TERM) {
         cbFiber->reset(nullptr);
       } else {
-        cbFiber->state_ = Fiber::HOLD;
+        cbFiber->_state = Fiber::HOLD;
         cbFiber.reset();
       }
     } else {
@@ -181,12 +181,12 @@ void Scheduler::run() {
         break;
       }
 
-      ++idleThreadCount_;
+      ++_idleThreadCount;
       idleFiber->swapIn();
-      --idleThreadCount_;
+      --_idleThreadCount;
       if (idleFiber->getState() != Fiber::TERM &&
           idleFiber->getState() != Fiber::EXCEPT) {
-        idleFiber->state_ = Fiber::HOLD;
+        idleFiber->_state = Fiber::HOLD;
       }
     }
   }
@@ -195,8 +195,8 @@ void Scheduler::run() {
 void Scheduler::tickle() { GUDOV_LOG_INFO(g_logger) << "tickle"; }
 
 bool Scheduler::stopping() {
-  MutexType::Lock lock(mutex_);
-  return autoStop_ && stopping_ && fibers_.empty() && activeThreadCount_ == 0;
+  MutexType::Lock lock(_mutex);
+  return _autoStop && _stopping && _fibers.empty() && _activeThreadCount == 0;
 }
 
 void Scheduler::idle() { GUDOV_LOG_INFO(g_logger) << "idle"; }

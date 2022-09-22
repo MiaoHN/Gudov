@@ -21,7 +21,7 @@ class Scheduler {
             const std::string& name = "");
   virtual ~Scheduler();
 
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const { return _name; }
 
   static Scheduler* GetThis();
   static Fiber*     GetMainFiber();
@@ -33,7 +33,7 @@ class Scheduler {
   void schedule(FiberOrCb fc, int thread = -1) {
     bool needTickle = false;
     {
-      MutexType::Lock lock(mutex_);
+      MutexType::Lock lock(_mutex);
       needTickle = scheduleNoLock(fc, thread);
     }
 
@@ -46,7 +46,7 @@ class Scheduler {
   void schedule(InputIterator begin, InputIterator end) {
     bool needTickle = false;
     {
-      MutexType::Lock lock(mutex_);
+      MutexType::Lock lock(_mutex);
       while (begin != end) {
         needTickle = scheduleNoLock(&*begin) || needTickle;
       }
@@ -68,10 +68,10 @@ class Scheduler {
  private:
   template <typename FiberOrCb>
   bool scheduleNoLock(FiberOrCb fc, int thread) {
-    bool           needTickle = fibers_.empty();
+    bool           needTickle = _fibers.empty();
     FiberAndThread ft(fc, thread);
     if (ft.fiber || ft.cb) {
-      fibers_.push_back(ft);
+      _fibers.push_back(ft);
     }
 
     return needTickle;
@@ -100,20 +100,20 @@ class Scheduler {
   };
 
  private:
-  MutexType                 mutex_;
-  std::vector<Thread::ptr>  threads_;
-  std::list<FiberAndThread> fibers_;
-  Fiber::ptr                rootFiber_;
-  std::string               name_;
+  MutexType                 _mutex;
+  std::vector<Thread::ptr>  _threads;
+  std::list<FiberAndThread> _fibers;
+  Fiber::ptr                _rootFiber;
+  std::string               _name;
 
  protected:
-  std::vector<int>    threadIds_;
-  size_t              threadCount_;
-  std::atomic<size_t> activeThreadCount_ = {0};
-  std::atomic<size_t> idleThreadCount_   = {0};
-  bool                stopping_          = true;
-  bool                autoStop_          = false;
-  int                 rootThread_        = 0;
+  std::vector<int>    _threadIds;
+  size_t              _threadCount;
+  std::atomic<size_t> _activeThreadCount = {0};
+  std::atomic<size_t> _idleThreadCount   = {0};
+  bool                _stopping          = true;
+  bool                _autoStop          = false;
+  int                 _rootThread        = 0;
 };
 
 }  // namespace gudov

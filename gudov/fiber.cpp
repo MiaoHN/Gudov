@@ -46,10 +46,10 @@ uint64_t Fiber::GetFiberId() {
 }
 
 Fiber::Fiber() {
-  state_ = EXEC;
+  _state = EXEC;
   SetThis(this);
 
-  if (getcontext(&ctx_)) {
+  if (getcontext(&_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
 
@@ -59,81 +59,81 @@ Fiber::Fiber() {
 }
 
 Fiber::Fiber(std::function<void()> cb, size_t stackSize, bool useCaller)
-    : id_(++s_fiberId), cb_(cb) {
+    : _id(++s_fiberId), _cb(cb) {
   ++s_fiberCount;
-  stackSize_ = stackSize ? stackSize : g_fiberStackSize->getValue();
+  _stackSize = stackSize ? stackSize : g_fiberStackSize->getValue();
 
-  stack_ = StackAllocator::Alloc(stackSize_);
-  if (getcontext(&ctx_)) {
+  _stack = StackAllocator::Alloc(_stackSize);
+  if (getcontext(&_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
-  ctx_.uc_link          = nullptr;
-  ctx_.uc_stack.ss_sp   = stack_;
-  ctx_.uc_stack.ss_size = stackSize_;
+  _ctx.uc_link          = nullptr;
+  _ctx.uc_stack.ss_sp   = _stack;
+  _ctx.uc_stack.ss_size = _stackSize;
 
   if (!useCaller) {
-    makecontext(&ctx_, &Fiber::MainFunc, 0);
+    makecontext(&_ctx, &Fiber::MainFunc, 0);
   } else {
-    makecontext(&ctx_, &Fiber::CallerMainFunc, 0);
+    makecontext(&_ctx, &Fiber::CallerMainFunc, 0);
   }
 
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << id_;
+  GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << _id;
 }
 
 Fiber::~Fiber() {
   --s_fiberCount;
-  if (stack_) {
-    GUDOV_ASSERT(state_ == TERM || state_ == EXCEPT || state_ == INIT);
-    StackAllocator::Dealloc(stack_, stackSize_);
+  if (_stack) {
+    GUDOV_ASSERT(_state == TERM || _state == EXCEPT || _state == INIT);
+    StackAllocator::Dealloc(_stack, _stackSize);
   } else {
-    GUDOV_ASSERT(!cb_);
-    GUDOV_ASSERT(state_ == EXEC);
+    GUDOV_ASSERT(!_cb);
+    GUDOV_ASSERT(_state == EXEC);
 
     Fiber* cur = t_fiber;
     if (cur == this) {
       SetThis(nullptr);
     }
   }
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << id_;
+  GUDOV_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << _id;
 }
 
 void Fiber::reset(std::function<void()> cb) {
-  GUDOV_ASSERT(stack_);
-  GUDOV_ASSERT(state_ == TERM || state_ == EXCEPT || state_ == INIT);
-  cb_ = cb;
-  if (getcontext(&ctx_)) {
+  GUDOV_ASSERT(_stack);
+  GUDOV_ASSERT(_state == TERM || _state == EXCEPT || _state == INIT);
+  _cb = cb;
+  if (getcontext(&_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
 
-  ctx_.uc_link          = nullptr;
-  ctx_.uc_stack.ss_sp   = stack_;
-  ctx_.uc_stack.ss_size = stackSize_;
+  _ctx.uc_link          = nullptr;
+  _ctx.uc_stack.ss_sp   = _stack;
+  _ctx.uc_stack.ss_size = _stackSize;
 
-  makecontext(&ctx_, &Fiber::MainFunc, 0);
-  state_ = INIT;
+  makecontext(&_ctx, &Fiber::MainFunc, 0);
+  _state = INIT;
 }
 
 void Fiber::call() {
   SetThis(this);
-  state_ = EXEC;
+  _state = EXEC;
   GUDOV_LOG_ERROR(g_logger) << getId();
-  if (swapcontext(&t_threadFiber->ctx_, &ctx_)) {
+  if (swapcontext(&t_threadFiber->_ctx, &_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }
 }
 
 void Fiber::back() {
   SetThis(t_threadFiber.get());
-  if (swapcontext(&ctx_, &t_threadFiber->ctx_)) {
+  if (swapcontext(&_ctx, &t_threadFiber->_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }
 }
 
 void Fiber::swapIn() {
   SetThis(this);
-  GUDOV_ASSERT(state_ != EXEC);
-  state_ = EXEC;
-  if (swapcontext(&Scheduler::GetMainFiber()->ctx_, &ctx_)) {
+  GUDOV_ASSERT(_state != EXEC);
+  _state = EXEC;
+  if (swapcontext(&Scheduler::GetMainFiber()->_ctx, &_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }
 }
@@ -142,11 +142,11 @@ void Fiber::swapOut() {
   SetThis(Scheduler::GetMainFiber());
 
   if (this != Scheduler::GetMainFiber()) {
-    if (swapcontext(&ctx_, &Scheduler::GetMainFiber()->ctx_)) {
+    if (swapcontext(&_ctx, &Scheduler::GetMainFiber()->_ctx)) {
       GUDOV_ASSERT2(false, "swapcontext");
     }
   } else {
-    if (swapcontext(&ctx_, &t_threadFiber->ctx_)) {
+    if (swapcontext(&_ctx, &t_threadFiber->_ctx)) {
       GUDOV_ASSERT2(false, "swapcontext");
     }
   }
@@ -166,13 +166,13 @@ Fiber::ptr Fiber::GetThis() {
 
 void Fiber::YieldToReady() {
   Fiber::ptr cur = GetThis();
-  cur->state_    = READY;
+  cur->_state    = READY;
   cur->swapOut();
 }
 
 void Fiber::YieldToHold() {
   Fiber::ptr cur = GetThis();
-  cur->state_    = HOLD;
+  cur->_state    = HOLD;
   cur->swapOut();
 }
 
@@ -182,16 +182,16 @@ void Fiber::MainFunc() {
   Fiber::ptr cur = GetThis();
   GUDOV_ASSERT(cur);
   try {
-    cur->cb_();
-    cur->cb_    = nullptr;
-    cur->state_ = TERM;
+    cur->_cb();
+    cur->_cb    = nullptr;
+    cur->_state = TERM;
   } catch (std::exception& ex) {
-    cur->state_ = EXCEPT;
+    cur->_state = EXCEPT;
     GUDOV_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
                               << " fiber_id=" << cur->getId() << std::endl
                               << gudov::BacktraceToString();
   } catch (...) {
-    cur->state_ = EXCEPT;
+    cur->_state = EXCEPT;
     GUDOV_LOG_ERROR(g_logger) << "Fiber Except: "
                               << " fiber_id=" << cur->getId() << std::endl
                               << gudov::BacktraceToString();
@@ -209,16 +209,16 @@ void Fiber::CallerMainFunc() {
   Fiber::ptr cur = GetThis();
   GUDOV_ASSERT(cur);
   try {
-    cur->cb_();
-    cur->cb_    = nullptr;
-    cur->state_ = TERM;
+    cur->_cb();
+    cur->_cb    = nullptr;
+    cur->_state = TERM;
   } catch (std::exception& ex) {
-    cur->state_ = EXCEPT;
+    cur->_state = EXCEPT;
     GUDOV_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
                               << " fiber_id=" << cur->getId() << std::endl
                               << gudov::BacktraceToString();
   } catch (...) {
-    cur->state_ = EXCEPT;
+    cur->_state = EXCEPT;
     GUDOV_LOG_ERROR(g_logger) << "Fiber Except: "
                               << " fiber_id=" << cur->getId() << std::endl
                               << gudov::BacktraceToString();

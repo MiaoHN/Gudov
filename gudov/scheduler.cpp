@@ -13,7 +13,7 @@ static gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 static thread_local Scheduler* t_scheduler = nullptr;
 
 /**
- * @brief 程序主协程
+ * @brief 程序主协程的指针
  *
  */
 static thread_local Fiber* t_fiber = nullptr;
@@ -23,9 +23,11 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
   GUDOV_ASSERT(threads > 0);
 
   if (useCaller) {
+    // 初始化主协程
     gudov::Fiber::GetThis();
-    --threads;
+    --threads;  // 减掉主协程
 
+    // 只能有一个 Scheduler
     GUDOV_ASSERT(GetThis() == nullptr);
     t_scheduler = this;
 
@@ -62,16 +64,12 @@ void Scheduler::start() {
 
   _threads.resize(_threadCount);
   for (size_t i = 0; i < _threadCount; ++i) {
+    // 创建指定数量的线程并执行 run
     _threads[i].reset(new Thread(std::bind(&Scheduler::run, this),
                                  _name + "_" + std::to_string(i)));
     _threadIds.push_back(_threads[i]->getId());
   }
   lock.unlock();
-
-  // if (_rootFiber) {
-  //   _rootFiber->call();
-  //   GUDOV_LOG_INFO(g_logger) << "call out " << _rootFiber->getState();
-  // }
 }
 
 void Scheduler::stop() {
@@ -123,10 +121,12 @@ void Scheduler::setThis() { t_scheduler = this; }
 
 void Scheduler::run() {
   setThis();
-  if (gudov::GetThreadId() != _rootThread) {
+  // 获得主协程
+  if (GetThreadId() != _rootThread) {
     t_fiber = Fiber::GetThis().get();
   }
 
+  // 新建 idle 协程
   Fiber::ptr idleFiber(new Fiber(std::bind(&Scheduler::idle, this)));
   Fiber::ptr cbFiber;
 
@@ -137,9 +137,12 @@ void Scheduler::run() {
     bool isActive = false;
     {
       MutexType::Lock lock(_mutex);
-      auto            it = _fibers.begin();
+
+      // 遍历执行队列中的所有执行体
+      auto it = _fibers.begin();
       while (it != _fibers.end()) {
-        if (it->thread != -1 && it->thread != gudov::GetThreadId()) {
+        if (it->thread != -1 && it->thread != GetThreadId()) {
+          // 指定了处理线程，但不是当前线程则跳过
           ++it;
           tickleMe = true;
           continue;
@@ -147,10 +150,12 @@ void Scheduler::run() {
 
         GUDOV_ASSERT(it->fiber || it->cb);
         if (it->fiber && it->fiber->getState() == Fiber::EXEC) {
+          // 正在运行中的协程
           ++it;
           continue;
         }
 
+        // 找到未调度任务，将其从队列中取出
         ft = *it;
         _fibers.erase(it);
         ++_activeThreadCount;
@@ -158,58 +163,68 @@ void Scheduler::run() {
         break;
       }
     }
+
     if (tickleMe) {
       tickle();
     }
 
     if (ft.fiber && (ft.fiber->getState() != Fiber::TERM &&
                      ft.fiber->getState() != Fiber::EXCEPT)) {
+      // 将该协程执行完
       ft.fiber->swapIn();
       --_activeThreadCount;
 
       if (ft.fiber->getState() == Fiber::READY) {
+        // 如果状态为 READY 则重新调度
         schedule(ft.fiber);
       } else if (ft.fiber->getState() != Fiber::TERM &&
                  ft.fiber->getState() != Fiber::EXCEPT) {
+        // 未进行调度，设为挂起状态
         ft.fiber->_state = Fiber::HOLD;
       }
       ft.reset();
     } else if (ft.cb) {
+      // 初始化 cbFiber
       if (cbFiber) {
         cbFiber->reset(ft.cb);
       } else {
         cbFiber.reset(new Fiber(ft.cb));
       }
       ft.reset();
+      // 执行 cbFiber
       cbFiber->swapIn();
       --_activeThreadCount;
       if (cbFiber->getState() == Fiber::READY) {
+        // 状态为 READY 时重新调度
         schedule(cbFiber);
         cbFiber.reset();
       } else if (cbFiber->getState() == Fiber::EXCEPT ||
                  cbFiber->getState() == Fiber::TERM) {
+        // 执行结束，释放资源
         cbFiber->reset(nullptr);
       } else {
+        // 未进行调度转为 HOLD 状态
+        // TODO 这里的执行过程有点混乱
         cbFiber->_state = Fiber::HOLD;
         cbFiber.reset();
       }
     } else {
+      // 没有待调度的执行体
       if (isActive) {
         --_activeThreadCount;
         continue;
       }
+
       if (idleFiber->getState() == Fiber::TERM) {
+        // idle 协程状态为 TERM 时退出该函数
         GUDOV_LOG_INFO(g_logger) << "idle fiber term";
         break;
       }
 
       ++_idleThreadCount;
+      // 转入 idle 协程处理函数中
       idleFiber->swapIn();
       --_idleThreadCount;
-      if (idleFiber->getState() != Fiber::TERM &&
-          idleFiber->getState() != Fiber::EXCEPT) {
-        idleFiber->_state = Fiber::HOLD;
-      }
     }
   }
 }

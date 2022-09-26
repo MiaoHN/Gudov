@@ -17,18 +17,48 @@ class Scheduler {
   using ptr       = std::shared_ptr<Scheduler>;
   using MutexType = Mutex;
 
+  /**
+   * @brief 创建一个线程协程调度器
+   *
+   * @param threads 创建的线程数
+   * @param useCaller
+   * @param name
+   */
   Scheduler(size_t threads = 1, bool useCaller = true,
             const std::string& name = "");
   virtual ~Scheduler();
 
   const std::string& getName() const { return _name; }
 
+  /**
+   * @brief 获取当前 Scheduler
+   *
+   * @return Scheduler*
+   */
   static Scheduler* GetThis();
-  static Fiber*     GetMainFiber();
 
+  /**
+   * @brief 获取主协程
+   *
+   * @return Fiber*
+   */
+  static Fiber* GetMainFiber();
+
+  /**
+   * @brief 开始执行
+   *
+   */
   void start();
+
   void stop();
 
+  /**
+   * @brief 将待调度的协程或执行体加入调度队列中
+   *
+   * @tparam FiberOrCb
+   * @param fc
+   * @param thread
+   */
   template <typename FiberOrCb>
   void schedule(FiberOrCb fc, int thread = -1) {
     bool needTickle = false;
@@ -42,6 +72,13 @@ class Scheduler {
     }
   }
 
+  /**
+   * @brief 添加多个协程或执行体
+   *
+   * @tparam InputIterator
+   * @param begin
+   * @param end
+   */
   template <typename InputIterator>
   void schedule(InputIterator begin, InputIterator end) {
     bool needTickle = false;
@@ -59,9 +96,24 @@ class Scheduler {
   }
 
  protected:
+  /**
+   * @brief 通知协程有未执行任务
+   *
+   */
   virtual void tickle();
-  void         run();
+
+  /**
+   * @brief 处理调度的函数
+   *
+   */
+  void run();
+
   virtual bool stopping();
+
+  /**
+   * @brief 没有待调度执行体时执行该函数
+   *
+   */
   virtual void idle();
 
   void setThis();
@@ -69,6 +121,16 @@ class Scheduler {
   bool hasIdleThreads() { return _idleThreadCount > 0; }
 
  private:
+  /**
+   * @brief 将执行体加入队列中
+   * @details 将执行体加入 fibers 队列，如果队列为空则返回 true 等待 tickle
+   *
+   * @tparam FiberOrCb
+   * @param fc
+   * @param thread
+   * @return true 执行队列为空
+   * @return false 执行队列非空
+   */
   template <typename FiberOrCb>
   bool scheduleNoLock(FiberOrCb fc, int thread) {
     bool           needTickle = _fibers.empty();
@@ -81,6 +143,10 @@ class Scheduler {
   }
 
  private:
+  /**
+   * @brief 待运行的协程或线程
+   *
+   */
   struct FiberAndThread {
     Fiber::ptr            fiber;
     std::function<void()> cb;
@@ -103,20 +169,24 @@ class Scheduler {
   };
 
  private:
-  MutexType                 _mutex;
+  MutexType _mutex;
+  // 线程池 (不包括主协程)
   std::vector<Thread::ptr>  _threads;
   std::list<FiberAndThread> _fibers;
-  Fiber::ptr                _rootFiber;
+  Fiber::ptr                _rootFiber;  // 主协程
   std::string               _name;
 
  protected:
-  std::vector<int>    _threadIds;
+  // 所有线程的 id (包括主协程)
+  std::vector<int> _threadIds;
+  // 待调度的线程数
   size_t              _threadCount;
   std::atomic<size_t> _activeThreadCount = {0};
   std::atomic<size_t> _idleThreadCount   = {0};
   bool                _stopping          = true;
   bool                _autoStop          = false;
-  int                 _rootThread        = 0;
+  // 主线程 ID
+  int _rootThread = 0;
 };
 
 }  // namespace gudov

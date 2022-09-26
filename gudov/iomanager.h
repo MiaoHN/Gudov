@@ -28,7 +28,14 @@ class IOManager : public Scheduler, public TimerManager {
 
     EventContext& getContext(Event event);
     void          resetContext(EventContext& ctx);
-    void          triggerEvent(Event event);
+
+    /**
+     * @brief 触发对应事件
+     * @details 将对应的执行体放入调度器进行调度
+     *
+     * @param event
+     */
+    void triggerEvent(Event event);
 
     EventContext read;
     EventContext write;
@@ -50,10 +57,37 @@ class IOManager : public Scheduler, public TimerManager {
    * @param cb
    * @return int 0 success, -1 error
    */
-  int  addEvent(int fd, Event event, std::function<void()> cb = nullptr);
+  int addEvent(int fd, Event event, std::function<void()> cb = nullptr);
+
+  /**
+   * @brief 删除 fd 对应事件
+   * @attention 删除时不会触发事件
+   *
+   * @param fd
+   * @param event
+   * @return true
+   * @return false
+   */
   bool delEvent(int fd, Event event);
+
+  /**
+   * @brief 取消 fd 对应的所有事件
+   * @attention 取消前会触发一次对应
+   *
+   * @param fd
+   * @return true
+   * @return false
+   */
   bool cancelEvent(int fd, Event event);
 
+  /**
+   * @brief 取消 fd 对应的所有事件
+   * @attention 取消前会全部触发一次
+   *
+   * @param fd
+   * @return true
+   * @return false
+   */
   bool cancelAll(int fd);
 
   static IOManager* GetThis();
@@ -69,8 +103,11 @@ class IOManager : public Scheduler, public TimerManager {
 
  private:
   int _epfd = 0;
+
+  // 0 为读端  1 为写端
   int _tickleFds[2];
 
+  // 当前未执行的 IO 事件数量
   std::atomic<size_t>     _pendingEventCount{0};
   RWMutexType             _mutex;
   std::vector<FdContext*> _fdContexts;

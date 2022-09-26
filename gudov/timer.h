@@ -27,10 +27,11 @@ class Timer : public std::enable_shared_from_this<Timer> {
   Timer(uint64_t next);
 
  private:
-  bool                  _recurring = false;  // 是否是循环定时器
-  uint64_t              _ms        = 0;      // 执行周期
-  uint64_t              _next      = 0;      // 精确的执行函数
-  std::function<void()> _cb;
+  bool     _recurring = false;  // 是否是循环定时器
+  uint64_t _ms        = 0;      // 执行周期
+  uint64_t _next      = 0;      // 精确的执行函数
+
+  std::function<void()> _cb;  // 待执行的回调函数
   TimerManager *        _manager = nullptr;
 
  private:
@@ -63,6 +64,13 @@ class TimerManager {
   void         addTimer(Timer::ptr val, RWMutexType::WriteLock &lock);
 
  private:
+  /**
+   * @brief 服务器时间是否调后
+   *
+   * @param nowMs
+   * @return true
+   * @return false
+   */
   bool detectClockRollover(uint64_t nowMs);
 
  private:

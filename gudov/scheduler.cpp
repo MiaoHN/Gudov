@@ -225,6 +225,10 @@ void Scheduler::run() {
       // 转入 idle 协程处理函数中
       idleFiber->swapIn();
       --_idleThreadCount;
+      if (idleFiber->getState() != Fiber::TERM &&
+          idleFiber->getState() != Fiber::EXCEPT) {
+        idleFiber->_state = Fiber::HOLD;
+      }
     }
   }
 }

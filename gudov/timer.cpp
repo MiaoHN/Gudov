@@ -95,6 +95,12 @@ Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb,
   return timer;
 }
 
+/**
+ * @brief 条件的回调函数
+ *
+ * @param weakCond
+ * @param cb
+ */
 static void OnTimer(std::weak_ptr<void> weakCond, std::function<void()> cb) {
   std::shared_ptr<void> tmp = weakCond.lock();
   if (tmp) {
@@ -125,8 +131,9 @@ uint64_t TimerManager::getNextTimer() {
   }
 }
 
-void TimerManager::listExpiredCb(std::vector<std::function<void()> > &cbs) {
-  uint64_t                nowMs = GetCurrentMS();
+void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
+  uint64_t nowMs = GetCurrentMS();
+
   std::vector<Timer::ptr> expired;
   {
     RWMutexType::ReadLock lock(_mutex);
@@ -162,7 +169,9 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()> > &cbs) {
 }
 
 void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
-  auto it      = _timers.insert(val).first;
+  auto it = _timers.insert(val).first;
+
+  // _timers 原本为空并且未 tickle
   bool atFront = (it == _timers.begin()) && !_tickled;
   if (atFront) {
     _tickled = true;

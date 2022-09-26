@@ -48,7 +48,8 @@ class Scheduler {
     {
       MutexType::Lock lock(_mutex);
       while (begin != end) {
-        needTickle = scheduleNoLock(&*begin) || needTickle;
+        needTickle = scheduleNoLock(&*begin, -1) || needTickle;
+        ++begin;
       }
     }
 
@@ -64,6 +65,8 @@ class Scheduler {
   virtual void idle();
 
   void setThis();
+
+  bool hasIdleThreads() { return _idleThreadCount > 0; }
 
  private:
   template <typename FiberOrCb>

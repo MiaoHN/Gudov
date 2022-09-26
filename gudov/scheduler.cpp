@@ -11,7 +11,12 @@ namespace gudov {
 static gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 static thread_local Scheduler* t_scheduler = nullptr;
-static thread_local Fiber*     t_fiber     = nullptr;
+
+/**
+ * @brief 程序主协程
+ *
+ */
+static thread_local Fiber* t_fiber = nullptr;
 
 Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     : _name(name) {
@@ -24,7 +29,7 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     GUDOV_ASSERT(GetThis() == nullptr);
     t_scheduler = this;
 
-    _rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
+    _rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0));
     gudov::Thread::SetName(_name);
 
     t_fiber     = _rootFiber.get();

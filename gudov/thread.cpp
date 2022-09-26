@@ -7,7 +7,9 @@
 
 namespace gudov {
 
-static thread_local Thread*     t_thread     = nullptr;
+// 当前运行的线程
+static thread_local Thread* t_thread = nullptr;
+// 当前运行的线程的名称
 static thread_local std::string t_threadName = "UNKNOWN";
 
 static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
@@ -44,7 +46,7 @@ void Thread::SetName(const std::string& name) {
 }
 
 Thread::Thread(std::function<void()> cb, const std::string& name)
-    : _cb(cb), _name(name) {
+    : _name(name), _cb(cb) {
   if (name.empty()) {
     _name = "UNKNOWN";
   }
@@ -54,6 +56,8 @@ Thread::Thread(std::function<void()> cb, const std::string& name)
         << "pthread_create thread fail, rt=" << rt << " name=" << name;
     throw std::logic_error("pthread_create error");
   }
+
+  // 等待线程创建完毕 (运行到 notify()) 后执行函数体
   _semaphore.wait();
 }
 
@@ -80,11 +84,14 @@ void* Thread::run(void* arg) {
   t_thread       = thread;
   t_threadName   = thread->_name;
   thread->_id    = GetThreadId();
+
+  // 设置线程名
   pthread_setname_np(pthread_self(), thread->_name.substr(0, 15).c_str());
 
   std::function<void()> cb;
   cb.swap(thread->_cb);
 
+  // 线程创建成功，准备执行
   thread->_semaphore.notify();
 
   cb();

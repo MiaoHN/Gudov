@@ -13,12 +13,25 @@
 
 namespace gudov {
 
+/**
+ * @brief 信号量
+ *
+ */
 class Semaphore {
  public:
   Semaphore(uint32_t count = 0);
   ~Semaphore();
 
+  /**
+   * @brief 信号量不为 0 时减 1
+   *
+   */
   void wait();
+
+  /**
+   * @brief 信号量加 1
+   *
+   */
   void notify();
 
  private:
@@ -30,6 +43,11 @@ class Semaphore {
   sem_t _semaphore;
 };
 
+/**
+ * @brief 通过 RAII 机制实现锁
+ *
+ * @tparam T
+ */
 template <typename T>
 class ScopedLockImpl {
  public:
@@ -56,6 +74,11 @@ class ScopedLockImpl {
   bool _locked = false;
 };
 
+/**
+ * @brief 通过 RAII 机制实现的读锁
+ *
+ * @tparam T
+ */
 template <typename T>
 class ReadScopedLockImpl {
  public:
@@ -82,6 +105,11 @@ class ReadScopedLockImpl {
   bool _locked = false;
 };
 
+/**
+ * @brief 通过 RAII 机制实现的写锁
+ *
+ * @tparam T
+ */
 template <typename T>
 class WriteScopedLockImpl {
  public:
@@ -122,6 +150,10 @@ class Mutex {
   pthread_mutex_t _mutex;
 };
 
+/**
+ * @brief 读写锁
+ *
+ */
 class RWMutex {
  public:
   using ReadLock  = ReadScopedLockImpl<RWMutex>;
@@ -177,14 +209,36 @@ class Thread {
   Thread(std::function<void()> cb, const std::string& name);
   ~Thread();
 
-  pid_t              getId() const { return _id; }
+  /**
+   * @brief 获取线程的全局 ID
+   *
+   * @return pid_t
+   */
+  pid_t getId() const { return _id; }
+
   const std::string& getName() const { return _name; }
 
+  /**
+   * @brief 等待线程结束
+   *
+   */
   void join();
 
-  static Thread*            GetThis();
+  /**
+   * @brief 获取当前运行的线程
+   *
+   * @return Thread*
+   */
+  static Thread* GetThis();
+
+  /**
+   * @brief 获取当前运行的线程的名称
+   *
+   * @return Thread*
+   */
   static const std::string& GetName();
-  static void               SetName(const std::string& name);
+
+  static void SetName(const std::string& name);
 
  private:
   Thread(const Thread&)  = delete;
@@ -194,10 +248,11 @@ class Thread {
   static void* run(void* args);
 
  private:
-  pid_t                 _id     = -1;
-  pthread_t             _thread = 0;
-  std::function<void()> _cb;
-  std::string           _name;
+  pid_t       _id     = -1;  // 全局 ID，通过 syscall() 得到
+  pthread_t   _thread = 0;   // 进程内 ID，pthread_create() 创建时得到
+  std::string _name;         // 线程名称
+
+  std::function<void()> _cb;  // 线程内运行的函数
 
   Semaphore _semaphore;
 };

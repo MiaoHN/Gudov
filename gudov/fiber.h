@@ -14,6 +14,13 @@ namespace gudov {
 
 class Scheduler;
 
+/**
+ * @brief 协程
+ * @details
+ * 比线程更轻量的执行单元，协程切换在用户态中进行，其速度比线程的转换还快，
+ * 但是在同一线程中协程只能顺序执行，和线程的调度有所区别
+ *
+ */
 class Fiber : public std::enable_shared_from_this<Fiber> {
   friend class Scheduler;
 
@@ -21,41 +28,106 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   using ptr = std::shared_ptr<Fiber>;
 
   enum State {
-    INIT,
-    HOLD,
-    EXEC,
-    TERM,
-    READY,
-    EXCEPT,
+    INIT,    // 初始化状态
+    HOLD,    // 阻塞状态
+    EXEC,    // 执行状态
+    TERM,    // 结束状态
+    READY,   // 准备状态
+    EXCEPT,  // 异常状态
   };
 
  private:
+  /**
+   * @brief 创建主协程
+   *
+   */
   Fiber();
 
  public:
-  Fiber(std::function<void()> cb, size_t stackSize = 0, bool useCaller = false);
+  Fiber(std::function<void()> cb, size_t stackSize = 0);
   ~Fiber();
 
+  /**
+   * @brief 重置此 fiber 的函数执行体
+   *
+   * @param cb
+   */
   void reset(std::function<void()> cb);
+
+  /**
+   * @brief 转入当前协程执行
+   *
+   */
   void swapIn();
+
+  /**
+   * @brief 当前协程返回到主协程
+   *
+   */
   void swapOut();
 
+  /**
+   * @brief 执行此协程
+   * @details 从主协程转到子协程
+   *
+   */
   void call();
+
+  /**
+   * @brief 返回主协程
+   *
+   */
   void back();
 
   uint64_t getId() const { return _id; }
   State    getState() const { return _state; }
 
  public:
-  static void       SetThis(Fiber* f);
-  static Fiber::ptr GetThis();
-  static void       YieldToReady();
-  static void       YieldToHold();
+  /**
+   * @brief 设置当前运行协程
+   *
+   * @param f
+   */
+  static void SetThis(Fiber* f);
 
+  /**
+   * @brief 获得当前运行协程
+   * @details 如果当前线程还未创建协程，则创建主协程并返回
+   *
+   * @return Fiber::ptr
+   */
+  static Fiber::ptr GetThis();
+
+  /**
+   * @brief 将当前协程状态转为 READY
+   *
+   */
+  static void YieldToReady();
+
+  /**
+   * @brief 将当前协程状态转为 HOLD
+   *
+   */
+  static void YieldToHold();
+
+  /**
+   * @brief 获得协程总数量
+   *
+   * @return uint64_t
+   */
   static uint64_t TotalFibers();
 
-  static void     MainFunc();
-  static void     CallerMainFunc();
+  /**
+   * @brief 协程的运行函数
+   *
+   */
+  static void MainFunc();
+
+  /**
+   * @brief 获得当前运行的协程 ID
+   *
+   * @return uint64_t
+   */
   static uint64_t GetFiberId();
 
  private:

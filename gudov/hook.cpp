@@ -15,6 +15,9 @@ gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 namespace gudov {
 
+static ConfigVar<int>::ptr g_tcpConnectTimeout =
+    Config::Lookup("tcp.connect.timeout", 5000, "tcp connect timeout");
+
 static thread_local bool t_hookEnable = false;
 
 #define HOOK_FUN(XX) \
@@ -52,8 +55,20 @@ void hookInit() {
 #undef XX
 }
 
+static uint64_t s_connectTimeout = -1;
+
 struct _HookIniter {
-  _HookIniter() { hookInit(); }
+  _HookIniter() {
+    hookInit();
+    s_connectTimeout = g_tcpConnectTimeout->getValue();
+
+    g_tcpConnectTimeout->addListener(
+        [](const int& oldValue, const int& newValue) {
+          GUDOV_LOG_INFO(g_logger) << "tcp connect timeout changed from "
+                                   << oldValue << " to " << newValue;
+          s_connectTimeout = newValue;
+        });
+  }
 };
 
 static _HookIniter s_hookIniter;
@@ -71,7 +86,7 @@ struct TimerInfo {
 template <typename OriginFun, typename... Args>
 static ssize_t doIO(int fd, OriginFun fun, const std::string& hookFunName,
                     uint32_t event, int timeoutSo, Args&&... args) {
-  if (gudov::t_hookEnable) {
+  if (!gudov::t_hookEnable) {
     return fun(fd, std::forward<Args>(args)...);
   }
 
@@ -214,8 +229,82 @@ int socket(int domain, int type, int protocol) {
   return fd;
 }
 
+int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
+                       uint64_t timeoutMs) {
+  if (!gudov::t_hookEnable) {
+    return connectF(fd, addr, addrlen);
+  }
+  gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->get(fd);
+  if (!ctx || ctx->isClose()) {
+    errno = EBADF;
+    return -1;
+  }
+  if (!ctx->isSocket()) {
+    return connectF(fd, addr, addrlen);
+  }
+
+  if (ctx->getUserNonblock()) {
+    return connectF(fd, addr, addrlen);
+  }
+
+  int n = connectF(fd, addr, addrlen);
+  if (n == 0) {
+    return 0;
+  } else if (n != -1 || errno != EINPROGRESS) {
+    return n;
+  }
+
+  gudov::IOManager*          iom = gudov::IOManager::GetThis();
+  gudov::Timer::ptr          timer;
+  std::shared_ptr<TimerInfo> tinfo(new TimerInfo);
+  std::weak_ptr<TimerInfo>   winfo(tinfo);
+
+  if (timeoutMs != (uint64_t)-1) {
+    timer = iom->addConditionTimer(
+        timeoutMs,
+        [winfo, fd, iom]() {
+          auto t = winfo.lock();
+          if (!t || t->cancelled) {
+            return;
+          }
+          t->cancelled = ETIMEDOUT;
+          iom->cancelEvent(fd, gudov::IOManager::Event::WRITE);
+        },
+        winfo);
+  }
+
+  int rt = iom->addEvent(fd, gudov::IOManager::WRITE);
+  if (rt == 0) {
+    gudov::Fiber::YieldToHold();
+    if (timer) {
+      timer->cancel();
+    }
+    if (tinfo->cancelled) {
+      errno = tinfo->cancelled;
+      return -1;
+    }
+  } else {
+    if (timer) {
+      timer->cancel();
+    }
+    GUDOV_LOG_ERROR(g_logger) << "connect addEvent(" << fd << ", WRITE) error";
+  }
+
+  int       error = 0;
+  socklen_t len   = sizeof(int);
+  if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len)) {
+    return -1;
+  }
+  if (!error) {
+    return 0;
+  } else {
+    errno = error;
+    return -1;
+  }
+}
+
 int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
-  return connectF(sockfd, addr, addrlen);
+  return connectWithTimeout(sockfd, addr, addrlen, gudov::s_connectTimeout);
 }
 
 int accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {

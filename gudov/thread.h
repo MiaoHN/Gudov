@@ -11,13 +11,15 @@
 #include <string>
 #include <thread>
 
+#include "noncopyable.h"
+
 namespace gudov {
 
 /**
  * @brief 信号量
  *
  */
-class Semaphore {
+class Semaphore : public NonCopyable {
  public:
   Semaphore(uint32_t count = 0);
   ~Semaphore();
@@ -33,11 +35,6 @@ class Semaphore {
    *
    */
   void notify();
-
- private:
-  Semaphore(const Semaphore&)  = delete;
-  Semaphore(const Semaphore&&) = delete;
-  Semaphore& operator=(const Semaphore&) = delete;
 
  private:
   sem_t _semaphore;
@@ -136,7 +133,7 @@ class WriteScopedLockImpl {
   bool _locked = false;
 };
 
-class Mutex {
+class Mutex : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<Mutex>;
 
@@ -154,7 +151,7 @@ class Mutex {
  * @brief 读写锁
  *
  */
-class RWMutex {
+class RWMutex : public NonCopyable {
  public:
   using ReadLock  = ReadScopedLockImpl<RWMutex>;
   using WriteLock = WriteScopedLockImpl<RWMutex>;
@@ -170,7 +167,7 @@ class RWMutex {
   pthread_rwlock_t _lock;
 };
 
-class Spinlock {
+class Spinlock : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<Spinlock>;
   Spinlock() { pthread_spin_init(&_mutex, 0); }
@@ -183,7 +180,7 @@ class Spinlock {
   pthread_spinlock_t _mutex;
 };
 
-class CASLock {
+class CASLock : public NonCopyable {
  public:
   typedef ScopedLockImpl<CASLock> Lock;
   CASLock() { _mutex.clear(); }
@@ -203,7 +200,7 @@ class CASLock {
   volatile std::atomic_flag _mutex;
 };
 
-class Thread {
+class Thread : public NonCopyable {
  public:
   using ptr = std::shared_ptr<Thread>;
   Thread(std::function<void()> cb, const std::string& name);
@@ -241,10 +238,6 @@ class Thread {
   static void SetName(const std::string& name);
 
  private:
-  Thread(const Thread&)  = delete;
-  Thread(const Thread&&) = delete;
-  Thread& operator=(const Thread&) = delete;
-
   static void* run(void* args);
 
  private:

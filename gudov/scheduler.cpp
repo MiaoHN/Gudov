@@ -3,6 +3,7 @@
 #include <string>
 
 #include "gudov/util.h"
+#include "hook.h"
 #include "log.h"
 #include "macro.h"
 
@@ -120,6 +121,7 @@ void Scheduler::stop() {
 void Scheduler::setThis() { t_scheduler = this; }
 
 void Scheduler::run() {
+  setHookEnable(true);
   setThis();
   // 获得主协程
   if (GetThreadId() != _rootThread) {

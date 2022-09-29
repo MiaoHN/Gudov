@@ -11,7 +11,7 @@
 
 namespace gudov {
 
-gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 pid_t GetThreadId() { return syscall(SYS_gettid); }
 

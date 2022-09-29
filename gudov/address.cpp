@@ -8,7 +8,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_ROOT();
+static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 template <class T>
 static T CreateMask(uint32_t bits) {
@@ -117,6 +117,9 @@ std::shared_ptr<IPAddress> Address::LookupAnyIPAddress(const std::string& host,
                                                        int protocol) {
   std::vector<Address::ptr> result;
   if (Lookup(result, host, family, type, protocol)) {
+    for (auto& i : result) {
+      std::cout << i->toString() << std::endl;
+    }
     for (auto& i : result) {
       IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);
       if (v) {
@@ -231,7 +234,7 @@ bool Address::operator==(const Address& rhs) const {
 
 bool Address::operator!=(const Address& rhs) const { return !(*this == rhs); }
 
-IPAddress::ptr IPAddress::Create(const char* address, uint32_t port) {
+IPAddress::ptr IPAddress::Create(const char* address, uint16_t port) {
   addrinfo hints, *results;
   memset(&hints, 0, sizeof(addrinfo));
 
@@ -260,7 +263,7 @@ IPAddress::ptr IPAddress::Create(const char* address, uint32_t port) {
   }
 }
 
-IPv4Address::ptr IPv4Address::Create(const char* address, uint32_t port) {
+IPv4Address::ptr IPv4Address::Create(const char* address, uint16_t port) {
   IPv4Address::ptr rt(new IPv4Address);
   rt->_addr.sin_port = ByteSwapOnLittleEndian(port);
   int result         = inet_pton(AF_INET, address, &rt->_addr.sin_addr);
@@ -275,12 +278,14 @@ IPv4Address::ptr IPv4Address::Create(const char* address, uint32_t port) {
 
 IPv4Address::IPv4Address(const sockaddr_in& address) { _addr = address; }
 
-IPv4Address::IPv4Address(uint32_t address, uint32_t port) {
+IPv4Address::IPv4Address(uint32_t address, uint16_t port) {
   memset(&_addr, 0, sizeof(_addr));
   _addr.sin_family      = AF_INET;
   _addr.sin_port        = ByteSwapOnLittleEndian(port);
   _addr.sin_addr.s_addr = ByteSwapOnLittleEndian(address);
 }
+
+sockaddr* IPv4Address::getAddr() { return (sockaddr*)&_addr; }
 
 const sockaddr* IPv4Address::getAddr() const { return (sockaddr*)&_addr; }
 
@@ -330,11 +335,11 @@ uint32_t IPv4Address::getPort() const {
   return ByteSwapOnLittleEndian(_addr.sin_port);
 }
 
-void IPv4Address::setPort(uint32_t v) {
+void IPv4Address::setPort(uint16_t v) {
   _addr.sin_port = ByteSwapOnLittleEndian(v);
 }
 
-IPv6Address::ptr IPv6Address::Create(const char* address, uint32_t port) {
+IPv6Address::ptr IPv6Address::Create(const char* address, uint16_t port) {
   IPv6Address::ptr rt(new IPv6Address);
   rt->_addr.sin6_port = ByteSwapOnLittleEndian(port);
   int result          = inet_pton(AF_INET6, address, &rt->_addr.sin6_addr);
@@ -354,12 +359,14 @@ IPv6Address::IPv6Address() {
 
 IPv6Address::IPv6Address(const sockaddr_in6& address) { _addr = address; }
 
-IPv6Address::IPv6Address(const uint8_t address[16], uint32_t port) {
+IPv6Address::IPv6Address(const uint8_t address[16], uint16_t port) {
   memset(&_addr, 0, sizeof(_addr));
   _addr.sin6_family = AF_INET6;
   _addr.sin6_port   = ByteSwapOnLittleEndian(port);
   memcpy(&_addr.sin6_addr.s6_addr, address, 16);
 }
+
+sockaddr* IPv6Address::getAddr() { return (sockaddr*)&_addr; }
 
 const sockaddr* IPv6Address::getAddr() const { return (sockaddr*)&_addr; }
 
@@ -425,7 +432,7 @@ uint32_t IPv6Address::getPort() const {
   return ByteSwapOnLittleEndian(_addr.sin6_port);
 }
 
-void IPv6Address::setPort(uint32_t v) {
+void IPv6Address::setPort(uint16_t v) {
   _addr.sin6_port = ByteSwapOnLittleEndian(v);
 }
 
@@ -453,6 +460,10 @@ UnixAddress::UnixAddress(const std::string& path) {
   _length += offsetof(sockaddr_un, sun_path);
 }
 
+void UnixAddress::setAddrLen(uint32_t v) { _length = v; }
+
+sockaddr* UnixAddress::getAddr() { return (sockaddr*)&_addr; }
+
 const sockaddr* UnixAddress::getAddr() const { return (sockaddr*)&_addr; }
 
 socklen_t UnixAddress::getAddrLen() const { return _length; }
@@ -472,6 +483,8 @@ UnknownAddress::UnknownAddress(int family) {
 }
 
 UnknownAddress::UnknownAddress(const sockaddr& addr) { _addr = addr; }
+
+sockaddr* UnknownAddress::getAddr() { return &_addr; }
 
 const sockaddr* UnknownAddress::getAddr() const { return &_addr; }
 

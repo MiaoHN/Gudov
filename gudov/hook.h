@@ -2,6 +2,7 @@
 #define __GUDOV_HOOK_H__
 
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -103,6 +104,9 @@ extern getsockoptFun getsockoptF;
 typedef int (*setsockoptFun)(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen);
 extern setsockoptFun setsockoptF;
+
+extern int connectWithTimeout(int fd, const struct sockaddr *addr,
+                              socklen_t addrlen, uint64_t timeoutMs);
 }
 
 #endif  // __GUDOV_HOOK_H__

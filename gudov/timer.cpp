@@ -1,8 +1,11 @@
 #include "timer.h"
 
+#include "log.h"
 #include "util.h"
 
 namespace gudov {
+
+static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 Timer::Timer(uint64_t ms, std::function<void()> cb, bool recurring,
              TimerManager *manager)
@@ -89,6 +92,7 @@ TimerManager::~TimerManager() {}
 
 Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb,
                                   bool recurring) {
+  GUDOV_LOG_DEBUG(g_logger) << "TimerManager::addTimer";
   Timer::ptr             timer(new Timer(ms, cb, recurring, this));
   RWMutexType::WriteLock lock(_mutex);
   addTimer(timer, lock);

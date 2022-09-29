@@ -26,6 +26,7 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
   if (useCaller) {
     // 初始化主协程
     gudov::Fiber::GetThis();
+    GUDOV_LOG_DEBUG(g_logger) << "Scheduler::Scheduler Main Fiber Create";
     --threads;  // 减掉主协程
 
     // 只能有一个 Scheduler
@@ -33,6 +34,7 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     t_scheduler = this;
 
     _rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0));
+    GUDOV_LOG_DEBUG(g_logger) << "Scheduler::Scheduler Root Fiber Create";
     gudov::Thread::SetName(_name);
 
     t_fiber     = _rootFiber.get();
@@ -103,6 +105,7 @@ void Scheduler::stop() {
 
   if (_rootFiber) {
     if (!stopping()) {
+      // 主协程执行入口
       _rootFiber->call();
     }
   }
@@ -130,6 +133,7 @@ void Scheduler::run() {
 
   // 新建 idle 协程
   Fiber::ptr idleFiber(new Fiber(std::bind(&Scheduler::idle, this)));
+  GUDOV_LOG_DEBUG(g_logger) << "Scheduler::run idle Fiber Create";
   Fiber::ptr cbFiber;
 
   FiberAndThread ft;
@@ -192,6 +196,7 @@ void Scheduler::run() {
         cbFiber->reset(ft.cb);
       } else {
         cbFiber.reset(new Fiber(ft.cb));
+        GUDOV_LOG_DEBUG(g_logger) << "Scheduler::run cbFiber Create";
       }
       ft.reset();
       // 执行 cbFiber

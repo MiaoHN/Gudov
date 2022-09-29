@@ -149,8 +149,10 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
   // 为该事件分配调用资源
   eventCtx.scheduler = Scheduler::GetThis();
   if (cb) {
+    // 如果指定了调度函数则执行该函数
     eventCtx.cb.swap(cb);
   } else {
+    // 执行当前协程
     eventCtx.fiber = Fiber::GetThis();
     GUDOV_ASSERT(eventCtx.fiber->getState() == Fiber::EXEC);
   }
@@ -327,9 +329,13 @@ void IOManager::idle() {
       }
     } while (true);
 
+    // 处理超时事件
+
+    // 获取超时事件
     std::vector<std::function<void()>> cbs;
     listExpiredCb(cbs);
     if (!cbs.empty()) {
+      // 将超时事件加入调度队列
       schedule(cbs.begin(), cbs.end());
       cbs.clear();
     }
@@ -344,6 +350,7 @@ void IOManager::idle() {
         continue;
       }
 
+      // 获得事件对应句柄内容(包括执行体)
       FdContext* fdCtx = (FdContext*)event.data.ptr;
 
       FdContext::MutexType::Lock lock(fdCtx->mutex);

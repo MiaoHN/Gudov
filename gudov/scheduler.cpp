@@ -172,7 +172,7 @@ void Scheduler::run() {
 
     if (ft.fiber && (ft.fiber->getState() != Fiber::TERM &&
                      ft.fiber->getState() != Fiber::EXCEPT)) {
-      // 将该协程执行完
+      // 如果是可运行的协程，则将该协程执行完
       ft.fiber->swapIn();
       --_activeThreadCount;
 
@@ -186,6 +186,7 @@ void Scheduler::run() {
       }
       ft.reset();
     } else if (ft.cb) {
+      // 如果是函数 callback，则执行该函数
       // 初始化 cbFiber
       if (cbFiber) {
         cbFiber->reset(ft.cb);

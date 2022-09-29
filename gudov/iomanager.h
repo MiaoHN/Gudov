@@ -18,6 +18,10 @@ class IOManager : public Scheduler, public TimerManager {
   };
 
  private:
+  /**
+   * @brief 待处理的 fd 事件单元
+   *
+   */
   struct FdContext {
     using MutexType = Mutex;
     struct EventContext {
@@ -93,6 +97,7 @@ class IOManager : public Scheduler, public TimerManager {
   static IOManager* GetThis();
 
  protected:
+  // 提醒有事件待处理
   void tickle() override;
   bool stopping() override;
   void idle() override;
@@ -108,8 +113,9 @@ class IOManager : public Scheduler, public TimerManager {
   int _tickleFds[2];
 
   // 当前未执行的 IO 事件数量
-  std::atomic<size_t>     _pendingEventCount{0};
-  RWMutexType             _mutex;
+  std::atomic<size_t> _pendingEventCount{0};
+  RWMutexType         _mutex;
+
   std::vector<FdContext*> _fdContexts;
 };
 

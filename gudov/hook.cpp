@@ -51,7 +51,8 @@ void hookInit() {
   }
 
 #define XX(name) name##F = (name##Fun)dlsym(RTLD_NEXT, #name);
-  HOOK_FUN(XX);
+  // 此处将系统函数挂载到 nameF 上
+  HOOK_FUN(XX)
 #undef XX
 }
 
@@ -71,6 +72,7 @@ struct _HookIniter {
   }
 };
 
+// 使用结构体在初始化时完成 hook
 static _HookIniter s_hookIniter;
 
 bool isHookEnable() { return t_hookEnable; }
@@ -83,48 +85,71 @@ struct TimerInfo {
   int cancelled = 0;
 };
 
+/**
+ * @brief 通用的 IO 处理函数
+ *
+ * @tparam OriginFun 原始函数的函数指针
+ * @tparam Args 原始函数所带参数
+ * @param fd 待操作句柄
+ * @param fun 原始的函数
+ * @param hookFunName 要 hook 的函数名
+ * @param event 处理的事件
+ * @param timeoutSo 超时事件
+ * @param args 函数的参数
+ * @return ssize_t
+ */
 template <typename OriginFun, typename... Args>
 static ssize_t doIO(int fd, OriginFun fun, const std::string& hookFunName,
                     uint32_t event, int timeoutSo, Args&&... args) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
+    // 未启用 hook 时直接调用原有函数
     return fun(fd, std::forward<Args>(args)...);
   }
 
+  // 尝试在 FdManager 中获得该 fd 句柄
   gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->get(fd);
   if (!ctx) {
+    // 没找到则直接调用
     return fun(fd, std::forward<Args>(args)...);
   }
 
+  // 如果句柄已关闭则发生错误
   if (ctx->isClose()) {
     errno = EBADF;
     return -1;
   }
 
+  // 1. 只处理 socket
+  // 2. 如果已经在用户态设置过非阻塞(fcntl or ioctl)，也不继续处理
   if (!ctx->isSocket() || ctx->getUserNonblock()) {
     return fun(fd, std::forward<Args>(args)...);
   }
 
   // 设置超时时间
-  uint64_t                   to = ctx->getTimeout(timeoutSo);
+  uint64_t                   timeout = ctx->getTimeout(timeoutSo);
   std::shared_ptr<TimerInfo> tinfo(new TimerInfo);
 
 retry:
+  // 尝试执行原始函数
   ssize_t n = fun(fd, std::forward<Args>(args)...);
   while (n == -1 && errno == EINTR) {
-    // 重试
+    // 发生中断，重试
     n = fun(fd, std::forward<Args>(args)...);
   }
 
   if (n == -1 && errno == EAGAIN) {
+    // EAGAIN 表示暂无数据课操作，可稍后再试
     // 需要异步操作
+
+    // 获取 IOManager 和定时器
     gudov::IOManager*        iom = gudov::IOManager::GetThis();
     gudov::Timer::ptr        timer;
     std::weak_ptr<TimerInfo> winfo(tinfo);
 
-    if (to != (uint64_t)-1) {
+    if (timeout != (uint64_t)-1) {
       // 设置了超时
       timer = iom->addConditionTimer(
-          to,
+          timeout,
           [winfo, fd, iom, event]() {
             auto t = winfo.lock();
             if (!t || t->cancelled) {
@@ -163,12 +188,15 @@ retry:
 }
 
 extern "C" {
+
+// 在这里声明函数指针变量
+
 #define XX(name) name##Fun name##F = nullptr;
 HOOK_FUN(XX)
 #undef XX
 
 unsigned int sleep(unsigned int seconds) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return sleepF(seconds);
   }
 
@@ -184,7 +212,7 @@ unsigned int sleep(unsigned int seconds) {
 }
 
 int usleep(useconds_t usec) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return usleepF(usec);
   }
 
@@ -200,7 +228,7 @@ int usleep(useconds_t usec) {
 }
 
 int nanosleep(const struct timespec* req, struct timespec* rem) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return nanosleepF(req, rem);
   }
 
@@ -218,7 +246,7 @@ int nanosleep(const struct timespec* req, struct timespec* rem) {
 }
 
 int socket(int domain, int type, int protocol) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return socketF(domain, type, protocol);
   }
   int fd = socketF(domain, type, protocol);
@@ -231,7 +259,7 @@ int socket(int domain, int type, int protocol) {
 
 int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
                        uint64_t timeoutMs) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return connectF(fd, addr, addrlen);
   }
   gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->get(fd);
@@ -369,7 +397,7 @@ ssize_t sendmsg(int s, const struct msghdr* msg, int flags) {
 }
 
 int close(int fd) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return closeF(fd);
   }
 
@@ -480,7 +508,7 @@ int getsockopt(int sockfd, int level, int optname, void* optval,
 
 int setsockopt(int sockfd, int level, int optname, const void* optval,
                socklen_t optlen) {
-  if (!gudov::t_hookEnable) {
+  if (!gudov::isHookEnable()) {
     return setsockoptF(sockfd, level, optname, optval, optlen);
   }
   if (level == SOL_SOCKET) {

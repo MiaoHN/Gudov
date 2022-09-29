@@ -9,6 +9,11 @@
 
 namespace gudov {
 
+/**
+ * @brief 全局的 fd 信息封装
+ * @attention IOManager 中的 FdContext 是用来处理事件的，和这个 FdContext 不一样
+ *
+ */
 class FdContext : public std::enable_shared_from_this<FdContext> {
  public:
   using ptr = std::shared_ptr<FdContext>;

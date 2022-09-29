@@ -9,16 +9,28 @@
 
 namespace gudov {
 
+/**
+ * @brief 是否启用 hook
+ *
+ * @return true
+ * @return false
+ */
 bool isHookEnable();
 
+/**
+ * @brief 开启或关闭 hook
+ *
+ * @param flag
+ */
 void setHookEnable(bool flag);
 
 }  // namespace gudov
 
 extern "C" {
 
-// sleep
+// ~ NOTE: 定义并声明函数指针，将这些函数指针指向系统原有的函数 ~
 
+// sleep
 typedef unsigned int (*sleepFun)(unsigned int seconds);
 extern sleepFun sleepF;
 

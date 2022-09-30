@@ -260,8 +260,11 @@ int socket(int domain, int type, int protocol) {
 int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
                        uint64_t timeoutMs) {
   if (!gudov::isHookEnable()) {
+    // 未 hook 时使用原始函数
     return connectF(fd, addr, addrlen);
   }
+
+  // 得到对应的 Fd 信息
   gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->get(fd);
   if (!ctx || ctx->isClose()) {
     errno = EBADF;
@@ -272,6 +275,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
   }
 
   if (ctx->getUserNonblock()) {
+    // 已经设置为非阻塞了
     return connectF(fd, addr, addrlen);
   }
 
@@ -282,12 +286,14 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
     return n;
   }
 
+  // Connect 超时，此时正在建立连接，连接成功 epoll 触发可写事件
   gudov::IOManager*          iom = gudov::IOManager::GetThis();
   gudov::Timer::ptr          timer;
   std::shared_ptr<TimerInfo> tinfo(new TimerInfo);
   std::weak_ptr<TimerInfo>   winfo(tinfo);
 
   if (timeoutMs != (uint64_t)-1) {
+    // 添加一个定时器
     timer = iom->addConditionTimer(
         timeoutMs,
         [winfo, fd, iom]() {
@@ -301,6 +307,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
         winfo);
   }
 
+  // ~ 在这里将该 fd 加入 epoll 监听中
   int rt = iom->addEvent(fd, gudov::IOManager::WRITE);
   if (rt == 0) {
     gudov::Fiber::YieldToHold();

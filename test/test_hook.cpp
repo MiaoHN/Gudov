@@ -73,7 +73,7 @@ void testSock() {
 
 int main(int argc, char const *argv[]) {
   testSleep();
-  gudov::IOManager iom;
+  // gudov::IOManager iom;
   // iom.schedule(testSock);
   return 0;
 }

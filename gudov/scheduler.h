@@ -12,6 +12,12 @@
 
 namespace gudov {
 
+/**
+ * @brief 多线程多协程任务调度器
+ * @details 一个调度器管理多个线程，一个线程处理多个协程，在 IOManager
+ * 中只需处理 Fiber
+ *
+ */
 class Scheduler {
  public:
   using ptr       = std::shared_ptr<Scheduler>;
@@ -170,11 +176,26 @@ class Scheduler {
 
  private:
   MutexType _mutex;
-  // 线程池 (不包括主协程)
-  std::vector<Thread::ptr>  _threads;
+
+  /**
+   * @brief 线程池 (不包括主协程)
+   *
+   */
+  std::vector<Thread::ptr> _threads;
+
+  /**
+   * @brief 待处理的协程(业务)
+   *
+   */
   std::list<FiberAndThread> _fibers;
-  Fiber::ptr                _rootFiber;  // 主协程
-  std::string               _name;
+
+  /**
+   * @brief 主协程
+   *
+   */
+  Fiber::ptr _rootFiber;
+
+  std::string _name;
 
  protected:
   // 所有线程的 id (包括主协程)

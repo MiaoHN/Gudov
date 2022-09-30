@@ -56,6 +56,7 @@ IOManager::IOManager(size_t threads, bool useCaller, const std::string& name)
   int rt = pipe(_tickleFds);
   GUDOV_ASSERT(!rt);
 
+  // 将管道读端放入 epoll 进行监听
   epoll_event event;
   memset(&event, 0, sizeof(epoll_event));
   event.events  = EPOLLIN | EPOLLET;
@@ -283,6 +284,7 @@ void IOManager::tickle() {
     return;
   }
   int rt = write(_tickleFds[1], "T", 1);
+  GUDOV_LOG_DEBUG(g_logger) << "write data to tickleFds[1]";
   GUDOV_ASSERT(rt == 1);
 }
 
@@ -321,8 +323,9 @@ void IOManager::idle() {
       } else {
         nextTimeout = MAX_TIMEOUT;
       }
-      // 等待事件发生
+      // 等待事件发生，即 tickle() 函数往管道写端写入数据或者
       rt = epoll_wait(_epfd, events, maxEvents, (int)nextTimeout);
+      GUDOV_LOG_DEBUG(g_logger) << "epoll_wait...";
       if (rt < 0 && errno == EINTR) {
       } else {
         break;
@@ -334,6 +337,8 @@ void IOManager::idle() {
     // 获取超时事件
     std::vector<std::function<void()>> cbs;
     listExpiredCb(cbs);
+    GUDOV_LOG_DEBUG(g_logger)
+        << "callback.size(): " << cbs.size() << ", rt: " << rt;
     if (!cbs.empty()) {
       // 将超时事件加入调度队列
       schedule(cbs.begin(), cbs.end());
@@ -344,6 +349,7 @@ void IOManager::idle() {
       epoll_event& event = events[i];
       if (event.data.fd == _tickleFds[0]) {
         // _ticklefd[0] 用于通知事件产生这里只需读完剩余数据
+        GUDOV_LOG_DEBUG(g_logger) << "tickleFds[0] have data";
         uint8_t dummy;
         while (read(_tickleFds[0], &dummy, 1) == 1)
           ;

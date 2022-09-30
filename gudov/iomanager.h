@@ -6,6 +6,11 @@
 
 namespace gudov {
 
+/**
+ * @brief 基于 epoll 的 IO 管理器
+ * @details 当
+ * 
+ */
 class IOManager : public Scheduler, public TimerManager {
  public:
   using ptr         = std::shared_ptr<IOManager>;
@@ -97,10 +102,20 @@ class IOManager : public Scheduler, public TimerManager {
   static IOManager* GetThis();
 
  protected:
-  // 提醒有事件待处理
+  /**
+   * @brief 提醒有事件待处理
+   * @details 会触发一次 epoll_wait
+   *
+   */
   void tickle() override;
   bool stopping() override;
   void idle() override;
+
+  /**
+   * @brief 添加定时器后做适当处理
+   * @details 执行 tickle 后继而触发 epoll_wait
+   *
+   */
   void onTimerInsertedAtFront() override;
 
   void contextResize(size_t size);

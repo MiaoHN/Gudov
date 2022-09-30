@@ -15,6 +15,7 @@ static thread_local Scheduler* t_scheduler = nullptr;
 
 /**
  * @brief 程序主协程的指针
+ * @details 运行 Scheduler::run 函数所在的 Fiber
  *
  */
 static thread_local Fiber* t_fiber = nullptr;
@@ -141,6 +142,8 @@ void Scheduler::run() {
     ft.reset();
     bool tickleMe = false;
     bool isActive = false;
+
+    // ~ 拿到一个未调度的 FiberAndThread
     {
       MutexType::Lock lock(_mutex);
 
@@ -231,6 +234,7 @@ void Scheduler::run() {
 
       ++_idleThreadCount;
       // 转入 idle 协程处理函数中
+      GUDOV_LOG_DEBUG(g_logger) << "swap to idleFiber...";
       idleFiber->swapIn();
       --_idleThreadCount;
       if (idleFiber->getState() != Fiber::TERM &&

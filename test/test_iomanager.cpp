@@ -57,10 +57,10 @@ void test1() {
 
 gudov::Timer::ptr s_timer;
 void              testTimer() {
-  gudov::IOManager iom(2);
-  s_timer = iom.addTimer(
-      1000,
-      []() {
+               gudov::IOManager iom(2);
+               s_timer = iom.addTimer(
+                   1000,
+                   []() {
         static int i = 0;
         GUDOV_LOG_INFO(g_logger) << "hello timer i=" << i;
         if (++i == 3) {
@@ -68,7 +68,7 @@ void              testTimer() {
           // s_timer->cancel();
         }
       },
-      true);
+                   true);
 }
 
 int main(int argc, char** argv) {

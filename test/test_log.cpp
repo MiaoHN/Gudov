@@ -1,7 +1,6 @@
-#include "gudov/log.h"
-
 #include <iostream>
 
+#include "gudov/log.h"
 #include "gudov/util.h"
 
 int main(int argc, char const *argv[]) {

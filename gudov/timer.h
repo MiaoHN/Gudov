@@ -32,7 +32,7 @@ class Timer : public std::enable_shared_from_this<Timer> {
   uint64_t _next      = 0;      // 精确的执行函数
 
   std::function<void()> _cb;  // 待执行的回调函数
-  TimerManager *        _manager = nullptr;
+  TimerManager         *_manager = nullptr;
 
  private:
   struct Comparator {

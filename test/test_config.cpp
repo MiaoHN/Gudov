@@ -1,9 +1,8 @@
-#include "gudov/config.h"
-
 #include <yaml-cpp/yaml.h>
 
 #include <iostream>
 
+#include "gudov/config.h"
 #include "gudov/log.h"
 
 #if 1

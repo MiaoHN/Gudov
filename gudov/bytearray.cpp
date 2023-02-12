@@ -204,13 +204,12 @@ uint32_t ByteArray::readFuint32(){XX(uint32_t)}
 
 int64_t ByteArray::readFint64(){XX(int64_t)}
 
-uint64_t ByteArray::readFuint64() {
-  XX(uint64_t)
-}
-
+uint64_t ByteArray::readFuint64(){XX(uint64_t)}
 #undef XX
 
-int32_t ByteArray::readInt32() { return DecodeZigzag32(readUint32()); }
+int32_t ByteArray::readInt32() {
+  return DecodeZigzag32(readUint32());
+}
 
 uint32_t ByteArray::readUint32() {
   uint32_t result = 0;

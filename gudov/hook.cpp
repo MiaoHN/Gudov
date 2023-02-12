@@ -204,7 +204,7 @@ unsigned int sleep(unsigned int seconds) {
   gudov::IOManager* iom   = gudov::IOManager::GetThis();
   iom->addTimer(
       seconds * 1000,
-      std::bind((void (gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
+      std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
                     gudov::IOManager::schedule,
                 iom, fiber, -1));
   gudov::Fiber::YieldToHold();
@@ -220,7 +220,7 @@ int usleep(useconds_t usec) {
   gudov::IOManager* iom   = gudov::IOManager::GetThis();
   iom->addTimer(
       usec / 1000,
-      std::bind((void (gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
+      std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
                     gudov::IOManager::schedule,
                 iom, fiber, -1));
   gudov::Fiber::YieldToHold();
@@ -238,7 +238,7 @@ int nanosleep(const struct timespec* req, struct timespec* rem) {
   gudov::IOManager* iom   = gudov::IOManager::GetThis();
   iom->addTimer(
       timeoutMs,
-      std::bind((void (gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
+      std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
                     gudov::IOManager::schedule,
                 iom, fiber, -1));
   gudov::Fiber::YieldToHold();

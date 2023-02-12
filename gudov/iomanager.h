@@ -9,7 +9,7 @@ namespace gudov {
 /**
  * @brief 基于 epoll 的 IO 管理器
  * @details 当
- * 
+ *
  */
 class IOManager : public Scheduler, public TimerManager {
  public:

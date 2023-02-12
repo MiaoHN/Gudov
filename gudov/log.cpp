@@ -67,7 +67,7 @@ void LogEvent::format(const char* fmt, ...) {
 
 void LogEvent::format(const char* fmt, va_list al) {
   char* buf = nullptr;
-  int len = vasprintf(&buf, fmt, al);
+  int   len = vasprintf(&buf, fmt, al);
   if (len != -1) {
     _ss << std::string(buf, len);
     free(buf);
@@ -157,7 +157,7 @@ class DateTimeFormatItem : public LogFormatter::FormatItem {
   void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level,
               LogEvent::ptr event) override {
     struct tm tm;
-    time_t time = event->getTime();
+    time_t    time = event->getTime();
     localtime_r(&time, &tm);
     char buf[64];
     strftime(buf, sizeof(buf), m_format.c_str(), &tm);
@@ -257,7 +257,7 @@ void Logger::setFormatter(const std::string& val) {
 
 std::string Logger::toYamlString() {
   MutexType::Lock lock(_mutex);
-  YAML::Node node;
+  YAML::Node      node;
   node["name"] = _name;
   if (_level != LogLevel::UNKNOWN) {
     node["level"] = LogLevel::ToString(_level);
@@ -305,7 +305,7 @@ void Logger::clearAppenders() {
 
 void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
   if (level >= _level) {
-    auto self = shared_from_this();
+    auto            self = shared_from_this();
     MutexType::Lock lock(_mutex);
     if (!_appenders.empty()) {
       for (auto& i : _appenders) {
@@ -350,7 +350,7 @@ void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level,
 
 std::string FileLogAppender::toYamlString() {
   MutexType::Lock lock(_mutex);
-  YAML::Node node;
+  YAML::Node      node;
   node["type"] = "FileLogAppender";
   node["file"] = _filename;
   if (_level != LogLevel::UNKNOWN) {
@@ -411,7 +411,7 @@ std::string LogFormatter::format(Logger::ptr logger, LogLevel::Level level,
 void LogFormatter::init() {
   // str, format, type
   std::vector<std::tuple<std::string, std::string, int> > vec;
-  std::string nstr;
+  std::string                                             nstr;
   for (size_t i = 0; i < _pattern.size(); ++i) {
     if (_pattern[i] != '%') {
       nstr.append(1, _pattern[i]);
@@ -425,9 +425,9 @@ void LogFormatter::init() {
       }
     }
 
-    size_t n = i + 1;
-    int fmt_status = 0;
-    size_t fmt_begin = 0;
+    size_t n          = i + 1;
+    int    fmt_status = 0;
+    size_t fmt_begin  = 0;
 
     std::string str;
     std::string fmt;
@@ -442,7 +442,7 @@ void LogFormatter::init() {
           str = _pattern.substr(i + 1, n - i - 1);
           // std::cout << "*" << str << std::endl;
           fmt_status = 1;  // 解析格式
-          fmt_begin = n;
+          fmt_begin  = n;
           ++n;
           continue;
         }
@@ -525,21 +525,21 @@ LoggerManager::LoggerManager() {
 
 Logger::ptr LoggerManager::getLogger(const std::string& name) {
   MutexType::Lock lock(_mutex);
-  auto it = _loggers.find(name);
+  auto            it = _loggers.find(name);
   if (it != _loggers.end()) {
     return it->second;
   }
   Logger::ptr logger(new Logger(name));
-  logger->_root = _root;
+  logger->_root  = _root;
   _loggers[name] = logger;
   return logger;
 }
 
 struct LogAppenderDefine {
-  int type = 0;  // 1 File, 2 Stdout
+  int             type  = 0;  // 1 File, 2 Stdout
   LogLevel::Level level = LogLevel::UNKNOWN;
-  std::string formatter;
-  std::string file;
+  std::string     formatter;
+  std::string     file;
 
   bool operator==(const LogAppenderDefine& oth) const {
     return type == oth.type && level == oth.level &&
@@ -548,9 +548,9 @@ struct LogAppenderDefine {
 };
 
 struct LogDefine {
-  std::string name;
-  LogLevel::Level level = LogLevel::UNKNOWN;
-  std::string formatter;
+  std::string                    name;
+  LogLevel::Level                level = LogLevel::UNKNOWN;
+  std::string                    formatter;
   std::vector<LogAppenderDefine> appenders;
 
   bool operator==(const LogDefine& oth) const {
@@ -565,7 +565,7 @@ template <>
 class LexicalCast<std::string, std::set<LogDefine> > {
  public:
   std::set<LogDefine> operator()(const std::string& v) {
-    YAML::Node node = YAML::Load(v);
+    YAML::Node          node = YAML::Load(v);
     std::set<LogDefine> vec;
     for (size_t i = 0; i < node.size(); ++i) {
       auto n = node[i];
@@ -575,7 +575,7 @@ class LexicalCast<std::string, std::set<LogDefine> > {
       }
 
       LogDefine ld;
-      ld.name = n["name"].as<std::string>();
+      ld.name  = n["name"].as<std::string>();
       ld.level = LogLevel::FromString(
           n["level"].IsDefined() ? n["level"].as<std::string>() : "");
       if (n["formatter"].IsDefined()) {
@@ -590,7 +590,7 @@ class LexicalCast<std::string, std::set<LogDefine> > {
                       << std::endl;
             continue;
           }
-          std::string type = a["type"].as<std::string>();
+          std::string       type = a["type"].as<std::string>();
           LogAppenderDefine lad;
           if (type == "FileLogAppender") {
             lad.type = 1;
@@ -670,7 +670,7 @@ struct LogIniter {
                                   const std::set<LogDefine>& new_value) {
       GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << "on_logger_conf_changed";
       for (auto& i : new_value) {
-        auto it = old_value.find(i);
+        auto               it = old_value.find(i);
         gudov::Logger::ptr logger;
         if (it == old_value.end()) {
           // 新增logger
@@ -726,7 +726,7 @@ static LogIniter __log_init;
 
 std::string LoggerManager::toYamlString() {
   MutexType::Lock lock(_mutex);
-  YAML::Node node;
+  YAML::Node      node;
   for (auto& i : _loggers) {
     node.push_back(YAML::Load(i.second->toYamlString()));
   }

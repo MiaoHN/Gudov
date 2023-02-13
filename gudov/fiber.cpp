@@ -214,22 +214,10 @@ void Fiber::MainFunc() {
   // 获得当前运行的协程
   Fiber::ptr cur = GetThis();
   GUDOV_ASSERT(cur);
-  try {
-    // 执行协程的函数
-    cur->_cb();
-    cur->_cb    = nullptr;
-    cur->_state = TERM;
-  } catch (std::exception& ex) {
-    cur->_state = EXCEPT;
-    GUDOV_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
-                              << " fiber_id=" << cur->getId() << std::endl
-                              << gudov::BacktraceToString();
-  } catch (...) {
-    cur->_state = EXCEPT;
-    GUDOV_LOG_ERROR(g_logger) << "Fiber Except: "
-                              << " fiber_id=" << cur->getId() << std::endl
-                              << gudov::BacktraceToString();
-  }
+
+  cur->_cb();
+  cur->_cb    = nullptr;
+  cur->_state = TERM;
 
   auto rawPtr = cur.get();
   cur.reset();

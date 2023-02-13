@@ -1,6 +1,6 @@
 ragelmaker(http/http11_parser.rl LIB_RAGEL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/http)
 ragelmaker(http/httpclient_parser.rl LIB_RAGEL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/http)
-# ragelmaker(uri.rl LIB_SRC ${CMAKE_CURRENT_SOURCE_DIR})
+ragelmaker(uri.rl LIB_SRC ${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB LIB_SRC
   "http/*.cpp"

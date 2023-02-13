@@ -1,9 +1,6 @@
 #include "socket.h"
 
 #include <limits.h>
-#include <netinet/tcp.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 
 #include "fdmanager.h"
 #include "hook.h"
@@ -94,7 +91,7 @@ void Socket::setRecvTimeout(int64_t v) {
   setOption(SOL_SOCKET, SO_RCVTIMEO, tv);
 }
 
-bool Socket::getOption(int level, int option, void* result, size_t* len) {
+bool Socket::getOption(int level, int option, void* result, socklen_t* len) {
   int rt = getsockopt(_sock, level, option, result, (socklen_t*)len);
   if (rt) {
     GUDOV_LOG_DEBUG(g_logger)
@@ -106,7 +103,8 @@ bool Socket::getOption(int level, int option, void* result, size_t* len) {
   return true;
 }
 
-bool Socket::setOption(int level, int option, const void* value, size_t len) {
+bool Socket::setOption(int level, int option, const void* value,
+                       socklen_t len) {
   if (setsockopt(_sock, level, option, value, (socklen_t)len)) {
     GUDOV_LOG_DEBUG(g_logger)
         << "setOption sock=" << _sock << " level=" << level
@@ -375,10 +373,10 @@ Address::ptr Socket::getLocalAddress() {
 bool Socket::isValid() const { return _sock != -1; }
 
 int Socket::getError() {
-  int    error = 0;
-  size_t len   = sizeof(error);
+  int       error = 0;
+  socklen_t len   = sizeof(error);
   if (!getOption(SOL_SOCKET, SO_ERROR, &error, &len)) {
-    return -1;
+    error = errno;
   }
   return error;
 }

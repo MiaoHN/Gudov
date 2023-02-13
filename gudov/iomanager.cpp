@@ -155,7 +155,8 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
   } else {
     // 执行当前协程
     eventCtx.fiber = Fiber::GetThis();
-    GUDOV_ASSERT(eventCtx.fiber->getState() == Fiber::EXEC);
+    GUDOV_ASSERT2(eventCtx.fiber->getState() == Fiber::EXEC,
+                  "state=" << eventCtx.fiber->getState());
   }
   return 0;
 }

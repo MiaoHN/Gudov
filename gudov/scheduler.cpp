@@ -18,7 +18,7 @@ static thread_local Scheduler* t_scheduler = nullptr;
  * @details 运行 Scheduler::run 函数所在的 Fiber
  *
  */
-static thread_local Fiber* t_fiber = nullptr;
+static thread_local Fiber* t_scheduler_fiber = nullptr;
 
 Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     : _name(name) {
@@ -38,8 +38,8 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     GUDOV_LOG_DEBUG(g_logger) << "Scheduler::Scheduler Root Fiber Create";
     gudov::Thread::SetName(_name);
 
-    t_fiber     = _rootFiber.get();
-    _rootThread = gudov::GetThreadId();
+    t_scheduler_fiber = _rootFiber.get();
+    _rootThread       = gudov::GetThreadId();
     _threadIds.push_back(_rootThread);
   } else {
     _rootThread = -1;
@@ -56,7 +56,7 @@ Scheduler::~Scheduler() {
 
 Scheduler* Scheduler::GetThis() { return t_scheduler; }
 
-Fiber* Scheduler::GetMainFiber() { return t_fiber; }
+Fiber* Scheduler::GetMainFiber() { return t_scheduler_fiber; }
 
 void Scheduler::start() {
   MutexType::Lock lock(_mutex);
@@ -129,7 +129,7 @@ void Scheduler::run() {
   setThis();
   // 获得主协程
   if (GetThreadId() != _rootThread) {
-    t_fiber = Fiber::GetThis().get();
+    t_scheduler_fiber = Fiber::GetThis().get();
   }
 
   // 新建 idle 协程

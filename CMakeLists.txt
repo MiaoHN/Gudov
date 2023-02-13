@@ -16,3 +16,4 @@ include_directories(.)
 
 add_subdirectory(gudov)
 add_subdirectory(test)
+add_subdirectory(example)

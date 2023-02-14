@@ -35,7 +35,7 @@ const char test_response_data[] =
     "Connection: Close\r\n"
     "Content-Type: text/html\r\n\r\n"
     "<html>\r\n"
-    "<meta http-equiv=\"refresh\" content=\"0;url=http://www.baidu.com/\">\r\n"
+    "<meta http-equiv=\"refresh\" content=\"0;uri=http://www.baidu.com/\">\r\n"
     "</html>\r\n";
 
 void test_response() {

@@ -10,6 +10,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 find_library(YAMLCPP yaml-cpp)
 
+find_package(Boost REQUIRED)
+if (Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(.)

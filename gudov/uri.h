@@ -1,5 +1,5 @@
-#ifndef __GUDOV_URL_H__
-#define __GUDOV_URL_H__
+#ifndef __GUDOV_URI_H__
+#define __GUDOV_URI_H__
 
 #include <cstdint>
 #include <memory>
@@ -10,7 +10,7 @@
 namespace gudov {
 
 /**
- * @brief URL 类
+ * @brief URI 类
  * @details
  *
  * foo://user@gudov.com:8888/over/there?name=ferret#nose
@@ -19,13 +19,13 @@ namespace gudov {
  *  scheme     authority       path        query   fragment
  *
  */
-class Url {
+class Uri {
  public:
-  using ptr = std::shared_ptr<Url>;
+  using ptr = std::shared_ptr<Uri>;
 
-  static Url::ptr Create(const std::string& url);
+  static Uri::ptr Create(const std::string& uri);
 
-  Url();
+  Uri();
 
   const std::string& getScheme() const { return m_scheme; }
 
@@ -76,4 +76,4 @@ class Url {
 
 }  // namespace gudov
 
-#endif  // __GUDOV_URL_H__
+#endif  // __GUDOV_URI_H__

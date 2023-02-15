@@ -4,6 +4,8 @@
 
 static gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
 
+gudov ::IOManager::ptr worker;
+
 void run() {
   g_logger->setLevel(gudov::LogLevel::INFO);
   gudov::http::HttpServer::ptr server(new gudov::http::HttpServer(true));
@@ -49,7 +51,8 @@ void run() {
 }
 
 int main(int argc, char** argv) {
-  gudov::IOManager iom(4);
+  gudov::IOManager iom(1, true, "main");
+  worker.reset(new gudov::IOManager(3, false, "worker"));
   iom.schedule(run);
   return 0;
 }

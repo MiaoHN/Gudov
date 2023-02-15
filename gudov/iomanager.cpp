@@ -300,6 +300,7 @@ bool IOManager::stopping() {
 }
 
 void IOManager::idle() {
+  GUDOV_LOG_DEBUG(g_logger) << "idle";
   static const uint64_t maxEvents = 64;
 
   epoll_event* events = new epoll_event[maxEvents]();

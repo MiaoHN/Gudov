@@ -204,7 +204,7 @@ void Fiber::YieldToReady() {
 
 void Fiber::YieldToHold() {
   Fiber::ptr cur = GetThis();
-  cur->_state    = HOLD;
+  // cur->_state    = HOLD;
   cur->swapOut();
 }
 

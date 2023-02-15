@@ -93,3 +93,8 @@ add_dependencies(test_uri gudov)
 force_redefine_file_macro_for_sources(test_uri)
 target_link_libraries(test_uri gudov)
 add_test(NAME test_uri COMMAND test_uri)
+
+add_executable(test_http_server test_http_server.cpp)
+add_dependencies(test_http_server gudov)
+force_redefine_file_macro_for_sources(test_http_server)
+target_link_libraries(test_http_server gudov)

@@ -4,9 +4,9 @@ gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
 
 void runInFiber() {
   GUDOV_LOG_INFO(g_logger) << "run_in_fiber begin";
-  gudov::Fiber::YieldToHold();
+  gudov::Fiber::Yield();
   GUDOV_LOG_INFO(g_logger) << "run_in_fiber end";
-  gudov::Fiber::YieldToHold();
+  gudov::Fiber::Yield();
 }
 
 void testFiber() {

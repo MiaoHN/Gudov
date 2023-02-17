@@ -111,7 +111,7 @@ Fiber::Fiber(std::function<void()> callback, size_t stackSize)
 Fiber::~Fiber() {
   --s_fiberCount;
   if (_stack) {
-    GUDOV_ASSERT(_state == TERM || _state == EXCEPT || _state == INIT);
+    GUDOV_ASSERT(_state == TERM || _state == READY);
     StackAllocator::Dealloc(_stack, _stackSize);
   } else {
     GUDOV_ASSERT(!m_cb);
@@ -127,7 +127,7 @@ Fiber::~Fiber() {
 
 void Fiber::reset(std::function<void()> callback) {
   GUDOV_ASSERT(_stack);
-  GUDOV_ASSERT(_state == TERM || _state == EXCEPT || _state == INIT);
+  GUDOV_ASSERT(_state == TERM || _state == READY);
   m_cb = callback;
   if (getcontext(&_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
@@ -138,7 +138,7 @@ void Fiber::reset(std::function<void()> callback) {
   _ctx.uc_stack.ss_size = _stackSize;
 
   makecontext(&_ctx, &Fiber::MainFunc, 0);
-  _state = INIT;
+  _state = READY;
 }
 
 void Fiber::call() {
@@ -196,15 +196,9 @@ Fiber::ptr Fiber::GetThis() {
   return t_fiber->shared_from_this();
 }
 
-void Fiber::YieldToReady() {
+void Fiber::Yield() {
   Fiber::ptr cur = GetThis();
-  cur->_state    = READY;
-  cur->swapOut();
-}
-
-void Fiber::YieldToHold() {
-  Fiber::ptr cur = GetThis();
-  // cur->_state    = HOLD;
+  // cur->_state    = READY;
   cur->swapOut();
 }
 
@@ -216,7 +210,7 @@ void Fiber::MainFunc() {
   GUDOV_ASSERT(cur);
 
   cur->m_cb();
-  cur->m_cb    = nullptr;
+  cur->m_cb   = nullptr;
   cur->_state = TERM;
 
   auto rawPtr = cur.get();

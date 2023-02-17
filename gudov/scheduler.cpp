@@ -80,7 +80,7 @@ void Scheduler::stop() {
   m_auto_stop = true;
   if (m_root_fiber && m_thread_count == 0 &&
       (m_root_fiber->getState() == Fiber::TERM ||
-       m_root_fiber->getState() == Fiber::INIT)) {
+       m_root_fiber->getState() == Fiber::READY)) {
     GUDOV_LOG_INFO(g_logger) << this << " stopped";
     m_stopping = true;
 
@@ -177,8 +177,7 @@ void Scheduler::run() {
       tickle();
     }
 
-    if (task.fiber && (task.fiber->getState() != Fiber::TERM &&
-                       task.fiber->getState() != Fiber::EXCEPT)) {
+    if (task.fiber && (task.fiber->getState() != Fiber::TERM)) {
       // 如果是可运行的协程，则将该协程执行完
       task.fiber->swapIn();
       --m_active_thread_count;
@@ -186,10 +185,9 @@ void Scheduler::run() {
       if (task.fiber->getState() == Fiber::READY) {
         // 如果状态为 READY 则重新调度
         schedule(task.fiber);
-      } else if (task.fiber->getState() != Fiber::TERM &&
-                 task.fiber->getState() != Fiber::EXCEPT) {
+      } else if (task.fiber->getState() != Fiber::TERM) {
         // 未进行调度，设为挂起状态
-        task.fiber->_state = Fiber::HOLD;
+        task.fiber->_state = Fiber::READY;
       }
       task.reset();
     } else if (task.callback) {
@@ -209,14 +207,13 @@ void Scheduler::run() {
         // 状态为 READY 时重新调度
         schedule(callback_fiber);
         callback_fiber.reset();
-      } else if (callback_fiber->getState() == Fiber::EXCEPT ||
-                 callback_fiber->getState() == Fiber::TERM) {
+      } else if (callback_fiber->getState() == Fiber::TERM) {
         // 执行结束，释放资源
         callback_fiber->reset(nullptr);
       } else {
         // 未进行调度转为 HOLD 状态
         // TODO 这里的执行过程有点混乱
-        callback_fiber->_state = Fiber::HOLD;
+        callback_fiber->_state = Fiber::READY;
         callback_fiber.reset();
       }
     } else {
@@ -237,9 +234,8 @@ void Scheduler::run() {
       GUDOV_LOG_DEBUG(g_logger) << "swap to idle_fiber...";
       idle_fiber->swapIn();
       --m_idle_thread_count;
-      if (idle_fiber->getState() != Fiber::TERM &&
-          idle_fiber->getState() != Fiber::EXCEPT) {
-        idle_fiber->_state = Fiber::HOLD;
+      if (idle_fiber->getState() != Fiber::TERM) {
+        idle_fiber->_state = Fiber::READY;
       }
     }
   }
@@ -256,7 +252,7 @@ bool Scheduler::stopping() {
 void Scheduler::idle() {
   GUDOV_LOG_INFO(g_logger) << "idle";
   while (!stopping()) {
-    Fiber::YieldToHold();
+    Fiber::Yield();
   }
 }
 

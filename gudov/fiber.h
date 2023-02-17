@@ -28,12 +28,9 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   using ptr = std::shared_ptr<Fiber>;
 
   enum State {
-    INIT,    // 初始化状态
-    HOLD,    // 阻塞状态
-    EXEC,    // 执行状态
-    TERM,    // 结束状态
-    READY,   // 准备状态
-    EXCEPT,  // 异常状态
+    EXEC,   // 执行状态
+    TERM,   // 结束状态
+    READY,  // 准备状态
   };
 
  private:
@@ -99,16 +96,10 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   static Fiber::ptr GetThis();
 
   /**
-   * @brief 将当前协程状态转为 READY
+   * @brief 暂停执行当前协程，并将当前协程状态转为 Ready
    *
    */
-  static void YieldToReady();
-
-  /**
-   * @brief 将当前协程状态转为 HOLD
-   *
-   */
-  static void YieldToHold();
+  static void Yield();
 
   /**
    * @brief 获得协程总数量
@@ -133,7 +124,7 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
  private:
   uint64_t _id        = 0;
   uint32_t _stackSize = 0;
-  State    _state     = INIT;
+  State    _state     = READY;
 
   ucontext_t _ctx;
   void*      _stack = nullptr;

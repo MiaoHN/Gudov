@@ -22,7 +22,7 @@ void run() {
 }
 
 int main(int argc, char** argv) {
-  gudov::IOManager iom(1);
+  gudov::IOManager iom(5);
   iom.schedule(run);
   return 0;
 }

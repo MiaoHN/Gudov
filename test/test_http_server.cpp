@@ -1,5 +1,4 @@
 #include "gudov/http/http_server.h"
-
 #include "gudov/log.h"
 
 static gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();

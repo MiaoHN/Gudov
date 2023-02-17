@@ -171,7 +171,7 @@ retry:
         timer->cancel();
       }
     } else {
-      gudov::Fiber::YieldToHold();
+      gudov::Fiber::Yield();
       if (timer) {
         timer->cancel();
       }
@@ -207,7 +207,7 @@ unsigned int sleep(unsigned int seconds) {
       std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
                     gudov::IOManager::schedule,
                 iom, fiber, -1));
-  gudov::Fiber::YieldToHold();
+  gudov::Fiber::Yield();
   return 0;
 }
 
@@ -223,7 +223,7 @@ int usleep(useconds_t usec) {
       std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
                     gudov::IOManager::schedule,
                 iom, fiber, -1));
-  gudov::Fiber::YieldToHold();
+  gudov::Fiber::Yield();
   return 0;
 }
 
@@ -241,7 +241,7 @@ int nanosleep(const struct timespec* req, struct timespec* rem) {
       std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) &
                     gudov::IOManager::schedule,
                 iom, fiber, -1));
-  gudov::Fiber::YieldToHold();
+  gudov::Fiber::Yield();
   return 0;
 }
 
@@ -310,7 +310,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
   // ~ 在这里将该 fd 加入 epoll 监听中
   int rt = iom->addEvent(fd, gudov::IOManager::WRITE);
   if (rt == 0) {
-    gudov::Fiber::YieldToHold();
+    gudov::Fiber::Yield();
     if (timer) {
       timer->cancel();
     }

@@ -68,12 +68,12 @@ uint64_t Fiber::GetFiberId() {
 }
 
 Fiber::Fiber() {
-  _state = EXEC;
+  m_state = EXEC;
   // 将当前运行的协程设为此协程
   SetThis(this);
 
   // 获取当前运行栈信息
-  if (getcontext(&_ctx)) {
+  if (getcontext(&m_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
 
@@ -83,85 +83,85 @@ Fiber::Fiber() {
 }
 
 Fiber::Fiber(std::function<void()> callback, size_t stackSize)
-    : _id(++s_fiberId), m_cb(callback) {
+    : m_id(++s_fiberId), m_callback(callback) {
   ++s_fiberCount;
 
   // 如果未指定栈大小则从配置文件中读取
-  _stackSize = stackSize ? stackSize : g_fiberStackSize->getValue();
+  m_stack_size = stackSize ? stackSize : g_fiberStackSize->getValue();
 
   // 分配一片栈空间
-  _stack = StackAllocator::Alloc(_stackSize);
+  m_stack = StackAllocator::Alloc(m_stack_size);
 
-  if (getcontext(&_ctx)) {
+  if (getcontext(&m_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
   // 当前 context 执行完的下一个 context，这里设为 nullptr
-  _ctx.uc_link = nullptr;
+  m_ctx.uc_link = nullptr;
   // 设置栈顶指针的位置
-  _ctx.uc_stack.ss_sp = _stack;
+  m_ctx.uc_stack.ss_sp = m_stack;
   // 设置栈空间的大小
-  _ctx.uc_stack.ss_size = _stackSize;
+  m_ctx.uc_stack.ss_size = m_stack_size;
 
   // 为待执行函数指定栈空间
-  makecontext(&_ctx, &Fiber::MainFunc, 0);
+  makecontext(&m_ctx, &Fiber::MainFunc, 0);
 
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << _id;
+  GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
 }
 
 Fiber::~Fiber() {
   --s_fiberCount;
-  if (_stack) {
-    GUDOV_ASSERT(_state == TERM || _state == READY);
-    StackAllocator::Dealloc(_stack, _stackSize);
+  if (m_stack) {
+    GUDOV_ASSERT(m_state == TERM || m_state == READY);
+    StackAllocator::Dealloc(m_stack, m_stack_size);
   } else {
-    GUDOV_ASSERT(!m_cb);
-    GUDOV_ASSERT(_state == EXEC);
+    GUDOV_ASSERT(!m_callback);
+    GUDOV_ASSERT(m_state == EXEC);
 
     Fiber* cur = t_fiber;
     if (cur == this) {
       SetThis(nullptr);
     }
   }
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << _id;
+  GUDOV_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id;
 }
 
 void Fiber::reset(std::function<void()> callback) {
-  GUDOV_ASSERT(_stack);
-  GUDOV_ASSERT(_state == TERM || _state == READY);
-  m_cb = callback;
-  if (getcontext(&_ctx)) {
+  GUDOV_ASSERT(m_stack);
+  GUDOV_ASSERT(m_state == TERM || m_state == READY);
+  m_callback = callback;
+  if (getcontext(&m_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
 
-  _ctx.uc_link          = nullptr;
-  _ctx.uc_stack.ss_sp   = _stack;
-  _ctx.uc_stack.ss_size = _stackSize;
+  m_ctx.uc_link          = nullptr;
+  m_ctx.uc_stack.ss_sp   = m_stack;
+  m_ctx.uc_stack.ss_size = m_stack_size;
 
-  makecontext(&_ctx, &Fiber::MainFunc, 0);
-  _state = READY;
+  makecontext(&m_ctx, &Fiber::MainFunc, 0);
+  m_state = READY;
 }
 
 void Fiber::call() {
   SetThis(this);
-  _state = EXEC;
+  m_state = EXEC;
   GUDOV_LOG_ERROR(g_logger) << getId();
-  if (swapcontext(&t_threadFiber->_ctx, &_ctx)) {
+  if (swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }
 }
 
 void Fiber::back() {
   SetThis(t_threadFiber.get());
-  if (swapcontext(&_ctx, &t_threadFiber->_ctx)) {
+  if (swapcontext(&m_ctx, &t_threadFiber->m_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }
 }
 
 void Fiber::swapIn() {
   SetThis(this);
-  GUDOV_ASSERT(_state != EXEC);
-  _state = EXEC;
-  if (swapcontext(&Scheduler::GetMainFiber()->_ctx, &_ctx)) {
+  GUDOV_ASSERT(m_state != EXEC);
+  m_state = EXEC;
+  if (swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }
 }
@@ -171,12 +171,12 @@ void Fiber::swapOut() {
 
   if (this != Scheduler::GetMainFiber()) {
     // 如果不是主协程，则转入主协程
-    if (swapcontext(&_ctx, &Scheduler::GetMainFiber()->_ctx)) {
+    if (swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
       GUDOV_ASSERT2(false, "swapcontext");
     }
   } else {
     // 如果是主协程，则转入当前线程的主协程
-    if (swapcontext(&_ctx, &t_threadFiber->_ctx)) {
+    if (swapcontext(&m_ctx, &t_threadFiber->m_ctx)) {
       GUDOV_ASSERT2(false, "swapcontext");
     }
   }
@@ -198,7 +198,7 @@ Fiber::ptr Fiber::GetThis() {
 
 void Fiber::Yield() {
   Fiber::ptr cur = GetThis();
-  // cur->_state    = READY;
+  // cur->m_state    = READY;
   cur->swapOut();
 }
 
@@ -209,9 +209,9 @@ void Fiber::MainFunc() {
   Fiber::ptr cur = GetThis();
   GUDOV_ASSERT(cur);
 
-  cur->m_cb();
-  cur->m_cb   = nullptr;
-  cur->_state = TERM;
+  cur->m_callback();
+  cur->m_callback = nullptr;
+  cur->m_state    = TERM;
 
   auto rawPtr = cur.get();
   cur.reset();

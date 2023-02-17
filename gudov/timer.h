@@ -31,7 +31,7 @@ class Timer : public std::enable_shared_from_this<Timer> {
   uint64_t m_ms        = 0;      // 执行周期
   uint64_t m_next      = 0;      // 精确的执行函数
 
-  std::function<void()> m_cb;  // 待执行的回调函数
+  std::function<void()> m_callback;  // 待执行的回调函数
   TimerManager         *m_manager = nullptr;
 
  private:

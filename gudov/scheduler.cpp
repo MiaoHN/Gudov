@@ -187,7 +187,7 @@ void Scheduler::run() {
         schedule(task.fiber);
       } else if (task.fiber->getState() != Fiber::TERM) {
         // 未进行调度，设为挂起状态
-        task.fiber->_state = Fiber::READY;
+        task.fiber->m_state = Fiber::READY;
       }
       task.reset();
     } else if (task.callback) {
@@ -213,7 +213,7 @@ void Scheduler::run() {
       } else {
         // 未进行调度转为 HOLD 状态
         // TODO 这里的执行过程有点混乱
-        callback_fiber->_state = Fiber::READY;
+        callback_fiber->m_state = Fiber::READY;
         callback_fiber.reset();
       }
     } else {
@@ -235,7 +235,7 @@ void Scheduler::run() {
       idle_fiber->swapIn();
       --m_idle_thread_count;
       if (idle_fiber->getState() != Fiber::TERM) {
-        idle_fiber->_state = Fiber::READY;
+        idle_fiber->m_state = Fiber::READY;
       }
     }
   }

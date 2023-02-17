@@ -7,12 +7,12 @@ namespace gudov {
 namespace http {
 
 FunctionServlet::FunctionServlet(callback callback)
-    : Servlet("FunctionServlet"), m_cb(callback) {}
+    : Servlet("FunctionServlet"), m_callback(callback) {}
 
 int32_t FunctionServlet::handle(HttpRequest::ptr  request,
                                 HttpResponse::ptr response,
                                 HttpSession::ptr  session) {
-  return m_cb(request, response, session);
+  return m_callback(request, response, session);
 }
 
 ServletDispatch::ServletDispatch() : Servlet("ServletDispatch") {

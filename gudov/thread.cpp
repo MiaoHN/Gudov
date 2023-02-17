@@ -46,7 +46,7 @@ void Thread::SetName(const std::string& name) {
 }
 
 Thread::Thread(std::function<void()> callback, const std::string& name)
-    : m_name(name), m_cb(callback) {
+    : m_name(name), m_callback(callback) {
   if (name.empty()) {
     m_name = "UNKNOWN";
   }
@@ -83,13 +83,13 @@ void* Thread::run(void* arg) {
   Thread* thread = (Thread*)arg;
   t_thread       = thread;
   t_threadName   = thread->m_name;
-  thread->_id    = GetThreadId();
+  thread->m_id    = GetThreadId();
 
   // 设置线程名
   pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
 
   std::function<void()> callback;
-  callback.swap(thread->m_cb);
+  callback.swap(thread->m_callback);
 
   // 线程创建成功，准备执行
   thread->_semaphore.notify();

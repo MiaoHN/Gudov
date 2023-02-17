@@ -43,7 +43,7 @@ class FunctionServlet : public Servlet {
                          HttpSession::ptr session) override;
 
  private:
-  callback m_cb;
+  callback m_callback;
 };
 
 class ServletDispatch : public Servlet {

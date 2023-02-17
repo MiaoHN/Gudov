@@ -211,7 +211,7 @@ class Thread : public NonCopyable {
    *
    * @return pid_t
    */
-  pid_t getId() const { return _id; }
+  pid_t getId() const { return m_id; }
 
   const std::string& getName() const { return m_name; }
 
@@ -241,11 +241,11 @@ class Thread : public NonCopyable {
   static void* run(void* args);
 
  private:
-  pid_t       _id     = -1;  // 全局 ID，通过 syscall() 得到
+  pid_t       m_id     = -1;  // 全局 ID，通过 syscall() 得到
   pthread_t   m_thread = 0;   // 进程内 ID，pthread_create() 创建时得到
   std::string m_name;         // 线程名称
 
-  std::function<void()> m_cb;  // 线程内运行的函数
+  std::function<void()> m_callback;  // 线程内运行的函数
 
   Semaphore _semaphore;
 };

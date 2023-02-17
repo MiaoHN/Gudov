@@ -9,7 +9,7 @@ static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
 Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring,
              TimerManager *manager)
-    : m_recurring(recurring), m_ms(ms), m_cb(callback), m_manager(manager) {
+    : m_recurring(recurring), m_ms(ms), m_callback(callback), m_manager(manager) {
   m_next = GetCurrentMS() + m_ms;
 }
 
@@ -17,8 +17,8 @@ Timer::Timer(uint64_t next) : m_next(next) {}
 
 bool Timer::cancel() {
   TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
-  if (m_cb) {
-    m_cb    = nullptr;
+  if (m_callback) {
+    m_callback    = nullptr;
     auto it = m_manager->m_timers.find(shared_from_this());
     m_manager->m_timers.erase(it);
     return true;
@@ -28,7 +28,7 @@ bool Timer::cancel() {
 
 bool Timer::refresh() {
   TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
-  if (!m_cb) {
+  if (!m_callback) {
     return false;
   }
   auto it = m_manager->m_timers.find(shared_from_this());
@@ -46,7 +46,7 @@ bool Timer::reset(uint64_t ms, bool fromNow) {
     return true;
   }
   TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
-  if (!m_cb) {
+  if (!m_callback) {
     return false;
   }
   auto it = m_manager->m_timers.find(shared_from_this());
@@ -165,12 +165,12 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
   cbs.reserve(expired.size());
 
   for (auto &timer : expired) {
-    cbs.push_back(timer->m_cb);
+    cbs.push_back(timer->m_callback);
     if (timer->m_recurring) {
       timer->m_next = now_ms + timer->m_ms;
       m_timers.insert(timer);
     } else {
-      timer->m_cb = nullptr;
+      timer->m_callback = nullptr;
     }
   }
 }

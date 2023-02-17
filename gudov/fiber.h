@@ -76,8 +76,8 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
    */
   void back();
 
-  uint64_t getId() const { return _id; }
-  State    getState() const { return _state; }
+  uint64_t getId() const { return m_id; }
+  State    getState() const { return m_state; }
 
  public:
   /**
@@ -122,14 +122,14 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   static uint64_t GetFiberId();
 
  private:
-  uint64_t _id        = 0;
-  uint32_t _stackSize = 0;
-  State    _state     = READY;
+  uint64_t m_id         = 0;
+  uint32_t m_stack_size = 0;
+  State    m_state      = READY;
 
-  ucontext_t _ctx;
-  void*      _stack = nullptr;
+  ucontext_t m_ctx;
+  void*      m_stack = nullptr;
 
-  std::function<void()> m_cb;
+  std::function<void()> m_callback;
 };
 
 }  // namespace gudov

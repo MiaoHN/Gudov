@@ -113,7 +113,7 @@ class ByteArray {
   size_t _capacity;
   size_t _size;
   size_t _endian;
-  Node*  _root;
+  Node*  m_root;
   Node*  _cur;
 };
 

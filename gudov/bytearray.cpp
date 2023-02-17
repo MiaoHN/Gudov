@@ -29,11 +29,11 @@ ByteArray::ByteArray(size_t baseSize)
       _capacity(baseSize),
       _size(0),
       _endian(GUDOV_BIG_ENDIAN),
-      _root(new Node(baseSize)),
-      _cur(_root) {}
+      m_root(new Node(baseSize)),
+      _cur(m_root) {}
 
 ByteArray::~ByteArray() {
-  Node* tmp = _root;
+  Node* tmp = m_root;
   while (tmp) {
     _cur = tmp;
     tmp  = tmp->next;
@@ -291,14 +291,14 @@ void ByteArray::clear() {
   _position = 0;
   _size     = 0;
   _capacity = _baseSize;
-  Node* tmp = _root->next;
+  Node* tmp = m_root->next;
   while (tmp) {
     _cur = tmp;
     tmp  = tmp->next;
     delete _cur;
   }
-  _cur        = _root;
-  _root->next = nullptr;
+  _cur        = m_root;
+  m_root->next = nullptr;
 }
 
 void ByteArray::write(const void* buf, size_t size) {
@@ -403,7 +403,7 @@ void ByteArray::setPosition(size_t v) {
   if (_position > _size) {
     _size = _position;
   }
-  _cur = _root;
+  _cur = m_root;
   while (v > _cur->size) {
     v -= _cur->size;
     _cur = _cur->next;
@@ -538,7 +538,7 @@ uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len,
 
   size_t npos  = position % _baseSize;
   size_t count = position / _baseSize;
-  Node*  cur   = _root;
+  Node*  cur   = m_root;
   while (count > 0) {
     cur = cur->next;
     --count;
@@ -605,7 +605,7 @@ void ByteArray::addCapacity(size_t size) {
 
   size         = size - oldCap;
   size_t count = (size / _baseSize) + (((size % _baseSize) > oldCap) ? 1 : 0);
-  Node*  tmp   = _root;
+  Node*  tmp   = m_root;
   while (tmp->next) {
     tmp = tmp->next;
   }

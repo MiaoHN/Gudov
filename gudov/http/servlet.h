@@ -37,7 +37,7 @@ class FunctionServlet : public Servlet {
                                          HttpResponse::ptr response,
                                          HttpSession::ptr  session)>;
 
-  FunctionServlet(callback cb);
+  FunctionServlet(callback callback);
 
   virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response,
                          HttpSession::ptr session) override;
@@ -56,9 +56,9 @@ class ServletDispatch : public Servlet {
                          HttpSession::ptr session) override;
 
   void addServlet(const std::string& uri, Servlet::ptr slt);
-  void addServlet(const std::string& uri, FunctionServlet::callback cb);
+  void addServlet(const std::string& uri, FunctionServlet::callback callback);
   void addGlobServlet(const std::string& uri, Servlet::ptr slt);
-  void addGlobServlet(const std::string& uri, FunctionServlet::callback cb);
+  void addGlobServlet(const std::string& uri, FunctionServlet::callback callback);
 
   void delServlet(const std::string& uri);
   void delGlobServlet(const std::string& uri);

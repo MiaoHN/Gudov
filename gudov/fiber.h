@@ -44,15 +44,15 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   Fiber();
 
  public:
-  Fiber(std::function<void()> cb, size_t stackSize = 0);
+  Fiber(std::function<void()> callback, size_t stackSize = 0);
   ~Fiber();
 
   /**
    * @brief 重置此 fiber 的函数执行体
    *
-   * @param cb
+   * @param callback
    */
-  void reset(std::function<void()> cb);
+  void reset(std::function<void()> callback);
 
   /**
    * @brief 转入当前协程执行
@@ -138,7 +138,7 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   ucontext_t _ctx;
   void*      _stack = nullptr;
 
-  std::function<void()> _cb;
+  std::function<void()> m_cb;
 };
 
 }  // namespace gudov

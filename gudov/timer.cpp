@@ -7,62 +7,62 @@ namespace gudov {
 
 static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
 
-Timer::Timer(uint64_t ms, std::function<void()> cb, bool recurring,
+Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring,
              TimerManager *manager)
-    : _recurring(recurring), _ms(ms), _cb(cb), _manager(manager) {
-  _next = GetCurrentMS() + _ms;
+    : m_recurring(recurring), m_ms(ms), m_cb(callback), m_manager(manager) {
+  m_next = GetCurrentMS() + m_ms;
 }
 
-Timer::Timer(uint64_t next) : _next(next) {}
+Timer::Timer(uint64_t next) : m_next(next) {}
 
 bool Timer::cancel() {
-  TimerManager::RWMutexType::WriteLock lock(_manager->_mutex);
-  if (_cb) {
-    _cb     = nullptr;
-    auto it = _manager->_timers.find(shared_from_this());
-    _manager->_timers.erase(it);
+  TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+  if (m_cb) {
+    m_cb    = nullptr;
+    auto it = m_manager->m_timers.find(shared_from_this());
+    m_manager->m_timers.erase(it);
     return true;
   }
   return false;
 }
 
 bool Timer::refresh() {
-  TimerManager::RWMutexType::WriteLock lock(_manager->_mutex);
-  if (!_cb) {
+  TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+  if (!m_cb) {
     return false;
   }
-  auto it = _manager->_timers.find(shared_from_this());
-  if (it == _manager->_timers.end()) {
+  auto it = m_manager->m_timers.find(shared_from_this());
+  if (it == m_manager->m_timers.end()) {
     return false;
   }
-  _manager->_timers.erase(it);
-  _next = GetCurrentMS() + _ms;
-  _manager->_timers.insert(shared_from_this());
+  m_manager->m_timers.erase(it);
+  m_next = GetCurrentMS() + m_ms;
+  m_manager->m_timers.insert(shared_from_this());
   return true;
 }
 
 bool Timer::reset(uint64_t ms, bool fromNow) {
-  if (ms == _ms && !fromNow) {
+  if (ms == m_ms && !fromNow) {
     return true;
   }
-  TimerManager::RWMutexType::WriteLock lock(_manager->_mutex);
-  if (!_cb) {
+  TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+  if (!m_cb) {
     return false;
   }
-  auto it = _manager->_timers.find(shared_from_this());
-  if (it == _manager->_timers.end()) {
+  auto it = m_manager->m_timers.find(shared_from_this());
+  if (it == m_manager->m_timers.end()) {
     return false;
   }
-  _manager->_timers.erase(it);
+  m_manager->m_timers.erase(it);
   uint64_t start = 0;
   if (fromNow) {
     start = GetCurrentMS();
   } else {
-    start = _next - _ms;
+    start = m_next - m_ms;
   }
-  _ms   = ms;
-  _next = start + _ms;
-  _manager->addTimer(shared_from_this(), lock);
+  m_ms   = ms;
+  m_next = start + m_ms;
+  m_manager->addTimer(shared_from_this(), lock);
   return true;
 }
 
@@ -77,24 +77,24 @@ bool Timer::Comparator::operator()(const Timer::ptr &lhs,
   if (!rhs) {
     return false;
   }
-  if (lhs->_next < rhs->_next) {
+  if (lhs->m_next < rhs->m_next) {
     return true;
   }
-  if (lhs->_next > rhs->_next) {
+  if (lhs->m_next > rhs->m_next) {
     return false;
   }
   return lhs.get() < rhs.get();
 }
 
-TimerManager::TimerManager() { _previousTime = GetCurrentMS(); }
+TimerManager::TimerManager() { m_previous_time = GetCurrentMS(); }
 
 TimerManager::~TimerManager() {}
 
-Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb,
+Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback,
                                   bool recurring) {
   GUDOV_LOG_DEBUG(g_logger) << "TimerManager::addTimer";
-  Timer::ptr             timer(new Timer(ms, cb, recurring, this));
-  RWMutexType::WriteLock lock(_mutex);
+  Timer::ptr             timer(new Timer(ms, callback, recurring, this));
+  RWMutexType::WriteLock lock(m_mutex);
   addTimer(timer, lock);
   return timer;
 }
@@ -103,105 +103,105 @@ Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb,
  * @brief 条件的回调函数
  *
  * @param weakCond
- * @param cb
+ * @param callback
  */
-static void OnTimer(std::weak_ptr<void> weakCond, std::function<void()> cb) {
+static void OnTimer(std::weak_ptr<void> weakCond, std::function<void()> callback) {
   std::shared_ptr<void> tmp = weakCond.lock();
   if (tmp) {
-    cb();
+    callback();
   }
 }
 
 Timer::ptr TimerManager::addConditionTimer(uint64_t              ms,
-                                           std::function<void()> cb,
+                                           std::function<void()> callback,
                                            std::weak_ptr<void>   weakCond,
                                            bool                  recurring) {
-  return addTimer(ms, std::bind(&OnTimer, weakCond, cb), recurring);
+  return addTimer(ms, std::bind(&OnTimer, weakCond, callback), recurring);
 }
 
 uint64_t TimerManager::getNextTimer() {
-  RWMutexType::ReadLock lock(_mutex);
-  _tickled = false;
-  if (_timers.empty()) {
+  RWMutexType::ReadLock lock(m_mutex);
+  m_tickled = false;
+  if (m_timers.empty()) {
     return ~0ull;
   }
 
-  const Timer::ptr &next  = *_timers.begin();
-  uint64_t          nowMs = GetCurrentMS();
-  if (nowMs >= next->_next) {
+  const Timer::ptr &next   = *m_timers.begin();
+  uint64_t          now_ms = GetCurrentMS();
+  if (now_ms >= next->m_next) {
     return 0;
   } else {
-    return next->_next - nowMs;
+    return next->m_next - now_ms;
   }
 }
 
 void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
-  uint64_t nowMs = GetCurrentMS();
+  uint64_t now_ms = GetCurrentMS();
 
   std::vector<Timer::ptr> expired;
   {
-    RWMutexType::ReadLock lock(_mutex);
-    if (_timers.empty()) {
+    RWMutexType::ReadLock lock(m_mutex);
+    if (m_timers.empty()) {
       return;
     }
   }
-  RWMutexType::WriteLock lock(_mutex);
+  RWMutexType::WriteLock lock(m_mutex);
 
-  if (_timers.empty()) {
+  if (m_timers.empty()) {
     return;
   }
-  bool rollOver = detectClockRollover(nowMs);
-  if (!rollOver && ((*_timers.begin())->_next > nowMs)) {
+  bool roll_over = detectClockRollover(now_ms);
+  if (!roll_over && ((*m_timers.begin())->m_next > now_ms)) {
     return;
   }
 
-  Timer::ptr nowTimer(new Timer(nowMs));
-  auto       it = rollOver ? _timers.end() : _timers.lower_bound(nowTimer);
-  while (it != _timers.end() && (*it)->_next == nowMs) {
+  Timer::ptr now_timer(new Timer(now_ms));
+  auto       it = roll_over ? m_timers.end() : m_timers.lower_bound(now_timer);
+  while (it != m_timers.end() && (*it)->m_next == now_ms) {
     ++it;
   }
-  expired.insert(expired.begin(), _timers.begin(), it);
-  _timers.erase(_timers.begin(), it);
+  expired.insert(expired.begin(), m_timers.begin(), it);
+  m_timers.erase(m_timers.begin(), it);
   cbs.reserve(expired.size());
 
   for (auto &timer : expired) {
-    cbs.push_back(timer->_cb);
-    if (timer->_recurring) {
-      timer->_next = nowMs + timer->_ms;
-      _timers.insert(timer);
+    cbs.push_back(timer->m_cb);
+    if (timer->m_recurring) {
+      timer->m_next = now_ms + timer->m_ms;
+      m_timers.insert(timer);
     } else {
-      timer->_cb = nullptr;
+      timer->m_cb = nullptr;
     }
   }
 }
 
 void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
-  auto it = _timers.insert(val).first;
+  auto it = m_timers.insert(val).first;
 
-  // _timers 原本为空并且未 tickle
-  bool atFront = (it == _timers.begin()) && !_tickled;
-  if (atFront) {
-    _tickled = true;
+  // m_timers 原本为空并且未 tickle
+  bool at_front = (it == m_timers.begin()) && !m_tickled;
+  if (at_front) {
+    m_tickled = true;
   }
   lock.unlock();
 
-  if (atFront) {
+  if (at_front) {
     onTimerInsertedAtFront();
   }
 }
 
-bool TimerManager::detectClockRollover(uint64_t nowMs) {
-  bool rollOver = false;
-  if (nowMs < _previousTime && nowMs < (_previousTime - 60 * 60 * 1000)) {
-    rollOver = true;
+bool TimerManager::detectClockRollover(uint64_t now_ms) {
+  bool roll_over = false;
+  if (now_ms < m_previous_time && now_ms < (m_previous_time - 60 * 60 * 1000)) {
+    roll_over = true;
   }
-  _previousTime = nowMs;
-  return rollOver;
+  m_previous_time = now_ms;
+  return roll_over;
 }
 
 bool TimerManager::hasTimer() {
-  RWMutexType::ReadLock lock(_mutex);
-  return !_timers.empty();
+  RWMutexType::ReadLock lock(m_mutex);
+  return !m_timers.empty();
 }
 
 }  // namespace gudov

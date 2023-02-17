@@ -32,7 +32,7 @@ class IOManager : public Scheduler, public TimerManager {
     struct EventContext {
       Scheduler*            scheduler = nullptr;  // 待执行的 scheduler
       Fiber::ptr            fiber;                // 事件携程
-      std::function<void()> cb;                   // 事件的回调函数
+      std::function<void()> callback;                   // 事件的回调函数
     };
 
     EventContext& getContext(Event event);
@@ -63,10 +63,10 @@ class IOManager : public Scheduler, public TimerManager {
    *
    * @param fd
    * @param event
-   * @param cb
+   * @param callback
    * @return int 0 success, -1 error
    */
-  int addEvent(int fd, Event event, std::function<void()> cb = nullptr);
+  int addEvent(int fd, Event event, std::function<void()> callback = nullptr);
 
   /**
    * @brief 删除 fd 对应事件
@@ -129,7 +129,7 @@ class IOManager : public Scheduler, public TimerManager {
 
   // 当前未执行的 IO 事件数量
   std::atomic<size_t> _pendingEventCount{0};
-  RWMutexType         _mutex;
+  RWMutexType         m_mutex;
 
   std::vector<FdContext*> _fdContexts;
 };

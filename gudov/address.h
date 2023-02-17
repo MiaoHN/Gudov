@@ -16,15 +16,59 @@
 namespace gudov {
 
 class IPAddress;
+
+/**
+ * @brief 地址抽象
+ *
+ */
 class Address {
  public:
   using ptr = std::shared_ptr<Address>;
 
+  /**
+   * @brief 通过 `sockaddr` 创建一个 Address::ptr
+   *
+   * @param[in] addr 地址的指针
+   * @param[in] addrlen 地址长度
+   * @return Address::ptr
+   */
   static Address::ptr Create(const sockaddr* addr, socklen_t addrlen);
+
+  /**
+   * @brief 根据主机名查询所有可用地址
+   *
+   * @param[out] result 记录可用地址的列表
+   * @param[in] host 主机名
+   * @param[in] family 地址族(IPv4/IPv6)
+   * @param[in] type socket 类型
+   * @param[in] protocol 协议类型
+   * @return true 查询成功
+   * @return false 查询失败
+   */
   static bool Lookup(std::vector<Address::ptr>& result, const std::string& host,
                      int family = AF_INET, int type = 0, int protocol = 0);
+
+  /**
+   * @brief 根据主机名得到任意一个可用地址
+   *
+   * @param[in] host 主机名
+   * @param[in] family 地址族(IPv4/IPv6)
+   * @param[in] type socket 类型
+   * @param[in] protocol 协议类型
+   * @return Address::ptr 可用地址
+   */
   static Address::ptr LookupAny(const std::string& host, int family = AF_INET,
                                 int type = 0, int protocol = 0);
+
+  /**
+   * @brief 根据 host 获取任意一个可用的 IP 地址
+   *
+   * @param[in] host 主机名
+   * @param[in] family 地址族(IPv4/IPv6)
+   * @param[in] type socket 类型
+   * @param[in] protocol 协议类型
+   * @return std::shared_ptr<IPAddress> 可用 IP 地址
+   */
   static std::shared_ptr<IPAddress> LookupAnyIPAddress(const std::string& host,
                                                        int family   = AF_INET,
                                                        int type     = 0,
@@ -39,6 +83,11 @@ class Address {
 
   virtual ~Address() {}
 
+  /**
+   * @brief 获取地址类型(IPv4/IPv6)
+   *
+   * @return int AF_INET/AF_INET6
+   */
   int getFamily() const;
 
   virtual const sockaddr* getAddr() const    = 0;

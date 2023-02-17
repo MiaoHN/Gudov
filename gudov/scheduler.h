@@ -34,7 +34,7 @@ class Scheduler {
             const std::string& name = "");
   virtual ~Scheduler();
 
-  const std::string& getName() const { return _name; }
+  const std::string& getName() const { return m_name; }
 
   /**
    * @brief 获取当前 Scheduler
@@ -69,7 +69,7 @@ class Scheduler {
   void schedule(FiberOrCb fc, int thread = -1) {
     bool needTickle = false;
     {
-      MutexType::Lock lock(_mutex);
+      MutexType::Lock lock(m_mutex);
       needTickle = scheduleNoLock(fc, thread);
     }
 
@@ -89,7 +89,7 @@ class Scheduler {
   void schedule(InputIterator begin, InputIterator end) {
     bool needTickle = false;
     {
-      MutexType::Lock lock(_mutex);
+      MutexType::Lock lock(m_mutex);
       while (begin != end) {
         needTickle = scheduleNoLock(&*begin, -1) || needTickle;
         ++begin;
@@ -124,7 +124,7 @@ class Scheduler {
 
   void setThis();
 
-  bool hasIdleThreads() { return _idleThreadCount > 0; }
+  bool hasIdleThreads() { return m_idle_thread_count > 0; }
 
  private:
   /**
@@ -139,10 +139,10 @@ class Scheduler {
    */
   template <typename FiberOrCb>
   bool scheduleNoLock(FiberOrCb fc, int thread) {
-    bool           needTickle = _fibers.empty();
-    FiberAndThread ft(fc, thread);
-    if (ft.fiber || ft.cb) {
-      _fibers.push_back(ft);
+    bool needTickle = m_tasks.empty();
+    Task task(fc, thread);
+    if (task.fiber || task.callback) {
+      m_tasks.push_back(task);
     }
 
     return needTickle;
@@ -153,61 +153,59 @@ class Scheduler {
    * @brief 待运行的协程或线程
    *
    */
-  struct FiberAndThread {
+  struct Task {
     Fiber::ptr            fiber;
-    std::function<void()> cb;
+    std::function<void()> callback;
     int                   thread;
 
-    FiberAndThread(Fiber::ptr f, int thr) : fiber(f), thread(thr) {}
-    FiberAndThread(Fiber::ptr* f, int thr) : thread(thr) { fiber.swap(*f); }
-    FiberAndThread(std::function<void()> f, int thr) : cb(f), thread(thr) {}
-    FiberAndThread(std::function<void()>* f, int thr) : thread(thr) {
-      cb.swap(*f);
-    }
+    Task(Fiber::ptr f, int thr) : fiber(f), thread(thr) {}
+    Task(Fiber::ptr* f, int thr) : thread(thr) { fiber.swap(*f); }
+    Task(std::function<void()> f, int thr) : callback(f), thread(thr) {}
+    Task(std::function<void()>* f, int thr) : thread(thr) { callback.swap(*f); }
 
-    FiberAndThread() : thread(-1) {}
+    Task() : thread(-1) {}
 
     void reset() {
-      fiber  = nullptr;
-      cb     = nullptr;
-      thread = -1;
+      fiber    = nullptr;
+      callback = nullptr;
+      thread   = -1;
     }
   };
 
  private:
-  MutexType _mutex;
+  MutexType m_mutex;
 
   /**
    * @brief 线程池 (不包括主协程)
    *
    */
-  std::vector<Thread::ptr> _threads;
+  std::vector<Thread::ptr> m_threads;
 
   /**
    * @brief 待处理的协程(业务)
    *
    */
-  std::list<FiberAndThread> _fibers;
+  std::list<Task> m_tasks;
 
   /**
    * @brief 主协程
    *
    */
-  Fiber::ptr _rootFiber;
+  Fiber::ptr m_root_fiber;
 
-  std::string _name;
+  std::string m_name;
 
  protected:
   // 所有线程的 id (包括主协程)
-  std::vector<int> _threadIds;
+  std::vector<int> m_thread_ids;
   // 待调度的线程数
-  size_t              _threadCount;
-  std::atomic<size_t> _activeThreadCount = {0};
-  std::atomic<size_t> _idleThreadCount   = {0};
-  bool                _stopping          = true;
-  bool                _autoStop          = false;
+  size_t              m_thread_count;
+  std::atomic<size_t> m_active_thread_count = {0};
+  std::atomic<size_t> m_idle_thread_count   = {0};
+  bool                m_stopping            = true;
+  bool                m_auto_stop           = false;
   // 主线程 ID
-  int _rootThread = 0;
+  int m_root_thread = 0;
 };
 
 }  // namespace gudov

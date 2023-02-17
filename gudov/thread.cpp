@@ -40,17 +40,17 @@ const std::string& Thread::GetName() { return t_threadName; }
 
 void Thread::SetName(const std::string& name) {
   if (t_thread) {
-    t_thread->_name = name;
+    t_thread->m_name = name;
   }
   t_threadName = name;
 }
 
-Thread::Thread(std::function<void()> cb, const std::string& name)
-    : _name(name), _cb(cb) {
+Thread::Thread(std::function<void()> callback, const std::string& name)
+    : m_name(name), m_cb(callback) {
   if (name.empty()) {
-    _name = "UNKNOWN";
+    m_name = "UNKNOWN";
   }
-  int rt = pthread_create(&_thread, nullptr, &Thread::run, this);
+  int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
   if (rt) {
     GUDOV_LOG_ERROR(g_logger)
         << "pthread_create thread fail, rt=" << rt << " name=" << name;
@@ -62,39 +62,39 @@ Thread::Thread(std::function<void()> cb, const std::string& name)
 }
 
 Thread::~Thread() {
-  if (_thread) {
-    pthread_detach(_thread);
+  if (m_thread) {
+    pthread_detach(m_thread);
   }
 }
 
 void Thread::join() {
-  if (_thread) {
-    int rt = pthread_join(_thread, nullptr);
+  if (m_thread) {
+    int rt = pthread_join(m_thread, nullptr);
     if (rt) {
       GUDOV_LOG_ERROR(g_logger)
-          << "pthread_join thread fail, rt=" << rt << " name=" << _name;
+          << "pthread_join thread fail, rt=" << rt << " name=" << m_name;
       throw std::logic_error("pthread_join error");
     }
-    _thread = 0;
+    m_thread = 0;
   }
 }
 
 void* Thread::run(void* arg) {
   Thread* thread = (Thread*)arg;
   t_thread       = thread;
-  t_threadName   = thread->_name;
+  t_threadName   = thread->m_name;
   thread->_id    = GetThreadId();
 
   // 设置线程名
-  pthread_setname_np(pthread_self(), thread->_name.substr(0, 15).c_str());
+  pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
 
-  std::function<void()> cb;
-  cb.swap(thread->_cb);
+  std::function<void()> callback;
+  callback.swap(thread->m_cb);
 
   // 线程创建成功，准备执行
   thread->_semaphore.notify();
 
-  cb();
+  callback();
   return 0;
 }
 

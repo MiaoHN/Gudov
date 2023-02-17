@@ -61,7 +61,7 @@ bool Address::Lookup(std::vector<Address::ptr>& result, const std::string& host,
   std::string node;
   const char* service = nullptr;
 
-  //检查 ipv6address serivce
+  //检查 IPv6 address serivce
   if (!host.empty() && host[0] == '[') {
     const char* endipv6 =
         (const char*)memchr(host.c_str() + 1, ']', host.size() - 1);
@@ -120,7 +120,7 @@ std::shared_ptr<IPAddress> Address::LookupAnyIPAddress(const std::string& host,
   std::vector<Address::ptr> result;
   if (Lookup(result, host, family, type, protocol)) {
     for (auto& i : result) {
-      std::cout << i->toString() << std::endl;
+      GUDOV_LOG_DEBUG(g_logger) << i->toString();
     }
     for (auto& i : result) {
       IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);

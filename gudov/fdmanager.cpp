@@ -6,64 +6,64 @@
 namespace gudov {
 
 FdContext::FdContext(int fd)
-    : _isInit(false),
-      _isSocket(false),
-      _sysNonblock(false),
-      _userNonblock(false),
-      _isClose(false),
-      _fd(fd),
-      _recvTimeout(-1),
-      _sendTimeout(-1) {
+    : m_is_init(false),
+      m_is_socket(false),
+      m_sys_nonblock(false),
+      m_user_nonblock(false),
+      m_is_close(false),
+      m_fd(fd),
+      m_recv_timeout(-1),
+      m_send_timeout(-1) {
   init();
 }
 
 FdContext::~FdContext() {}
 
 bool FdContext::init() {
-  if (_isInit) {
+  if (m_is_init) {
     return true;
   }
 
-  _recvTimeout = -1;
-  _sendTimeout = -1;
+  m_recv_timeout = -1;
+  m_send_timeout = -1;
 
   struct stat fdStat;
-  if (-1 == fstat(_fd, &fdStat)) {
-    _isInit   = false;
-    _isSocket = false;
+  if (-1 == fstat(m_fd, &fdStat)) {
+    m_is_init   = false;
+    m_is_socket = false;
   } else {
-    _isInit   = true;
-    _isSocket = S_ISSOCK(fdStat.st_mode);
+    m_is_init   = true;
+    m_is_socket = S_ISSOCK(fdStat.st_mode);
   }
 
-  if (_isSocket) {
-    int flags = fcntlF(_fd, F_GETFL, 0);
+  if (m_is_socket) {
+    int flags = fcntlF(m_fd, F_GETFL, 0);
     if (!(flags & O_NONBLOCK)) {
-      fcntlF(_fd, F_SETFL, flags | O_NONBLOCK);
+      fcntlF(m_fd, F_SETFL, flags | O_NONBLOCK);
     }
-    _sysNonblock = true;
+    m_sys_nonblock = true;
   } else {
-    _sysNonblock = false;
+    m_sys_nonblock = false;
   }
 
-  _userNonblock = false;
-  _isClose      = false;
-  return _isInit;
+  m_user_nonblock = false;
+  m_is_close      = false;
+  return m_is_init;
 }
 
 void FdContext::setTimeout(int type, uint64_t v) {
   if (type == SO_RCVTIMEO) {
-    _recvTimeout = v;
+    m_recv_timeout = v;
   } else {
-    _sendTimeout = v;
+    m_send_timeout = v;
   }
 }
 
 uint64_t FdContext::getTimeout(int type) {
   if (type == SO_RCVTIMEO) {
-    return _recvTimeout;
+    return m_recv_timeout;
   } else {
-    return _sendTimeout;
+    return m_send_timeout;
   }
 }
 
@@ -72,7 +72,7 @@ FdManager::FdManager() { _datas.resize(64); }
 FdManager::~FdManager() {}
 
 FdContext::ptr FdManager::get(int fd, bool autoCreate) {
-  RWMutexType::ReadLock lock(_mutex);
+  RWMutexType::ReadLock lock(m_mutex);
   if (_datas.size() <= static_cast<size_t>(fd)) {
     if (autoCreate == false) {
       return nullptr;
@@ -84,7 +84,7 @@ FdContext::ptr FdManager::get(int fd, bool autoCreate) {
   }
   lock.unlock();
 
-  RWMutexType::WriteLock lock2(_mutex);
+  RWMutexType::WriteLock lock2(m_mutex);
 
   FdContext::ptr ctx(new FdContext(fd));
   _datas[fd] = ctx;
@@ -93,7 +93,7 @@ FdContext::ptr FdManager::get(int fd, bool autoCreate) {
 }
 
 void FdManager::del(int fd) {
-  RWMutexType::WriteLock lock(_mutex);
+  RWMutexType::WriteLock lock(m_mutex);
   if (_datas.size() <= static_cast<size_t>(fd)) {
     return;
   }

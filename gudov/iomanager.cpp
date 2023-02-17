@@ -30,7 +30,7 @@ void IOManager::FdContext::resetContext(
     IOManager::FdContext::EventContext& ctx) {
   ctx.scheduler = nullptr;
   ctx.fiber.reset();
-  ctx.cb = nullptr;
+  ctx.callback = nullptr;
 }
 
 void IOManager::FdContext::triggerEvent(IOManager::Event event) {
@@ -39,8 +39,8 @@ void IOManager::FdContext::triggerEvent(IOManager::Event event) {
 
   EventContext& ctx = getContext(event);
 
-  if (ctx.cb) {
-    ctx.scheduler->schedule(&ctx.cb);
+  if (ctx.callback) {
+    ctx.scheduler->schedule(&ctx.callback);
   } else {
     ctx.scheduler->schedule(&ctx.fiber);
   }
@@ -99,16 +99,16 @@ void IOManager::contextResize(size_t size) {
   }
 }
 
-int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
+int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   FdContext* fdCtx = nullptr;
   // 得到对应 fd 下标的 context，如果越界就将 _fdContexts 扩容
-  RWMutexType::ReadLock lock(_mutex);
+  RWMutexType::ReadLock lock(m_mutex);
   if ((int)_fdContexts.size() > fd) {
     fdCtx = _fdContexts[fd];
     lock.unlock();
   } else {
     lock.unlock();
-    RWMutexType::WriteLock lock2(_mutex);
+    RWMutexType::WriteLock lock2(m_mutex);
     contextResize(fd * 1.5);
     GUDOV_ASSERT((int)_fdContexts.size() > fd);
     fdCtx = _fdContexts[fd];
@@ -145,13 +145,13 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
   FdContext::EventContext& eventCtx = fdCtx->getContext(event);
 
   // 确保该事件还未分配 scheduler, fiber 以及 callback 函数
-  GUDOV_ASSERT(!eventCtx.scheduler && !eventCtx.fiber && !eventCtx.cb);
+  GUDOV_ASSERT(!eventCtx.scheduler && !eventCtx.fiber && !eventCtx.callback);
 
   // 为该事件分配调用资源
   eventCtx.scheduler = Scheduler::GetThis();
-  if (cb) {
+  if (callback) {
     // 如果指定了调度函数则执行该函数
-    eventCtx.cb.swap(cb);
+    eventCtx.callback.swap(callback);
   } else {
     // 执行当前协程
     eventCtx.fiber = Fiber::GetThis();
@@ -162,7 +162,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
 }
 
 bool IOManager::delEvent(int fd, Event event) {
-  RWMutexType::ReadLock lock(_mutex);
+  RWMutexType::ReadLock lock(m_mutex);
   if ((int)_fdContexts.size() <= fd) {
     // 该 fd 超出范围
     return false;
@@ -203,7 +203,7 @@ bool IOManager::delEvent(int fd, Event event) {
 }
 
 bool IOManager::cancelEvent(int fd, Event event) {
-  RWMutexType::ReadLock lock(_mutex);
+  RWMutexType::ReadLock lock(m_mutex);
   if ((int)_fdContexts.size() <= fd) {
     return false;
   }
@@ -237,7 +237,7 @@ bool IOManager::cancelEvent(int fd, Event event) {
 }
 
 bool IOManager::cancelAll(int fd) {
-  RWMutexType::ReadLock lock(_mutex);
+  RWMutexType::ReadLock lock(m_mutex);
   if ((int)_fdContexts.size() <= fd) {
     return false;
   }

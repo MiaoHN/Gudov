@@ -1,3 +1,13 @@
+/**
+ * @file fdmanager.h
+ * @author MiaoHN (582418227@qq.com)
+ * @brief fd 管理器封装
+ * @version 0.1
+ * @date 2023-02-17
+ *
+ * @copyright Copyright (c) 2023
+ *
+ */
 #ifndef __GUDOV_FDMANAGER_H__
 #define __GUDOV_FDMANAGER_H__
 
@@ -22,31 +32,31 @@ class FdContext : public std::enable_shared_from_this<FdContext> {
   ~FdContext();
 
   bool init();
-  bool isInit() const { return _isInit; }
-  bool isSocket() const { return _isSocket; }
-  bool isClose() const { return _isClose; }
+  bool isInit() const { return m_is_init; }
+  bool isSocket() const { return m_is_socket; }
+  bool isClose() const { return m_is_close; }
   bool close();
 
-  void setUserNonblock(bool v) { _userNonblock = v; }
-  bool getUserNonblock() const { return _userNonblock; }
+  void setUserNonblock(bool v) { m_user_nonblock = v; }
+  bool getUserNonblock() const { return m_user_nonblock; }
 
-  void setSysNonblock(bool v) { _sysNonblock = v; }
-  bool getSysNonblock() const { return _sysNonblock; }
+  void setSysNonblock(bool v) { m_sys_nonblock = v; }
+  bool getSysNonblock() const { return m_sys_nonblock; }
 
   void     setTimeout(int type, uint64_t v);
   uint64_t getTimeout(int type);
 
  private:
-  bool _isInit : 1;
-  bool _isSocket : 1;
-  bool _sysNonblock : 1;
-  bool _userNonblock : 1;
-  bool _isClose : 1;
+  bool m_is_init : 1;
+  bool m_is_socket : 1;
+  bool m_sys_nonblock : 1;
+  bool m_user_nonblock : 1;
+  bool m_is_close : 1;
 
-  int _fd;
+  int m_fd;
 
-  uint64_t _recvTimeout;
-  uint64_t _sendTimeout;
+  uint64_t m_recv_timeout;
+  uint64_t m_send_timeout;
 };
 
 class FdManager {
@@ -60,7 +70,7 @@ class FdManager {
   void           del(int fd);
 
  private:
-  RWMutexType _mutex;
+  RWMutexType m_mutex;
 
   std::vector<FdContext::ptr> _datas;
 };

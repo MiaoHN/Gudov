@@ -82,8 +82,8 @@ Fiber::Fiber() {
   GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber";
 }
 
-Fiber::Fiber(std::function<void()> cb, size_t stackSize)
-    : _id(++s_fiberId), _cb(cb) {
+Fiber::Fiber(std::function<void()> callback, size_t stackSize)
+    : _id(++s_fiberId), m_cb(callback) {
   ++s_fiberCount;
 
   // 如果未指定栈大小则从配置文件中读取
@@ -114,7 +114,7 @@ Fiber::~Fiber() {
     GUDOV_ASSERT(_state == TERM || _state == EXCEPT || _state == INIT);
     StackAllocator::Dealloc(_stack, _stackSize);
   } else {
-    GUDOV_ASSERT(!_cb);
+    GUDOV_ASSERT(!m_cb);
     GUDOV_ASSERT(_state == EXEC);
 
     Fiber* cur = t_fiber;
@@ -125,10 +125,10 @@ Fiber::~Fiber() {
   GUDOV_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << _id;
 }
 
-void Fiber::reset(std::function<void()> cb) {
+void Fiber::reset(std::function<void()> callback) {
   GUDOV_ASSERT(_stack);
   GUDOV_ASSERT(_state == TERM || _state == EXCEPT || _state == INIT);
-  _cb = cb;
+  m_cb = callback;
   if (getcontext(&_ctx)) {
     GUDOV_ASSERT2(false, "getcontext");
   }
@@ -215,8 +215,8 @@ void Fiber::MainFunc() {
   Fiber::ptr cur = GetThis();
   GUDOV_ASSERT(cur);
 
-  cur->_cb();
-  cur->_cb    = nullptr;
+  cur->m_cb();
+  cur->m_cb    = nullptr;
   cur->_state = TERM;
 
   auto rawPtr = cur.get();

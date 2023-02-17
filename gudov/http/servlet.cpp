@@ -6,8 +6,8 @@ namespace gudov {
 
 namespace http {
 
-FunctionServlet::FunctionServlet(callback cb)
-    : Servlet("FunctionServlet"), m_cb(cb) {}
+FunctionServlet::FunctionServlet(callback callback)
+    : Servlet("FunctionServlet"), m_cb(callback) {}
 
 int32_t FunctionServlet::handle(HttpRequest::ptr  request,
                                 HttpResponse::ptr response,
@@ -35,9 +35,9 @@ void ServletDispatch::addServlet(const std::string& uri, Servlet::ptr slt) {
 }
 
 void ServletDispatch::addServlet(const std::string&        uri,
-                                 FunctionServlet::callback cb) {
+                                 FunctionServlet::callback callback) {
   RWMutexType::WriteLock lock(m_mutex);
-  m_datas[uri].reset(new FunctionServlet(cb));
+  m_datas[uri].reset(new FunctionServlet(callback));
 }
 
 void ServletDispatch::addGlobServlet(const std::string& uri, Servlet::ptr slt) {
@@ -52,8 +52,8 @@ void ServletDispatch::addGlobServlet(const std::string& uri, Servlet::ptr slt) {
 }
 
 void ServletDispatch::addGlobServlet(const std::string&        uri,
-                                     FunctionServlet::callback cb) {
-  return addGlobServlet(uri, FunctionServlet::ptr(new FunctionServlet(cb)));
+                                     FunctionServlet::callback callback) {
+  return addGlobServlet(uri, FunctionServlet::ptr(new FunctionServlet(callback)));
 }
 
 void ServletDispatch::delServlet(const std::string& uri) {

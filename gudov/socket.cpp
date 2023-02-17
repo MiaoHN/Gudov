@@ -20,7 +20,7 @@ Socket::ptr Socket::CreateTCP(Address::ptr address) {
 Socket::ptr Socket::CreateUDP(Address::ptr address) {
   Socket::ptr sock(new Socket(address->getFamily(), UDP, 0));
   sock->newSock();
-  sock->_isConnected = true;
+  sock->m_is_connected = true;
   return sock;
 }
 
@@ -32,7 +32,7 @@ Socket::ptr Socket::CreateTCPSocket() {
 Socket::ptr Socket::CreateUDPSocket() {
   Socket::ptr sock(new Socket(IPv4, UDP, 0));
   sock->newSock();
-  sock->_isConnected = true;
+  sock->m_is_connected = true;
   return sock;
 }
 
@@ -44,7 +44,7 @@ Socket::ptr Socket::CreateTCPSocket6() {
 Socket::ptr Socket::CreateUDPSocket6() {
   Socket::ptr sock(new Socket(IPv6, UDP, 0));
   sock->newSock();
-  sock->_isConnected = true;
+  sock->m_is_connected = true;
   return sock;
 }
 
@@ -59,16 +59,16 @@ Socket::ptr Socket::CreateUnixUDPSocket() {
 }
 
 Socket::Socket(int family, int type, int protocol)
-    : _sock(-1),
-      _family(family),
-      _type(type),
-      _protocol(protocol),
-      _isConnected(false) {}
+    : m_sock(-1),
+      m_family(family),
+      m_type(type),
+      m_protocol(protocol),
+      m_is_connected(false) {}
 
 Socket::~Socket() { close(); }
 
 int64_t Socket::getSendTimeout() {
-  FdContext::ptr ctx = FdMgr::getInstance()->get(_sock);
+  FdContext::ptr ctx = FdMgr::getInstance()->get(m_sock);
   if (ctx) {
     return ctx->getTimeout(SO_SNDTIMEO);
   }
@@ -83,7 +83,7 @@ void Socket::setSendTimeout(int64_t v) {
 }
 
 int64_t Socket::getRecvTimeout() {
-  FdContext::ptr ctx = FdMgr::getInstance()->get(_sock);
+  FdContext::ptr ctx = FdMgr::getInstance()->get(m_sock);
   if (ctx) {
     return ctx->getTimeout(SO_RCVTIMEO);
   }
@@ -98,10 +98,10 @@ void Socket::setRecvTimeout(int64_t v) {
 }
 
 bool Socket::getOption(int level, int option, void* result, socklen_t* len) {
-  int rt = getsockopt(_sock, level, option, result, (socklen_t*)len);
+  int rt = getsockopt(m_sock, level, option, result, (socklen_t*)len);
   if (rt) {
     GUDOV_LOG_DEBUG(g_logger)
-        << "getOption sock=" << _sock << " level=" << level
+        << "getOption sock=" << m_sock << " level=" << level
         << " option=" << option << " errno=" << errno
         << " errstr=" << strerror(errno);
     return false;
@@ -111,9 +111,9 @@ bool Socket::getOption(int level, int option, void* result, socklen_t* len) {
 
 bool Socket::setOption(int level, int option, const void* value,
                        socklen_t len) {
-  if (setsockopt(_sock, level, option, value, (socklen_t)len)) {
+  if (setsockopt(m_sock, level, option, value, (socklen_t)len)) {
     GUDOV_LOG_DEBUG(g_logger)
-        << "setOption sock=" << _sock << " level=" << level
+        << "setOption sock=" << m_sock << " level=" << level
         << " option=" << option << " errno=" << errno
         << " errstr=" << strerror(errno);
     return false;
@@ -122,14 +122,14 @@ bool Socket::setOption(int level, int option, const void* value,
 }
 
 Socket::ptr Socket::accept() {
-  Socket::ptr sock(new Socket(_family, _type, _protocol));
-  int         newSock = ::accept(_sock, nullptr, nullptr);
-  if (newSock == -1) {
-    GUDOV_LOG_ERROR(g_logger) << "accept(" << _sock << ") errno=" << errno
+  Socket::ptr sock(new Socket(m_family, m_type, m_protocol));
+  int         new_sock = ::accept(m_sock, nullptr, nullptr);
+  if (new_sock == -1) {
+    GUDOV_LOG_ERROR(g_logger) << "accept(" << m_sock << ") errno=" << errno
                               << " errstr=" << strerror(errno);
     return nullptr;
   }
-  if (sock->init(newSock)) {
+  if (sock->init(new_sock)) {
     return sock;
   }
   return nullptr;
@@ -143,14 +143,14 @@ bool Socket::bind(const Address::ptr addr) {
     }
   }
 
-  if (GUDOV_UNLICKLY(addr->getFamily() != _family)) {
+  if (GUDOV_UNLICKLY(addr->getFamily() != m_family)) {
     GUDOV_LOG_ERROR(g_logger)
-        << "bind sock.family(" << _family << ") addr.family("
+        << "bind sock.family(" << m_family << ") addr.family("
         << addr->getFamily() << ") not equal, addr=" << addr->toString();
     return false;
   }
 
-  if (::bind(_sock, addr->getAddr(), addr->getAddrLen())) {
+  if (::bind(m_sock, addr->getAddr(), addr->getAddrLen())) {
     GUDOV_LOG_ERROR(g_logger)
         << "bind error errrno=" << errno << " errstr=" << strerror(errno);
     return false;
@@ -167,33 +167,33 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeoutMs) {
     }
   }
 
-  if (GUDOV_UNLICKLY(addr->getFamily() != _family)) {
+  if (GUDOV_UNLICKLY(addr->getFamily() != m_family)) {
     GUDOV_LOG_ERROR(g_logger)
-        << "connect sock.family(" << _family << ") addr.family("
+        << "connect sock.family(" << m_family << ") addr.family("
         << addr->getFamily() << ") not equal, addr=" << addr->toString();
     return false;
   }
 
   if (timeoutMs == (uint64_t)-1) {
-    if (::connect(_sock, addr->getAddr(), addr->getAddrLen())) {
+    if (::connect(m_sock, addr->getAddr(), addr->getAddrLen())) {
       GUDOV_LOG_ERROR(g_logger)
-          << "sock=" << _sock << " connect(" << addr->toString()
+          << "sock=" << m_sock << " connect(" << addr->toString()
           << ") error errno=" << errno << " errstr=" << strerror(errno);
       close();
       return false;
     }
   } else {
-    if (::connectWithTimeout(_sock, addr->getAddr(), addr->getAddrLen(),
+    if (::connectWithTimeout(m_sock, addr->getAddr(), addr->getAddrLen(),
                              timeoutMs)) {
       GUDOV_LOG_ERROR(g_logger)
-          << "sock=" << _sock << " connect(" << addr->toString()
+          << "sock=" << m_sock << " connect(" << addr->toString()
           << ") timeout=" << timeoutMs << " error errno=" << errno
           << " errstr=" << strerror(errno);
       close();
       return false;
     }
   }
-  _isConnected = true;
+  m_is_connected = true;
   getRemoteAddress();
   getLocalAddress();
   return true;
@@ -204,7 +204,7 @@ bool Socket::listen(int backLog) {
     GUDOV_LOG_ERROR(g_logger) << "listen error sock=-1";
     return false;
   }
-  if (::listen(_sock, backLog)) {
+  if (::listen(m_sock, backLog)) {
     GUDOV_LOG_ERROR(g_logger)
         << "listen error errno=" << errno << " errstr=" << strerror(errno);
     return false;
@@ -213,20 +213,20 @@ bool Socket::listen(int backLog) {
 }
 
 bool Socket::close() {
-  if (!_isConnected && _sock == -1) {
+  if (!m_is_connected && m_sock == -1) {
     return true;
   }
-  _isConnected = false;
-  if (_sock != -1) {
-    ::close(_sock);
-    _sock = -1;
+  m_is_connected = false;
+  if (m_sock != -1) {
+    ::close(m_sock);
+    m_sock = -1;
   }
   return false;
 }
 
 int Socket::send(const void* buffer, size_t length, int flags) {
   if (isConnected()) {
-    return ::send(_sock, buffer, length, flags);
+    return ::send(m_sock, buffer, length, flags);
   }
   return -1;
 }
@@ -237,7 +237,7 @@ int Socket::send(const iovec* buffers, size_t length, int flags) {
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov    = (iovec*)buffers;
     msg.msg_iovlen = length;
-    return ::sendmsg(_sock, &msg, flags);
+    return ::sendmsg(m_sock, &msg, flags);
   }
   return -1;
 }
@@ -245,7 +245,7 @@ int Socket::send(const iovec* buffers, size_t length, int flags) {
 int Socket::sendTo(const void* buffer, size_t length, const Address::ptr to,
                    int flags) {
   if (isConnected()) {
-    return ::sendto(_sock, buffer, length, flags, to->getAddr(),
+    return ::sendto(m_sock, buffer, length, flags, to->getAddr(),
                     to->getAddrLen());
   }
   return -1;
@@ -260,14 +260,14 @@ int Socket::sendTo(const iovec* buffers, size_t length, const Address::ptr to,
     msg.msg_iovlen  = length;
     msg.msg_name    = to->getAddr();
     msg.msg_namelen = to->getAddrLen();
-    return ::sendmsg(_sock, &msg, flags);
+    return ::sendmsg(m_sock, &msg, flags);
   }
   return -1;
 }
 
 int Socket::recv(void* buffer, size_t length, int flags) {
   if (isConnected()) {
-    return ::recv(_sock, buffer, length, flags);
+    return ::recv(m_sock, buffer, length, flags);
   }
   return -1;
 }
@@ -278,7 +278,7 @@ int Socket::recv(iovec* buffers, size_t length, int flags) {
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov    = (iovec*)buffers;
     msg.msg_iovlen = length;
-    return ::recvmsg(_sock, &msg, flags);
+    return ::recvmsg(m_sock, &msg, flags);
   }
   return -1;
 }
@@ -287,7 +287,7 @@ int Socket::recvFrom(void* buffer, size_t length, Address::ptr from,
                      int flags) {
   if (isConnected()) {
     socklen_t len = from->getAddrLen();
-    return ::recvfrom(_sock, buffer, length, flags, from->getAddr(), &len);
+    return ::recvfrom(m_sock, buffer, length, flags, from->getAddr(), &len);
   }
   return -1;
 }
@@ -301,18 +301,18 @@ int Socket::recvFrom(iovec* buffers, size_t length, Address::ptr from,
     msg.msg_iovlen  = length;
     msg.msg_name    = from->getAddr();
     msg.msg_namelen = from->getAddrLen();
-    return ::recvmsg(_sock, &msg, flags);
+    return ::recvmsg(m_sock, &msg, flags);
   }
   return -1;
 }
 
 Address::ptr Socket::getRemoteAddress() {
-  if (_remoteAddress) {
-    return _remoteAddress;
+  if (m_remote_address) {
+    return m_remote_address;
   }
 
   Address::ptr result;
-  switch (_family) {
+  switch (m_family) {
     case AF_INET:
       result.reset(new IPv4Address());
       break;
@@ -323,31 +323,31 @@ Address::ptr Socket::getRemoteAddress() {
       result.reset(new UnixAddress());
       break;
     default:
-      result.reset(new UnknownAddress(_family));
+      result.reset(new UnknownAddress(m_family));
       break;
   }
   socklen_t addrlen = result->getAddrLen();
-  if (getpeername(_sock, result->getAddr(), &addrlen)) {
+  if (getpeername(m_sock, result->getAddr(), &addrlen)) {
     GUDOV_LOG_ERROR(g_logger)
-        << "getpeername error sock=" << _sock << " errno=" << errno
+        << "getpeername error sock=" << m_sock << " errno=" << errno
         << " errstr=" << strerror(errno);
-    return Address::ptr(new UnknownAddress(_family));
+    return Address::ptr(new UnknownAddress(m_family));
   }
-  if (_family == AF_UNIX) {
+  if (m_family == AF_UNIX) {
     UnixAddress::ptr addr = std::dynamic_pointer_cast<UnixAddress>(result);
     addr->setAddrLen(addrlen);
   }
-  _remoteAddress = result;
-  return _remoteAddress;
+  m_remote_address = result;
+  return m_remote_address;
 }
 
 Address::ptr Socket::getLocalAddress() {
-  if (_localAddress) {
-    return _localAddress;
+  if (m_local_address) {
+    return m_local_address;
   }
 
   Address::ptr result;
-  switch (_family) {
+  switch (m_family) {
     case AF_INET:
       result.reset(new IPv4Address());
       break;
@@ -358,25 +358,25 @@ Address::ptr Socket::getLocalAddress() {
       result.reset(new UnixAddress());
       break;
     default:
-      result.reset(new UnknownAddress(_family));
+      result.reset(new UnknownAddress(m_family));
       break;
   }
   socklen_t addrlen = result->getAddrLen();
-  if (getsockname(_sock, result->getAddr(), &addrlen)) {
+  if (getsockname(m_sock, result->getAddr(), &addrlen)) {
     GUDOV_LOG_ERROR(g_logger)
-        << "getsockname error sock=" << _sock << " errno=" << errno
+        << "getsockname error sock=" << m_sock << " errno=" << errno
         << " errstr=" << strerror(errno);
-    return Address::ptr(new UnknownAddress(_family));
+    return Address::ptr(new UnknownAddress(m_family));
   }
-  if (_family == AF_UNIX) {
+  if (m_family == AF_UNIX) {
     UnixAddress::ptr addr = std::dynamic_pointer_cast<UnixAddress>(result);
     addr->setAddrLen(addrlen);
   }
-  _localAddress = result;
-  return _localAddress;
+  m_local_address = result;
+  return m_local_address;
 }
 
-bool Socket::isValid() const { return _sock != -1; }
+bool Socket::isValid() const { return m_sock != -1; }
 
 int Socket::getError() {
   int       error = 0;
@@ -388,50 +388,51 @@ int Socket::getError() {
 }
 
 std::ostream& Socket::dump(std::ostream& os) const {
-  os << "[Socket sock=" << _sock << " is_connected=" << _isConnected
-     << " family=" << _family << " type=" << _type << " protocol=" << _protocol;
-  if (_localAddress) {
-    os << " local_address=" << _localAddress->toString();
+  os << "[Socket sock=" << m_sock << " is_connected=" << m_is_connected
+     << " family=" << m_family << " type=" << m_type
+     << " protocol=" << m_protocol;
+  if (m_local_address) {
+    os << " local_address=" << m_local_address->toString();
   }
-  if (_remoteAddress) {
-    os << " remote_address=" << _remoteAddress->toString();
+  if (m_remote_address) {
+    os << " remote_address=" << m_remote_address->toString();
   }
   os << "]";
   return os;
 }
 
 bool Socket::cancelRead() {
-  return IOManager::GetThis()->cancelEvent(_sock,
+  return IOManager::GetThis()->cancelEvent(m_sock,
                                            gudov::IOManager::Event::READ);
 }
 
 bool Socket::cancelWrite() {
-  return IOManager::GetThis()->cancelEvent(_sock,
+  return IOManager::GetThis()->cancelEvent(m_sock,
                                            gudov::IOManager::Event::WRITE);
 }
 
 bool Socket::cancelAccept() {
-  return IOManager::GetThis()->cancelEvent(_sock,
+  return IOManager::GetThis()->cancelEvent(m_sock,
                                            gudov::IOManager::Event::READ);
 }
 
-bool Socket::cancelAll() { return IOManager::GetThis()->cancelAll(_sock); }
+bool Socket::cancelAll() { return IOManager::GetThis()->cancelAll(m_sock); }
 
 void Socket::initSock() {
   int val = 1;
   setOption(SOL_SOCKET, SO_REUSEADDR, val);
-  if (_type == SOCK_STREAM) {
+  if (m_type == SOCK_STREAM) {
     setOption(IPPROTO_TCP, TCP_NODELAY, val);
   }
 }
 
 void Socket::newSock() {
-  _sock = socket(_family, _type, _protocol);
-  if (GUDOV_LICKLY(_sock != -1)) {
+  m_sock = socket(m_family, m_type, m_protocol);
+  if (GUDOV_LICKLY(m_sock != -1)) {
     initSock();
   } else {
     GUDOV_LOG_ERROR(g_logger)
-        << "socket(" << _family << ", " << _type << ", " << _protocol
+        << "socket(" << m_family << ", " << m_type << ", " << m_protocol
         << ") errno=" << errno << " errstr=" << strerror(errno);
   }
 }
@@ -439,8 +440,8 @@ void Socket::newSock() {
 bool Socket::init(int sock) {
   FdContext::ptr ctx = FdMgr::getInstance()->get(sock);
   if (ctx && ctx->isSocket() && !ctx->isClose()) {
-    _sock        = sock;
-    _isConnected = true;
+    m_sock         = sock;
+    m_is_connected = true;
     initSock();
     getLocalAddress();
     getRemoteAddress();

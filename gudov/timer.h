@@ -22,17 +22,17 @@ class Timer : public std::enable_shared_from_this<Timer> {
   bool reset(uint64_t ms, bool fromNow);
 
  private:
-  Timer(uint64_t ms, std::function<void()> cb, bool recurring,
+  Timer(uint64_t ms, std::function<void()> callback, bool recurring,
         TimerManager *manager);
   Timer(uint64_t next);
 
  private:
-  bool     _recurring = false;  // 是否是循环定时器
-  uint64_t _ms        = 0;      // 执行周期
-  uint64_t _next      = 0;      // 精确的执行函数
+  bool     m_recurring = false;  // 是否是循环定时器
+  uint64_t m_ms        = 0;      // 执行周期
+  uint64_t m_next      = 0;      // 精确的执行函数
 
-  std::function<void()> _cb;  // 待执行的回调函数
-  TimerManager         *_manager = nullptr;
+  std::function<void()> m_cb;  // 待执行的回调函数
+  TimerManager         *m_manager = nullptr;
 
  private:
   struct Comparator {
@@ -40,6 +40,10 @@ class Timer : public std::enable_shared_from_this<Timer> {
   };
 };
 
+/**
+ * @brief 定时器管理器
+ *
+ */
 class TimerManager {
   friend class Timer;
 
@@ -49,9 +53,9 @@ class TimerManager {
   TimerManager();
   virtual ~TimerManager();
 
-  Timer::ptr addTimer(uint64_t ms, std::function<void()> cb,
+  Timer::ptr addTimer(uint64_t ms, std::function<void()> callback,
                       bool recurring = false);
-  Timer::ptr addConditionTimer(uint64_t ms, std::function<void()> cb,
+  Timer::ptr addConditionTimer(uint64_t ms, std::function<void()> callback,
                                std::weak_ptr<void> weakCond,
                                bool                recurring = false);
 
@@ -67,19 +71,19 @@ class TimerManager {
   /**
    * @brief 服务器时间是否调后
    *
-   * @param nowMs
+   * @param now_ms
    * @return true
    * @return false
    */
-  bool detectClockRollover(uint64_t nowMs);
+  bool detectClockRollover(uint64_t now_ms);
 
  private:
-  RWMutexType _mutex;
+  RWMutexType m_mutex;
 
-  std::set<Timer::ptr, Timer::Comparator> _timers;
+  std::set<Timer::ptr, Timer::Comparator> m_timers;
 
-  bool     _tickled      = false;
-  uint64_t _previousTime = 0;
+  bool     m_tickled       = false;
+  uint64_t m_previous_time = 0;
 };
 
 }  // namespace gudov

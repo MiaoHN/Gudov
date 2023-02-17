@@ -43,22 +43,22 @@ gudov::ConfigVar<std::unordered_map<std::string, int>>::ptr
 
 void print_yaml(const YAML::Node& node, int level) {
   if (node.IsScalar()) {
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+    LOG_INFO(LOG_ROOT())
         << std::string(level * 4, ' ') << node.Scalar() << " - " << node.Type()
         << " - " << level;
   } else if (node.IsNull()) {
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << std::string(level * 4, ' ') << "NULL - "
+    LOG_INFO(LOG_ROOT()) << std::string(level * 4, ' ') << "NULL - "
                                      << node.Type() << " - " << level;
   } else if (node.IsMap()) {
     for (auto it = node.begin(); it != node.end(); ++it) {
-      GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+      LOG_INFO(LOG_ROOT())
           << std::string(level * 4, ' ') << it->first << " - "
           << it->second.Type() << " - " << level;
       print_yaml(it->second, level + 1);
     }
   } else if (node.IsSequence()) {
     for (size_t i = 0; i < node.size(); ++i) {
-      GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+      LOG_INFO(LOG_ROOT())
           << std::string(level * 4, ' ') << i << " - " << node[i].Type()
           << " - " << level;
       print_yaml(node[i], level + 1);
@@ -70,26 +70,26 @@ void test_yaml() {
   YAML::Node root =
       YAML::LoadFile("/home/gudov/workspace/gudov/bin/conf/log.yml");
   // print_yaml(root, 0);
-  // GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << root.Scalar();
+  // LOG_INFO(LOG_ROOT()) << root.Scalar();
 
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << root["test"].IsDefined();
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << root["logs"].IsDefined();
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << root;
+  LOG_INFO(LOG_ROOT()) << root["test"].IsDefined();
+  LOG_INFO(LOG_ROOT()) << root["logs"].IsDefined();
+  LOG_INFO(LOG_ROOT()) << root;
 }
 
 void test_config() {
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "before: " << g_int_value_config->getValue();
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "before: " << g_float_value_config->toString();
 
 #define XX(g_var, name, prefix)                                        \
   {                                                                    \
     auto& v = g_var->getValue();                                       \
     for (auto& i : v) {                                                \
-      GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << #prefix " " #name ": " << i; \
+      LOG_INFO(LOG_ROOT()) << #prefix " " #name ": " << i; \
     }                                                                  \
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT())                                   \
+    LOG_INFO(LOG_ROOT())                                   \
         << #prefix " " #name " yaml: " << g_var->toString();           \
   }
 
@@ -97,10 +97,10 @@ void test_config() {
   {                                                                          \
     auto& v = g_var->getValue();                                             \
     for (auto& i : v) {                                                      \
-      GUDOV_LOG_INFO(GUDOV_LOG_ROOT())                                       \
+      LOG_INFO(LOG_ROOT())                                       \
           << #prefix " " #name ": {" << i.first << " - " << i.second << "}"; \
     }                                                                        \
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT())                                         \
+    LOG_INFO(LOG_ROOT())                                         \
         << #prefix " " #name " yaml: " << g_var->toString();                 \
   }
 
@@ -115,9 +115,9 @@ void test_config() {
       YAML::LoadFile("/home/gudov/workspace/gudov/bin/conf/test.yml");
   gudov::Config::LoadFromYaml(root);
 
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "after: " << g_int_value_config->getValue();
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "after: " << g_float_value_config->toString();
 
   XX(g_int_vec_value_config, int_vec, after);
@@ -193,7 +193,7 @@ gudov::ConfigVar<std::map<std::string, std::vector<Person>>>::ptr
         "system person");
 
 void test_class() {
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "before: " << g_person->getValue().toString() << " - "
       << g_person->toString();
 
@@ -201,34 +201,34 @@ void test_class() {
   {                                                                      \
     auto m = g_person_map->getValue();                                   \
     for (auto& i : m) {                                                  \
-      GUDOV_LOG_INFO(GUDOV_LOG_ROOT())                                   \
+      LOG_INFO(LOG_ROOT())                                   \
           << prefix << ": " << i.first << " - " << i.second.toString();  \
     }                                                                    \
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << prefix << ": size=" << m.size(); \
+    LOG_INFO(LOG_ROOT()) << prefix << ": size=" << m.size(); \
   }
 
   g_person->addListener([](const Person& old_value, const Person& new_value) {
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << "old_value=" << old_value.toString()
+    LOG_INFO(LOG_ROOT()) << "old_value=" << old_value.toString()
                                      << " new_value=" << new_value.toString();
   });
 
   XX_PM(g_person_map, "class.map before");
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "before: " << g_person_vec_map->toString();
 
   YAML::Node root = YAML::LoadFile("conf/test.yml");
   gudov::Config::LoadFromYaml(root);
 
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+  LOG_INFO(LOG_ROOT())
       << "after: " << g_person->getValue().toString() << " - "
       << g_person->toString();
   XX_PM(g_person_map, "class.map after");
-  GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << "after: " << g_person_vec_map->toString();
+  LOG_INFO(LOG_ROOT()) << "after: " << g_person_vec_map->toString();
 }
 
 void test_log() {
-  static gudov::Logger::ptr system_log = GUDOV_LOG_NAME("system");
-  GUDOV_LOG_INFO(system_log) << "hello system" << std::endl;
+  static gudov::Logger::ptr system_log = LOG_NAME("system");
+  LOG_INFO(system_log) << "hello system" << std::endl;
   std::cout << gudov::LoggerMgr::getInstance()->toYamlString() << std::endl;
   YAML::Node root = YAML::LoadFile("conf/log.yml");
   gudov::Config::LoadFromYaml(root);
@@ -236,10 +236,10 @@ void test_log() {
   std::cout << gudov::LoggerMgr::getInstance()->toYamlString() << std::endl;
   std::cout << "=============" << std::endl;
   std::cout << root << std::endl;
-  GUDOV_LOG_INFO(system_log) << "hello system" << std::endl;
+  LOG_INFO(system_log) << "hello system" << std::endl;
 
   system_log->setFormatter("%d - %m%n");
-  GUDOV_LOG_INFO(system_log) << "hello system" << std::endl;
+  LOG_INFO(system_log) << "hello system" << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
   test_log();
 
   gudov::Config::Visit([](gudov::ConfigVarBase::ptr var) {
-    GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+    LOG_INFO(LOG_ROOT())
         << "name=" << var->getName() << " description=" << var->getDescription()
         << " value=" << var->toString();
   });

@@ -19,9 +19,9 @@ int main(int argc, char const *argv[]) {
 
   std::cout << "Hello gudov log" << std::endl;
 
-  GUDOV_LOG_INFO(logger) << "test macro";
-  GUDOV_LOG_ERROR(logger) << "test macro error";
+  LOG_INFO(logger) << "test macro";
+  LOG_ERROR(logger) << "test macro error";
 
-  GUDOV_LOG_FMT_ERROR(logger, "test macro fmt error %s", "aa");
+  LOG_FMT_ERROR(logger, "test macro fmt error %s", "aa");
   return 0;
 }

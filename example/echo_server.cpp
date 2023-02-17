@@ -4,7 +4,7 @@
 #include "gudov/log.h"
 #include "gudov/tcp_server.h"
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+static gudov::Logger::ptr g_logger = LOG_ROOT();
 
 class EchoServer : public gudov::TcpServer {
  public:
@@ -18,7 +18,7 @@ class EchoServer : public gudov::TcpServer {
 EchoServer::EchoServer(int type) : m_type(type) {}
 
 void EchoServer::handleClient(gudov::Socket::ptr client) {
-  GUDOV_LOG_INFO(g_logger) << "handleClient " << *client;
+  LOG_INFO(g_logger) << "handleClient " << *client;
   gudov::ByteArray::ptr ba(new gudov::ByteArray);
   while (true) {
     ba->clear();
@@ -27,11 +27,11 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
 
     int rt = client->recv(&iovs[0], iovs.size());
     if (rt == 0) {
-      GUDOV_LOG_INFO(g_logger) << "client close: " << *client;
+      LOG_INFO(g_logger) << "client close: " << *client;
       break;
     } else if (rt < 0) {
-      GUDOV_LOG_INFO(g_logger) << "client error rt=" << rt << " errno=" << errno
-                               << " errstr=" << strerror(errno);
+      LOG_INFO(g_logger) << "client error rt=" << rt << " errno=" << errno
+                         << " errstr=" << strerror(errno);
       break;
     }
     ba->setPosition(ba->getPosition() + rt);
@@ -49,7 +49,7 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
 int type = 1;
 
 void run() {
-  GUDOV_LOG_INFO(g_logger) << "server type=" << type;
+  LOG_INFO(g_logger) << "server type=" << type;
   EchoServer::ptr es(new EchoServer(type));
   auto            addr = gudov::Address::LookupAny("0.0.0.0:8020");
   while (!es->bind(addr)) {
@@ -60,8 +60,8 @@ void run() {
 
 int main(int argc, char const *argv[]) {
   if (argc < 2) {
-    GUDOV_LOG_INFO(g_logger)
-        << "used as[" << argv[0] << " -t] or [" << argv[0] << " -b]";
+    LOG_INFO(g_logger) << "used as[" << argv[0] << " -t] or [" << argv[0]
+                       << " -b]";
     return 0;
   }
 

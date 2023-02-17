@@ -9,7 +9,7 @@
 
 namespace gudov {
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static gudov::Logger::ptr g_logger = LOG_NAME("system");
 
 static thread_local Scheduler* t_scheduler = nullptr;
 
@@ -27,7 +27,7 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
   if (useCaller) {
     // 初始化主协程
     gudov::Fiber::GetThis();
-    GUDOV_LOG_DEBUG(g_logger) << "Scheduler::Scheduler Main Fiber Create";
+    LOG_DEBUG(g_logger) << "Scheduler::Scheduler Main Fiber Create";
     --threads;  // 减掉主协程
 
     // 只能有一个 Scheduler
@@ -35,7 +35,7 @@ Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
     t_scheduler = this;
 
     m_root_fiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0));
-    GUDOV_LOG_DEBUG(g_logger) << "Scheduler::Scheduler Root Fiber Create";
+    LOG_DEBUG(g_logger) << "Scheduler::Scheduler Root Fiber Create";
     gudov::Thread::SetName(m_name);
 
     t_scheduler_fiber = m_root_fiber.get();
@@ -81,7 +81,7 @@ void Scheduler::stop() {
   if (m_root_fiber && m_thread_count == 0 &&
       (m_root_fiber->getState() == Fiber::TERM ||
        m_root_fiber->getState() == Fiber::READY)) {
-    GUDOV_LOG_INFO(g_logger) << this << " stopped";
+    LOG_INFO(g_logger) << this << " stopped";
     m_stopping = true;
 
     if (stopping()) {
@@ -134,7 +134,7 @@ void Scheduler::run() {
 
   // 新建 idle 协程
   Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this)));
-  GUDOV_LOG_DEBUG(g_logger) << "Scheduler::run idle Fiber Create";
+  LOG_DEBUG(g_logger) << "Scheduler::run idle Fiber Create";
   Fiber::ptr callback_fiber;
 
   Task task;
@@ -197,7 +197,7 @@ void Scheduler::run() {
         callback_fiber->reset(task.callback);
       } else {
         callback_fiber.reset(new Fiber(task.callback));
-        GUDOV_LOG_DEBUG(g_logger) << "Scheduler::run callback_fiber Create";
+        LOG_DEBUG(g_logger) << "Scheduler::run callback_fiber Create";
       }
       task.reset();
       // 执行 callback_fiber
@@ -225,13 +225,13 @@ void Scheduler::run() {
 
       if (idle_fiber->getState() == Fiber::TERM) {
         // idle 协程状态为 TERM 时退出该函数
-        GUDOV_LOG_INFO(g_logger) << "idle fiber term";
+        LOG_INFO(g_logger) << "idle fiber term";
         break;
       }
 
       ++m_idle_thread_count;
       // 转入 idle 协程处理函数中
-      GUDOV_LOG_DEBUG(g_logger) << "swap to idle_fiber...";
+      LOG_DEBUG(g_logger) << "swap to idle_fiber...";
       idle_fiber->swapIn();
       --m_idle_thread_count;
       if (idle_fiber->getState() != Fiber::TERM) {
@@ -241,7 +241,7 @@ void Scheduler::run() {
   }
 }
 
-void Scheduler::tickle() { GUDOV_LOG_INFO(g_logger) << "tickle"; }
+void Scheduler::tickle() { LOG_INFO(g_logger) << "tickle"; }
 
 bool Scheduler::stopping() {
   MutexType::Lock lock(m_mutex);
@@ -250,7 +250,7 @@ bool Scheduler::stopping() {
 }
 
 void Scheduler::idle() {
-  GUDOV_LOG_INFO(g_logger) << "idle";
+  LOG_INFO(g_logger) << "idle";
   while (!stopping()) {
     Fiber::Yield();
   }

@@ -1,7 +1,7 @@
 #include "gudov/bytearray.h"
 #include "gudov/gudov.h"
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+static gudov::Logger::ptr g_logger = LOG_ROOT();
 
 void test() {
 #define XX(type, len, writeFun, readFun, baseLen)               \
@@ -20,7 +20,7 @@ void test() {
       GUDOV_ASSERT(v == vec[i]);                                \
     }                                                           \
     GUDOV_ASSERT(ba->getReadSize() == 0);                       \
-    GUDOV_LOG_INFO(g_logger)                                    \
+    LOG_INFO(g_logger)                                    \
         << #writeFun "/" #readFun " (" #type " ) len=" << len   \
         << " baseLen=" << baseLen << " size=" << ba->getSize(); \
   }
@@ -56,7 +56,7 @@ void test() {
       GUDOV_ASSERT(v == vec[i]);                                               \
     }                                                                          \
     GUDOV_ASSERT(ba->getReadSize() == 0);                                      \
-    GUDOV_LOG_INFO(g_logger)                                                   \
+    LOG_INFO(g_logger)                                                   \
         << #writeFun "/" #readFun " (" #type " ) len=" << len                  \
         << " baseLen=" << baseLen << " size=" << ba->getSize();                \
     ba->setPosition(0);                                                        \

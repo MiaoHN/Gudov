@@ -12,7 +12,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 IOManager::FdContext::EventContext& IOManager::FdContext::getContext(
     IOManager::Event event) {
@@ -117,7 +117,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   FdContext::MutexType::Lock lock2(fdCtx->mutex);
   if (fdCtx->events & event) {
     // 已经添加过该事件
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "addEvent assert fd=" << fd << " event=" << event
         << " fdCtx.event=" << fdCtx->events;
     GUDOV_ASSERT(!(fdCtx->events & event));
@@ -132,7 +132,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
         << epevent.events << "):" << rt << " (" << errno << ") ("
         << strerror(errno) << ")";
@@ -185,7 +185,7 @@ bool IOManager::delEvent(int fd, Event event) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
         << epevent.events << "):" << rt << " (" << errno << ") ("
         << strerror(errno) << ")";
@@ -223,7 +223,7 @@ bool IOManager::cancelEvent(int fd, Event event) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
         << epevent.events << "):" << rt << " (" << errno << ") ("
         << strerror(errno) << ")";
@@ -256,7 +256,7 @@ bool IOManager::cancelAll(int fd) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
         << epevent.events << "):" << rt << " (" << errno << ") ("
         << strerror(errno) << ")";
@@ -285,7 +285,7 @@ void IOManager::tickle() {
     return;
   }
   int rt = write(_tickleFds[1], "T", 1);
-  GUDOV_LOG_DEBUG(g_logger) << "write data to tickleFds[1]";
+  LOG_DEBUG(g_logger) << "write data to tickleFds[1]";
   GUDOV_ASSERT(rt == 1);
 }
 
@@ -300,7 +300,7 @@ bool IOManager::stopping() {
 }
 
 void IOManager::idle() {
-  GUDOV_LOG_DEBUG(g_logger) << "idle";
+  LOG_DEBUG(g_logger) << "idle";
   static const uint64_t maxEvents = 64;
 
   epoll_event* events = new epoll_event[maxEvents]();
@@ -312,7 +312,7 @@ void IOManager::idle() {
   while (true) {
     uint64_t nextTimeout = 0;
     if (stopping(nextTimeout)) {
-      GUDOV_LOG_INFO(g_logger) << "name=" << getName() << " idle stopping exit";
+      LOG_INFO(g_logger) << "name=" << getName() << " idle stopping exit";
       break;
     }
 
@@ -327,7 +327,7 @@ void IOManager::idle() {
       }
       // 等待事件发生，即 tickle() 函数往管道写端写入数据或者
       rt = epoll_wait(_epfd, events, maxEvents, (int)nextTimeout);
-      GUDOV_LOG_DEBUG(g_logger) << "epoll_wait...";
+      LOG_DEBUG(g_logger) << "epoll_wait...";
       if (rt < 0 && errno == EINTR) {
       } else {
         break;
@@ -339,7 +339,7 @@ void IOManager::idle() {
     // 获取超时事件
     std::vector<std::function<void()>> cbs;
     listExpiredCb(cbs);
-    GUDOV_LOG_DEBUG(g_logger)
+    LOG_DEBUG(g_logger)
         << "callback.size(): " << cbs.size() << ", rt: " << rt;
     if (!cbs.empty()) {
       // 将超时事件加入调度队列
@@ -351,7 +351,7 @@ void IOManager::idle() {
       epoll_event& event = events[i];
       if (event.data.fd == _tickleFds[0]) {
         // _ticklefd[0] 用于通知事件产生这里只需读完剩余数据
-        GUDOV_LOG_DEBUG(g_logger) << "tickleFds[0] have data";
+        LOG_DEBUG(g_logger) << "tickleFds[0] have data";
         uint8_t dummy;
         while (read(_tickleFds[0], &dummy, 1) == 1)
           ;
@@ -386,7 +386,7 @@ void IOManager::idle() {
 
       int rt2 = epoll_ctl(_epfd, op, fdCtx->fd, &event);
       if (rt2) {
-        GUDOV_LOG_ERROR(g_logger)
+        LOG_ERROR(g_logger)
             << "epoll_ctl(" << _epfd << ", " << op << "," << fdCtx->fd << ","
             << event.events << "):" << rt2 << " (" << errno << ") ("
             << strerror(errno) << ")";

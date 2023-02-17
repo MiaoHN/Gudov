@@ -6,7 +6,7 @@ namespace gudov {
 
 namespace http {
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static gudov::Logger::ptr g_logger = LOG_NAME("system");
 
 HttpServer::HttpServer(bool keepalive, IOManager* worker,
                        IOManager* accept_worker)
@@ -15,12 +15,12 @@ HttpServer::HttpServer(bool keepalive, IOManager* worker,
 }
 
 void HttpServer::handleClient(Socket::ptr client) {
-  GUDOV_LOG_DEBUG(g_logger) << "handleClient " << *client;
+  LOG_DEBUG(g_logger) << "handleClient " << *client;
   HttpSession::ptr session(new HttpSession(client));
   do {
     auto req = session->recvRequest();
     if (!req) {
-      GUDOV_LOG_DEBUG(g_logger)
+      LOG_DEBUG(g_logger)
           << "recv http request fail, errno=" << errno
           << " errstr=" << strerror(errno) << " cliet:" << *client
           << " keep_alive=" << m_is_keep_alive;

@@ -7,7 +7,7 @@ namespace gudov {
 
 namespace http {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 std::string HttpResult::toString() const {
   std::stringstream ss;
@@ -20,7 +20,7 @@ HttpConnection::HttpConnection(Socket::ptr sock, bool owner)
     : SocketStream(sock, owner) {}
 
 HttpConnection::~HttpConnection() {
-  GUDOV_LOG_DEBUG(g_logger) << "HttpConnection::~HttpConnection";
+  LOG_DEBUG(g_logger) << "HttpConnection::~HttpConnection";
 }
 
 HttpResponse::ptr HttpConnection::recvResponse() {
@@ -79,7 +79,7 @@ HttpResponse::ptr HttpConnection::recvResponse() {
       } while (!parser->isFinished());
       len -= 2;
 
-      GUDOV_LOG_INFO(g_logger) << "content_len=" << client_parser.content_len;
+      LOG_INFO(g_logger) << "content_len=" << client_parser.content_len;
       if (client_parser.content_len <= len) {
         body.append(data, client_parser.content_len);
         memmove(data, data + client_parser.content_len,
@@ -300,17 +300,17 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
   if (!ptr) {
     IPAddress::ptr addr = Address::LookupAnyIPAddress(m_host);
     if (!addr) {
-      GUDOV_LOG_ERROR(g_logger) << "get addr fail: " << m_host;
+      LOG_ERROR(g_logger) << "get addr fail: " << m_host;
       return nullptr;
     }
     addr->setPort(m_port);
     Socket::ptr sock = Socket::CreateTCP(addr);
     if (!sock) {
-      GUDOV_LOG_ERROR(g_logger) << "create sock fail: " << *addr;
+      LOG_ERROR(g_logger) << "create sock fail: " << *addr;
       return nullptr;
     }
     if (!sock->connect(addr)) {
-      GUDOV_LOG_ERROR(g_logger) << "sock connect fail: " << *addr;
+      LOG_ERROR(g_logger) << "sock connect fail: " << *addr;
       return nullptr;
     }
 

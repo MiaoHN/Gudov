@@ -10,12 +10,12 @@
 #include "gudov/gudov.h"
 #include "gudov/iomanager.h"
 
-gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+gudov::Logger::ptr g_logger = LOG_ROOT();
 
 int sock = 0;
 
 void test_fiber() {
-  GUDOV_LOG_INFO(g_logger) << "test_fiber sock=" << sock;
+  LOG_INFO(g_logger) << "test_fiber sock=" << sock;
 
   // sleep(3);
 
@@ -33,19 +33,19 @@ void test_fiber() {
 
   if (!connect(sock, (const sockaddr*)&addr, sizeof(addr))) {
   } else if (errno == EINPROGRESS) {
-    GUDOV_LOG_INFO(g_logger)
+    LOG_INFO(g_logger)
         << "add event errno=" << errno << " " << strerror(errno);
     gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::READ, []() {
-      GUDOV_LOG_INFO(g_logger) << "read callback";
+      LOG_INFO(g_logger) << "read callback";
     });
     gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::WRITE, []() {
-      GUDOV_LOG_INFO(g_logger) << "write callback";
+      LOG_INFO(g_logger) << "write callback";
       // close(sock);
       gudov::IOManager::GetThis()->cancelEvent(sock, gudov::IOManager::READ);
       close(sock);
     });
   } else {
-    GUDOV_LOG_INFO(g_logger) << "else " << errno << " " << strerror(errno);
+    LOG_INFO(g_logger) << "else " << errno << " " << strerror(errno);
   }
 }
 
@@ -62,7 +62,7 @@ void              testTimer() {
                    1000,
                    []() {
         static int i = 0;
-        GUDOV_LOG_INFO(g_logger) << "hello timer i=" << i;
+        LOG_INFO(g_logger) << "hello timer i=" << i;
         if (++i == 3) {
           s_timer->reset(2000, true);
           // s_timer->cancel();

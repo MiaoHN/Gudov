@@ -16,7 +16,7 @@
 #include "thread"
 #include "util.h"
 
-#define GUDOV_LOG_LEVEL(logger, level)                                \
+#define LOG_LEVEL(logger, level)                                      \
   if (logger->getLevel() <= level)                                    \
   gudov::LogEventWrap(                                                \
       gudov::LogEvent::ptr(new gudov::LogEvent(                       \
@@ -24,7 +24,7 @@
           gudov::GetFiberId(), time(0))))                             \
       .getSS()
 
-#define GUDOV_LOG_FMT_LEVEL(logger, level, fmt, ...)                  \
+#define LOG_FMT_LEVEL(logger, level, fmt, ...)                        \
   if (logger->getLevel() <= level)                                    \
   gudov::LogEventWrap(                                                \
       gudov::LogEvent::ptr(new gudov::LogEvent(                       \
@@ -33,25 +33,25 @@
       .getEvent()                                                     \
       ->format(fmt, __VA_ARGS__)
 
-#define GUDOV_LOG_DEBUG(logger) GUDOV_LOG_LEVEL(logger, gudov::LogLevel::DEBUG)
-#define GUDOV_LOG_INFO(logger)  GUDOV_LOG_LEVEL(logger, gudov::LogLevel::INFO)
-#define GUDOV_LOG_WARN(logger)  GUDOV_LOG_LEVEL(logger, gudov::LogLevel::WARN)
-#define GUDOV_LOG_ERROR(logger) GUDOV_LOG_LEVEL(logger, gudov::LogLevel::ERROR)
-#define GUDOV_LOG_FATAL(logger) GUDOV_LOG_LEVEL(logger, gudov::LogLevel::FATAL)
+#define LOG_DEBUG(logger) LOG_LEVEL(logger, gudov::LogLevel::DEBUG)
+#define LOG_INFO(logger)  LOG_LEVEL(logger, gudov::LogLevel::INFO)
+#define LOG_WARN(logger)  LOG_LEVEL(logger, gudov::LogLevel::WARN)
+#define LOG_ERROR(logger) LOG_LEVEL(logger, gudov::LogLevel::ERROR)
+#define LOG_FATAL(logger) LOG_LEVEL(logger, gudov::LogLevel::FATAL)
 
-#define GUDOV_LOG_FMT_DEBUG(logger, fmt, ...) \
-  GUDOV_LOG_FMT_LEVEL(logger, gudov::LogLevel::DEBUG, fmt, __VA_ARGS__)
-#define GUDOV_LOG_FMT_INFO(logger, fmt, ...) \
-  GUDOV_LOG_FMT_LEVEL(logger, gudov::LogLevel::INFO, fmt, __VA_ARGS__)
-#define GUDOV_LOG_FMT_WARN(logger, fmt, ...) \
-  GUDOV_LOG_FMT_LEVEL(logger, gudov::LogLevel::WARN, fmt, __VA_ARGS__)
-#define GUDOV_LOG_FMT_ERROR(logger, fmt, ...) \
-  GUDOV_LOG_FMT_LEVEL(logger, gudov::LogLevel::ERROR, fmt, __VA_ARGS__)
-#define GUDOV_LOG_FMT_FATAL(logger, fmt, ...) \
-  GUDOV_LOG_FMT_LEVEL(logger, gudov::LogLevel::FATAL, fmt, __VA_ARGS__)
+#define LOG_FMT_DEBUG(logger, fmt, ...) \
+  LOG_FMT_LEVEL(logger, gudov::LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define LOG_FMT_INFO(logger, fmt, ...) \
+  LOG_FMT_LEVEL(logger, gudov::LogLevel::INFO, fmt, __VA_ARGS__)
+#define LOG_FMT_WARN(logger, fmt, ...) \
+  LOG_FMT_LEVEL(logger, gudov::LogLevel::WARN, fmt, __VA_ARGS__)
+#define LOG_FMT_ERROR(logger, fmt, ...) \
+  LOG_FMT_LEVEL(logger, gudov::LogLevel::ERROR, fmt, __VA_ARGS__)
+#define LOG_FMT_FATAL(logger, fmt, ...) \
+  LOG_FMT_LEVEL(logger, gudov::LogLevel::FATAL, fmt, __VA_ARGS__)
 
-#define GUDOV_LOG_ROOT()     gudov::LoggerMgr::getInstance()->getRoot()
-#define GUDOV_LOG_NAME(name) gudov::LoggerMgr::getInstance()->getLogger(name)
+#define LOG_ROOT()     gudov::LoggerMgr::getInstance()->getRoot()
+#define LOG_NAME(name) gudov::LoggerMgr::getInstance()->getLogger(name)
 
 namespace gudov {
 

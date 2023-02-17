@@ -9,7 +9,7 @@ static ConfigVar<uint64_t>::ptr g_tcp_server_read_timeout =
     Config::Lookup("tcp_server.read_timeout", (uint64_t)(60 * 1000 * 2),
                    "tcp server read timeout");
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 TcpServer::TcpServer(IOManager* woker, IOManager* accept_woker)
     : m_worker(woker),
@@ -37,14 +37,14 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs,
   for (auto& addr : addrs) {
     Socket::ptr sock = Socket::CreateTCP(addr);
     if (!sock->bind(addr)) {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << "bind fail errno=" << errno << " errstr=" << strerror(errno)
           << " addr=[" << addr->toString() << "]";
       fails.push_back(addr);
       continue;
     }
     if (!sock->listen()) {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << "listen fail errno=" << errno << " errstr=" << strerror(errno)
           << " addr=[" << addr->toString() << "]";
       fails.push_back(addr);
@@ -59,7 +59,7 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs,
   }
 
   for (auto& i : m_socks) {
-    GUDOV_LOG_INFO(g_logger) << "server bind success: " << *i;
+    LOG_INFO(g_logger) << "server bind success: " << *i;
   }
   return true;
 }
@@ -72,7 +72,7 @@ void TcpServer::startAccept(Socket::ptr sock) {
       m_worker->schedule(
           std::bind(&TcpServer::handleClient, shared_from_this(), client));
     } else {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << "accept errno=" << errno << " errstr=" << strerror(errno);
     }
   }
@@ -103,7 +103,7 @@ void TcpServer::stop() {
 }
 
 void TcpServer::handleClient(Socket::ptr client) {
-  GUDOV_LOG_INFO(g_logger) << "handleClient: " << *client;
+  LOG_INFO(g_logger) << "handleClient: " << *client;
 }
 
 }  // namespace gudov

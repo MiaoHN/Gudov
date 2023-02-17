@@ -16,7 +16,7 @@
 
 #define GUDOV_ASSERT(x)                              \
   if (GUDOV_UNLICKLY(!(x))) {                        \
-    GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())                \
+    LOG_ERROR(LOG_ROOT())                \
         << "ASSERTION: " #x << "\nbacktrace:\n"      \
         << gudov::BacktraceToString(100, 2, "    "); \
     assert(x);                                       \
@@ -24,7 +24,7 @@
 
 #define GUDOV_ASSERT2(x, w)                          \
   if (GUDOV_UNLICKLY(!(x))) {                        \
-    GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())                \
+    LOG_ERROR(LOG_ROOT())                \
         << "ASSERTION: " #x << "\n"                  \
         << w << "\nbacktrace:\n"                     \
         << gudov::BacktraceToString(100, 2, "    "); \

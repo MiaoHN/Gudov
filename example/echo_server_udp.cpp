@@ -2,16 +2,16 @@
 #include "gudov/log.h"
 #include "gudov/socket.h"
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+static gudov::Logger::ptr g_logger = LOG_ROOT();
 
 void run() {
   gudov::IPAddress::ptr addr =
       gudov::Address::LookupAnyIPAddress("0.0.0.0:8050");
   gudov::Socket::ptr sock = gudov::Socket::CreateUDP(addr);
   if (sock->bind(addr)) {
-    GUDOV_LOG_INFO(g_logger) << "udp bind : " << *addr;
+    LOG_INFO(g_logger) << "udp bind : " << *addr;
   } else {
-    GUDOV_LOG_ERROR(g_logger) << "udp bind : " << *addr << " fail";
+    LOG_ERROR(g_logger) << "udp bind : " << *addr << " fail";
     return;
   }
   while (true) {
@@ -20,11 +20,11 @@ void run() {
     int                 len = sock->recvFrom(buff, 1024, from);
     if (len > 0) {
       buff[len] = '\0';
-      GUDOV_LOG_INFO(g_logger) << "recv: " << buff << " from: " << *from;
+      LOG_INFO(g_logger) << "recv: " << buff << " from: " << *from;
       len = sock->sendTo(buff, len, from);
       if (len < 0) {
-        GUDOV_LOG_INFO(g_logger)
-            << "send: " << buff << " to: " << *from << " error=" << len;
+        LOG_INFO(g_logger) << "send: " << buff << " to: " << *from
+                           << " error=" << len;
       }
     }
   }

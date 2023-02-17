@@ -2,7 +2,7 @@
 #include "gudov/log.h"
 #include "gudov/tcp_server.h"
 
-gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+gudov::Logger::ptr g_logger = LOG_ROOT();
 
 void run() {
   auto addr = gudov::Address::LookupAny("0.0.0.0:8033");

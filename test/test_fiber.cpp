@@ -1,27 +1,27 @@
 #include "gudov/gudov.h"
 
-gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+gudov::Logger::ptr g_logger = LOG_ROOT();
 
 void runInFiber() {
-  GUDOV_LOG_INFO(g_logger) << "run_in_fiber begin";
+  LOG_INFO(g_logger) << "run_in_fiber begin";
   gudov::Fiber::Yield();
-  GUDOV_LOG_INFO(g_logger) << "run_in_fiber end";
+  LOG_INFO(g_logger) << "run_in_fiber end";
   gudov::Fiber::Yield();
 }
 
 void testFiber() {
-  GUDOV_LOG_INFO(g_logger) << "main begin -1";
+  LOG_INFO(g_logger) << "main begin -1";
   {
     gudov::Fiber::GetThis();
-    GUDOV_LOG_INFO(g_logger) << "main begin";
+    LOG_INFO(g_logger) << "main begin";
     gudov::Fiber::ptr fiber(new gudov::Fiber(runInFiber));
     fiber->swapIn();
-    GUDOV_LOG_INFO(g_logger) << "main after swapIn";
+    LOG_INFO(g_logger) << "main after swapIn";
     fiber->swapIn();
-    GUDOV_LOG_INFO(g_logger) << "main after end";
+    LOG_INFO(g_logger) << "main after end";
     fiber->swapIn();
   }
-  GUDOV_LOG_INFO(g_logger) << "main after end2";
+  LOG_INFO(g_logger) << "main after end2";
 }
 
 int main(int argc, char *argv[]) {

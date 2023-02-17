@@ -4,13 +4,13 @@
 #include "gudov/gudov.h"
 #include "gudov/log.h"
 
-gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+gudov::Logger::ptr g_logger = LOG_ROOT();
 
 int          count = 0;
 gudov::Mutex s_mutex;
 
 void fun1() {
-  GUDOV_LOG_INFO(g_logger) << "name: " << gudov::Thread::GetName()
+  LOG_INFO(g_logger) << "name: " << gudov::Thread::GetName()
                            << " this.name: "
                            << gudov::Thread::GetThis()->getName()
                            << " id: " << gudov::GetThreadId()
@@ -24,18 +24,18 @@ void fun1() {
 
 void fun2() {
   while (true) {
-    GUDOV_LOG_INFO(g_logger) << "xxxxxxxxxxxxxxxxxxxx";
+    LOG_INFO(g_logger) << "xxxxxxxxxxxxxxxxxxxx";
   }
 }
 
 void fun3() {
   while (true) {
-    GUDOV_LOG_INFO(g_logger) << "====================";
+    LOG_INFO(g_logger) << "====================";
   }
 }
 
 int main(int argc, char *argv[]) {
-  GUDOV_LOG_INFO(g_logger) << "thread test begin";
+  LOG_INFO(g_logger) << "thread test begin";
   YAML::Node root = YAML::LoadFile("conf/log2.yml");
   gudov::Config::LoadFromYaml(root);
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     threads[i]->join();
   }
 
-  GUDOV_LOG_INFO(g_logger) << "thread test end";
-  GUDOV_LOG_INFO(g_logger) << "count=" << count;
+  LOG_INFO(g_logger) << "thread test end";
+  LOG_INFO(g_logger) << "count=" << count;
   return 0;
 }

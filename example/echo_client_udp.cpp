@@ -4,7 +4,7 @@
 #include "gudov/log.h"
 #include "gudov/socket.h"
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_ROOT();
+static gudov::Logger::ptr g_logger = LOG_ROOT();
 
 const char* ip   = nullptr;
 uint16_t    port = 0;
@@ -12,7 +12,7 @@ uint16_t    port = 0;
 void run() {
   gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress(ip);
   if (!addr) {
-    GUDOV_LOG_ERROR(g_logger) << "invalid ip: " << ip;
+    LOG_ERROR(g_logger) << "invalid ip: " << ip;
     return;
   }
   addr->setPort(port);
@@ -20,7 +20,7 @@ void run() {
   gudov::Socket::ptr sock = gudov::Socket::CreateUDP(addr);
 
   gudov::IOManager::GetThis()->schedule([addr, sock]() {
-    GUDOV_LOG_INFO(g_logger) << "begin recv";
+    LOG_INFO(g_logger) << "begin recv";
     while (true) {
       char buff[1024];
       int  len = sock->recvFrom(buff, 1024, addr);
@@ -40,11 +40,11 @@ void run() {
       int len = sock->sendTo(line.c_str(), line.size(), addr);
       if (len < 0) {
         int err = sock->getError();
-        GUDOV_LOG_ERROR(g_logger)
+        LOG_ERROR(g_logger)
             << "send error err=" << err << " errstr=" << strerror(err)
             << " len=" << len << " addr=" << *addr << " sock=" << *sock;
       } else {
-        GUDOV_LOG_INFO(g_logger) << "send " << line << " len:" << len;
+        LOG_INFO(g_logger) << "send " << line << " len:" << len;
       }
     }
   }
@@ -52,7 +52,7 @@ void run() {
 
 int main(int argc, char** argv) {
   if (argc < 3) {
-    GUDOV_LOG_INFO(g_logger) << "use as[" << argv[0] << " ip port]";
+    LOG_INFO(g_logger) << "use as[" << argv[0] << " ip port]";
     return 0;
   }
   ip   = argv[1];

@@ -12,7 +12,7 @@ static thread_local Thread* t_thread = nullptr;
 // 当前运行的线程的名称
 static thread_local std::string t_threadName = "UNKNOWN";
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 Semaphore::Semaphore(uint32_t count) {
   if (sem_init(&_semaphore, 0, count)) {
@@ -52,7 +52,7 @@ Thread::Thread(std::function<void()> callback, const std::string& name)
   }
   int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
   if (rt) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "pthread_create thread fail, rt=" << rt << " name=" << name;
     throw std::logic_error("pthread_create error");
   }
@@ -71,7 +71,7 @@ void Thread::join() {
   if (m_thread) {
     int rt = pthread_join(m_thread, nullptr);
     if (rt) {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << "pthread_join thread fail, rt=" << rt << " name=" << m_name;
       throw std::logic_error("pthread_join error");
     }

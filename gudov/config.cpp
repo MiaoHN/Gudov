@@ -18,7 +18,7 @@ static void ListAllMember(
     std::list<std::pair<std::string, const YAML::Node>>& output) {
   if (prefix.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") !=
       std::string::npos) {
-    GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())
+    LOG_ERROR(LOG_ROOT())
         << "Config invalid name: " << prefix << " : " << node;
     return;
   }

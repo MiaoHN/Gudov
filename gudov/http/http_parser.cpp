@@ -9,7 +9,7 @@ namespace gudov {
 
 namespace http {
 
-static gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static gudov::Logger::ptr g_logger = LOG_NAME("system");
 
 static gudov::ConfigVar<uint64_t>::ptr g_http_request_buffer_size =
     gudov::Config::Lookup("http.request.buffer_size", (uint64_t)(4 * 1024),
@@ -89,7 +89,7 @@ void on_request_method(void* data, const char* at, size_t length) {
   HttpMethod         m      = CharsToHttpMethod(at);
 
   if (m == HttpMethod::INVALID_METHOD) {
-    GUDOV_LOG_WARN(g_logger)
+    LOG_WARN(g_logger)
         << "invalid http request method: " << std::string(at, length);
     parser->setError(1000);
     return;
@@ -122,7 +122,7 @@ void on_request_version(void* data, const char* at, size_t length) {
   } else if (strncmp(at, "HTTP/1.0", length) == 0) {
     v = 0x10;
   } else {
-    GUDOV_LOG_WARN(g_logger)
+    LOG_WARN(g_logger)
         << "invalid http request version: " << std::string(at, length);
     parser->setError(1001);
     return;
@@ -138,7 +138,7 @@ void on_request_http_field(void* data, const char* field, size_t flen,
                            const char* value, size_t vlen) {
   HttpRequestParser* parser = static_cast<HttpRequestParser*>(data);
   if (flen == 0) {
-    GUDOV_LOG_WARN(g_logger) << "invalid http request field length == 0";
+    LOG_WARN(g_logger) << "invalid http request field length == 0";
     return;
   }
   parser->getData()->setHeader(std::string(field, flen),
@@ -199,7 +199,7 @@ void on_response_version(void* data, const char* at, size_t length) {
   } else if (strncmp(at, "HTTP/1.0", length) == 0) {
     v = 0x10;
   } else {
-    GUDOV_LOG_WARN(g_logger)
+    LOG_WARN(g_logger)
         << "invalid http response version: " << std::string(at, length);
     parser->setError(1001);
     return;
@@ -216,7 +216,7 @@ void on_response_http_field(void* data, const char* field, size_t flen,
                             const char* value, size_t vlen) {
   HttpResponseParser* parser = static_cast<HttpResponseParser*>(data);
   if (flen == 0) {
-    GUDOV_LOG_WARN(g_logger) << "invalid http response field length == 0";
+    LOG_WARN(g_logger) << "invalid http response field length == 0";
     // parser->setError(1002);
     return;
   }

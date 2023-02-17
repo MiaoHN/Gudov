@@ -10,7 +10,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 Socket::ptr Socket::CreateTCP(Address::ptr address) {
   Socket::ptr sock(new Socket(address->getFamily(), TCP, 0));
@@ -100,7 +100,7 @@ void Socket::setRecvTimeout(int64_t v) {
 bool Socket::getOption(int level, int option, void* result, socklen_t* len) {
   int rt = getsockopt(m_sock, level, option, result, (socklen_t*)len);
   if (rt) {
-    GUDOV_LOG_DEBUG(g_logger)
+    LOG_DEBUG(g_logger)
         << "getOption sock=" << m_sock << " level=" << level
         << " option=" << option << " errno=" << errno
         << " errstr=" << strerror(errno);
@@ -112,7 +112,7 @@ bool Socket::getOption(int level, int option, void* result, socklen_t* len) {
 bool Socket::setOption(int level, int option, const void* value,
                        socklen_t len) {
   if (setsockopt(m_sock, level, option, value, (socklen_t)len)) {
-    GUDOV_LOG_DEBUG(g_logger)
+    LOG_DEBUG(g_logger)
         << "setOption sock=" << m_sock << " level=" << level
         << " option=" << option << " errno=" << errno
         << " errstr=" << strerror(errno);
@@ -125,7 +125,7 @@ Socket::ptr Socket::accept() {
   Socket::ptr sock(new Socket(m_family, m_type, m_protocol));
   int         new_sock = ::accept(m_sock, nullptr, nullptr);
   if (new_sock == -1) {
-    GUDOV_LOG_ERROR(g_logger) << "accept(" << m_sock << ") errno=" << errno
+    LOG_ERROR(g_logger) << "accept(" << m_sock << ") errno=" << errno
                               << " errstr=" << strerror(errno);
     return nullptr;
   }
@@ -144,14 +144,14 @@ bool Socket::bind(const Address::ptr addr) {
   }
 
   if (GUDOV_UNLICKLY(addr->getFamily() != m_family)) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "bind sock.family(" << m_family << ") addr.family("
         << addr->getFamily() << ") not equal, addr=" << addr->toString();
     return false;
   }
 
   if (::bind(m_sock, addr->getAddr(), addr->getAddrLen())) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "bind error errrno=" << errno << " errstr=" << strerror(errno);
     return false;
   }
@@ -168,7 +168,7 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeoutMs) {
   }
 
   if (GUDOV_UNLICKLY(addr->getFamily() != m_family)) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "connect sock.family(" << m_family << ") addr.family("
         << addr->getFamily() << ") not equal, addr=" << addr->toString();
     return false;
@@ -176,7 +176,7 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeoutMs) {
 
   if (timeoutMs == (uint64_t)-1) {
     if (::connect(m_sock, addr->getAddr(), addr->getAddrLen())) {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << "sock=" << m_sock << " connect(" << addr->toString()
           << ") error errno=" << errno << " errstr=" << strerror(errno);
       close();
@@ -185,7 +185,7 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeoutMs) {
   } else {
     if (::connectWithTimeout(m_sock, addr->getAddr(), addr->getAddrLen(),
                              timeoutMs)) {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << "sock=" << m_sock << " connect(" << addr->toString()
           << ") timeout=" << timeoutMs << " error errno=" << errno
           << " errstr=" << strerror(errno);
@@ -201,11 +201,11 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeoutMs) {
 
 bool Socket::listen(int backLog) {
   if (!isValid()) {
-    GUDOV_LOG_ERROR(g_logger) << "listen error sock=-1";
+    LOG_ERROR(g_logger) << "listen error sock=-1";
     return false;
   }
   if (::listen(m_sock, backLog)) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "listen error errno=" << errno << " errstr=" << strerror(errno);
     return false;
   }
@@ -328,7 +328,7 @@ Address::ptr Socket::getRemoteAddress() {
   }
   socklen_t addrlen = result->getAddrLen();
   if (getpeername(m_sock, result->getAddr(), &addrlen)) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "getpeername error sock=" << m_sock << " errno=" << errno
         << " errstr=" << strerror(errno);
     return Address::ptr(new UnknownAddress(m_family));
@@ -363,7 +363,7 @@ Address::ptr Socket::getLocalAddress() {
   }
   socklen_t addrlen = result->getAddrLen();
   if (getsockname(m_sock, result->getAddr(), &addrlen)) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "getsockname error sock=" << m_sock << " errno=" << errno
         << " errstr=" << strerror(errno);
     return Address::ptr(new UnknownAddress(m_family));
@@ -431,7 +431,7 @@ void Socket::newSock() {
   if (GUDOV_LICKLY(m_sock != -1)) {
     initSock();
   } else {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "socket(" << m_family << ", " << m_type << ", " << m_protocol
         << ") errno=" << errno << " errstr=" << strerror(errno);
   }

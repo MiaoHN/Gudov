@@ -5,7 +5,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring,
              TimerManager *manager)
@@ -92,7 +92,7 @@ TimerManager::~TimerManager() {}
 
 Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback,
                                   bool recurring) {
-  GUDOV_LOG_DEBUG(g_logger) << "TimerManager::addTimer";
+  LOG_DEBUG(g_logger) << "TimerManager::addTimer";
   Timer::ptr             timer(new Timer(ms, callback, recurring, this));
   RWMutexType::WriteLock lock(m_mutex);
   addTimer(timer, lock);

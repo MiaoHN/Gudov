@@ -19,7 +19,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 /**
  * @brief 程序内协程号
@@ -79,7 +79,7 @@ Fiber::Fiber() {
 
   ++s_fiberCount;
 
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber";
+  LOG_DEBUG(g_logger) << "Fiber::Fiber";
 }
 
 Fiber::Fiber(std::function<void()> callback, size_t stackSize)
@@ -105,7 +105,7 @@ Fiber::Fiber(std::function<void()> callback, size_t stackSize)
   // 为待执行函数指定栈空间
   makecontext(&m_ctx, &Fiber::MainFunc, 0);
 
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
+  LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
 }
 
 Fiber::~Fiber() {
@@ -122,7 +122,7 @@ Fiber::~Fiber() {
       SetThis(nullptr);
     }
   }
-  GUDOV_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id;
+  LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id;
 }
 
 void Fiber::reset(std::function<void()> callback) {
@@ -144,7 +144,7 @@ void Fiber::reset(std::function<void()> callback) {
 void Fiber::call() {
   SetThis(this);
   m_state = EXEC;
-  GUDOV_LOG_ERROR(g_logger) << getId();
+  LOG_ERROR(g_logger) << getId();
   if (swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }

@@ -10,7 +10,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 template <class T>
 static T CreateMask(uint32_t bits) {
@@ -89,7 +89,7 @@ bool Address::Lookup(std::vector<Address::ptr>& result, const std::string& host,
   }
   int error = getaddrinfo(node.c_str(), service, &hints, &results);
   if (error) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "Address::Lookup getaddress(" << host << ", " << family << ", "
         << type << ") err=" << error << " errstr=" << strerror(errno);
     return false;
@@ -120,7 +120,7 @@ std::shared_ptr<IPAddress> Address::LookupAnyIPAddress(const std::string& host,
   std::vector<Address::ptr> result;
   if (Lookup(result, host, family, type, protocol)) {
     for (auto& i : result) {
-      GUDOV_LOG_DEBUG(g_logger) << i->toString();
+      LOG_DEBUG(g_logger) << i->toString();
     }
     for (auto& i : result) {
       IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);
@@ -137,7 +137,7 @@ bool Address::GetInterfaceAddress(
     int                                                            family) {
   struct ifaddrs *next, *results;
   if (getifaddrs(&results) != 0) {
-    GUDOV_LOG_ERROR(g_logger) << "Address::GetInterfaceAddresses getifaddrs "
+    LOG_ERROR(g_logger) << "Address::GetInterfaceAddresses getifaddrs "
                                  " err="
                               << errno << " errstr=" << strerror(errno);
     return false;
@@ -174,7 +174,7 @@ bool Address::GetInterfaceAddress(
       }
     }
   } catch (...) {
-    GUDOV_LOG_ERROR(g_logger) << "Address::GetInterfaceAddresses exception";
+    LOG_ERROR(g_logger) << "Address::GetInterfaceAddresses exception";
     freeifaddrs(results);
     return false;
   }
@@ -245,7 +245,7 @@ IPAddress::ptr IPAddress::Create(const char* address, uint16_t port) {
 
   int error = getaddrinfo(address, nullptr, &hints, &results);
   if (error) {
-    GUDOV_LOG_ERROR(g_logger) << "IPAddress::Create(" << address << ", " << port
+    LOG_ERROR(g_logger) << "IPAddress::Create(" << address << ", " << port
                               << ") error=" << error << " errno=" << errno
                               << " errstr=" << strerror(errno);
     return nullptr;
@@ -270,7 +270,7 @@ IPv4Address::ptr IPv4Address::Create(const char* address, uint16_t port) {
   rt->_addr.sin_port = ByteSwapOnLittleEndian(port);
   int result         = inet_pton(AF_INET, address, &rt->_addr.sin_addr);
   if (result <= 0) {
-    GUDOV_LOG_ERROR(g_logger) << "IPv4Address::Create(" << address << ", "
+    LOG_ERROR(g_logger) << "IPv4Address::Create(" << address << ", "
                               << port << ") rt=" << result << " errno=" << errno
                               << " errstr=" << strerror(errno);
     return nullptr;
@@ -346,7 +346,7 @@ IPv6Address::ptr IPv6Address::Create(const char* address, uint16_t port) {
   rt->_addr.sin6_port = ByteSwapOnLittleEndian(port);
   int result          = inet_pton(AF_INET6, address, &rt->_addr.sin6_addr);
   if (result <= 0) {
-    GUDOV_LOG_ERROR(g_logger) << "IPv6Address::Create(" << address << ", "
+    LOG_ERROR(g_logger) << "IPv6Address::Create(" << address << ", "
                               << port << ") rt=" << result << " errno=" << errno
                               << " errstr=" << strerror(errno);
     return nullptr;

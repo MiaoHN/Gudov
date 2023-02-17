@@ -11,7 +11,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 ByteArray::Node::Node(size_t s) : ptr(new char[s]), next(nullptr), size(s) {}
 
@@ -417,7 +417,7 @@ bool ByteArray::writeToFile(const std::string& name) const {
   std::ofstream ofs;
   ofs.open(name, std::ios::trunc | std::ios::binary);
   if (!ofs) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "writeToFile name=" << name << " error , errno=" << errno
         << " errstr=" << strerror(errno);
     return false;
@@ -443,7 +443,7 @@ bool ByteArray::readFromFile(const std::string& name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::binary);
   if (!ifs) {
-    GUDOV_LOG_ERROR(g_logger)
+    LOG_ERROR(g_logger)
         << "readFromFile name=" << name << " error, errno=" << errno
         << " errstr=" << strerror(errno);
     return false;

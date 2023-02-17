@@ -45,7 +45,10 @@ class ConfigVarBase {
 template <typename F, typename T>
 class LexicalCast {
  public:
-  T operator()(const F& v) { return boost::lexical_cast<T>(v); }
+  T operator()(const F& v) {
+    LOG_WARN(LOG_ROOT()) << "Undefined LexicalCast type";
+    return boost::lexical_cast<T>(v);
+  }
 };
 
 template <typename T>
@@ -247,7 +250,7 @@ class ConfigVar : public ConfigVarBase {
       RWMutexType::ReadLock lock(m_mutex);
       return ToStr()(_val);
     } catch (std::exception& e) {
-      GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())
+      LOG_ERROR(LOG_ROOT())
           << "ConfigVar::toString exception" << e.what()
           << " convert: " << typeid(_val).name() << " to string";
     }
@@ -258,7 +261,7 @@ class ConfigVar : public ConfigVarBase {
     try {
       setValue(FromStr()(val));
     } catch (std::exception& e) {
-      GUDOV_LOG_ERROR(GUDOV_LOG_ROOT())
+      LOG_ERROR(LOG_ROOT())
           << "ConfigVar::toString exception" << e.what()
           << " convert: string to " << typeid(_val).name() << " - " << val;
     }
@@ -329,10 +332,10 @@ class Config {
     if (it != GetDatas().end()) {
       auto tmp = std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
       if (tmp) {
-        GUDOV_LOG_INFO(GUDOV_LOG_ROOT()) << "Lookup name=" << name << " exists";
+        LOG_INFO(LOG_ROOT()) << "Lookup name=" << name << " exists";
         return tmp;
       } else {
-        GUDOV_LOG_INFO(GUDOV_LOG_ROOT())
+        LOG_INFO(LOG_ROOT())
             << "Lookup name=" << name << " exists but type not "
             << typeid(T).name() << " real_type=" << it->second->getTypeName()
             << " " << it->second->toString();
@@ -342,7 +345,7 @@ class Config {
 
     if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") !=
         std::string::npos) {
-      GUDOV_LOG_ERROR(GUDOV_LOG_ROOT()) << "Lookup name invalid";
+      LOG_ERROR(LOG_ROOT()) << "Lookup name invalid";
       throw std::invalid_argument(name);
     }
 

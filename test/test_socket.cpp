@@ -2,14 +2,14 @@
 #include "gudov/iomanager.h"
 #include "gudov/socket.h"
 
-static gudov::Logger::ptr g_looger = GUDOV_LOG_ROOT();
+static gudov::Logger::ptr g_looger = LOG_ROOT();
 
 void testSocket() {
   // std::vector<gudov::Address::ptr> addrs;
   // gudov::Address::Lookup(addrs, "www.baidu.com", AF_INET);
   // gudov::IPAddress::ptr addr;
   // for(auto& i : addrs) {
-  //    GUDOV_LOG_INFO(g_looger) << i->toString();
+  //    LOG_INFO(g_looger) << i->toString();
   //    addr = std::dynamic_pointer_cast<gudov::IPAddress>(i);
   //    if(addr) {
   //        break;
@@ -18,26 +18,26 @@ void testSocket() {
   gudov::IPAddress::ptr addr =
       gudov::Address::LookupAnyIPAddress("www.baidu.com");
   if (addr) {
-    GUDOV_LOG_INFO(g_looger) << "get address: " << addr->toString();
+    LOG_INFO(g_looger) << "get address: " << addr->toString();
   } else {
-    GUDOV_LOG_ERROR(g_looger) << "get address fail";
+    LOG_ERROR(g_looger) << "get address fail";
     return;
   }
 
   gudov::Socket::ptr sock = gudov::Socket::CreateTCP(addr);
   addr->setPort(80);
-  GUDOV_LOG_INFO(g_looger) << "addr=" << addr->toString();
+  LOG_INFO(g_looger) << "addr=" << addr->toString();
   if (!sock->connect(addr)) {
-    GUDOV_LOG_ERROR(g_looger) << "connect " << addr->toString() << " fail";
+    LOG_ERROR(g_looger) << "connect " << addr->toString() << " fail";
     return;
   } else {
-    GUDOV_LOG_INFO(g_looger) << "connect " << addr->toString() << " connected";
+    LOG_INFO(g_looger) << "connect " << addr->toString() << " connected";
   }
 
   const char buff[] = "GET / HTTP/1.0\r\n\r\n";
   int        rt     = sock->send(buff, sizeof(buff));
   if (rt <= 0) {
-    GUDOV_LOG_INFO(g_looger) << "send fail rt=" << rt;
+    LOG_INFO(g_looger) << "send fail rt=" << rt;
     return;
   }
 
@@ -46,53 +46,53 @@ void testSocket() {
   rt = sock->recv(&buffs[0], buffs.size());
 
   if (rt <= 0) {
-    GUDOV_LOG_INFO(g_looger) << "recv fail rt=" << rt;
+    LOG_INFO(g_looger) << "recv fail rt=" << rt;
     return;
   }
 
   buffs.resize(rt);
-  GUDOV_LOG_INFO(g_looger) << buffs;
+  LOG_INFO(g_looger) << buffs;
 }
 
 void test2() {
   gudov::IPAddress::ptr addr =
       gudov::Address::LookupAnyIPAddress("www.baidu.com:80");
   if (addr) {
-    GUDOV_LOG_INFO(g_looger) << "get address: " << addr->toString();
+    LOG_INFO(g_looger) << "get address: " << addr->toString();
   } else {
-    GUDOV_LOG_ERROR(g_looger) << "get address fail";
+    LOG_ERROR(g_looger) << "get address fail";
     return;
   }
 
   gudov::Socket::ptr sock = gudov::Socket::CreateTCP(addr);
   if (!sock->connect(addr)) {
-    GUDOV_LOG_ERROR(g_looger) << "connect " << addr->toString() << " fail";
+    LOG_ERROR(g_looger) << "connect " << addr->toString() << " fail";
     return;
   } else {
-    GUDOV_LOG_INFO(g_looger) << "connect " << addr->toString() << " connected";
+    LOG_INFO(g_looger) << "connect " << addr->toString() << " connected";
   }
 
   uint64_t ts = gudov::GetCurrentUS();
   for (size_t i = 0; i < 10000000000ul; ++i) {
     if (int err = sock->getError()) {
-      GUDOV_LOG_INFO(g_looger) << "err=" << err << " errstr=" << strerror(err);
+      LOG_INFO(g_looger) << "err=" << err << " errstr=" << strerror(err);
       break;
     }
 
     // struct tcp_info tcp_info;
     // if(!sock->getOption(IPPROTO_TCP, TCP_INFO, tcp_info)) {
-    //     GUDOV_LOG_INFO(g_looger) << "err";
+    //     LOG_INFO(g_looger) << "err";
     //     break;
     // }
     // if(tcp_info.tcpi_state != TCP_ESTABLISHED) {
-    //     GUDOV_LOG_INFO(g_looger)
+    //     LOG_INFO(g_looger)
     //             << " state=" << (int)tcp_info.tcpi_state;
     //     break;
     // }
     static int batch = 10000000;
     if (i && (i % batch) == 0) {
       uint64_t ts2 = gudov::GetCurrentUS();
-      GUDOV_LOG_INFO(g_looger)
+      LOG_INFO(g_looger)
           << "i=" << i << " used: " << ((ts2 - ts) * 1.0 / batch) << " us";
       ts = ts2;
     }

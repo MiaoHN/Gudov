@@ -11,7 +11,7 @@
 
 namespace gudov {
 
-static Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+static Logger::ptr g_logger = LOG_NAME("system");
 
 pid_t GetThreadId() { return syscall(SYS_gettid); }
 
@@ -23,7 +23,7 @@ void BackTrace(std::vector<std::string>& bt, int size, int skip) {
 
   char** strings = backtrace_symbols(array, s);
   if (strings == nullptr) {
-    GUDOV_LOG_ERROR(g_logger) << "backtrace_symbols error";
+    LOG_ERROR(g_logger) << "backtrace_symbols error";
     return;
   }
 

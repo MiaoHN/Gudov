@@ -11,7 +11,7 @@
 #include "iomanager.h"
 #include "log.h"
 
-gudov::Logger::ptr g_logger = GUDOV_LOG_NAME("system");
+gudov::Logger::ptr g_logger = LOG_NAME("system");
 
 namespace gudov {
 
@@ -65,7 +65,7 @@ struct _HookIniter {
 
     g_tcpConnectTimeout->addListener(
         [](const int& oldValue, const int& newValue) {
-          GUDOV_LOG_INFO(g_logger) << "tcp connect timeout changed from "
+          LOG_INFO(g_logger) << "tcp connect timeout changed from "
                                    << oldValue << " to " << newValue;
           s_connectTimeout = newValue;
         });
@@ -165,7 +165,7 @@ retry:
     // 为 fd 添加一个协程并且 hold
     int rt = iom->addEvent(fd, (gudov::IOManager::Event)(event));
     if (rt) {
-      GUDOV_LOG_ERROR(g_logger)
+      LOG_ERROR(g_logger)
           << hookFunName << " addEvent(" << fd << ", " << event << ")";
       if (timer) {
         timer->cancel();
@@ -322,7 +322,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
     if (timer) {
       timer->cancel();
     }
-    GUDOV_LOG_ERROR(g_logger) << "connect addEvent(" << fd << ", WRITE) error";
+    LOG_ERROR(g_logger) << "connect addEvent(" << fd << ", WRITE) error";
   }
 
   int       error = 0;

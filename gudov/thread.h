@@ -170,6 +170,7 @@ class RWMutex : public NonCopyable {
 class Spinlock : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<Spinlock>;
+
   Spinlock() { pthread_spin_init(&m_mutex, 0); }
   ~Spinlock() { pthread_spin_destroy(&m_mutex); }
 
@@ -182,7 +183,8 @@ class Spinlock : public NonCopyable {
 
 class CASLock : public NonCopyable {
  public:
-  typedef ScopedLockImpl<CASLock> Lock;
+  using Lock = ScopedLockImpl<CASLock>;
+
   CASLock() { m_mutex.clear(); }
   ~CASLock() {}
 

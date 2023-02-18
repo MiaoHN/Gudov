@@ -73,6 +73,11 @@ class LogLevel {
   static LogLevel::Level FromString(const std::string& str);
 };
 
+/**
+ * @brief 日志事件
+ * @details 记录日志发生的时间，文件位置，行数，协程号，线程号以及附加信息
+ *
+ */
 class LogEvent {
  public:
   using ptr = std::shared_ptr<LogEvent>;
@@ -112,6 +117,7 @@ class LogEventWrap {
  public:
   LogEventWrap(LogEvent::ptr e);
   ~LogEventWrap();
+
   LogEvent::ptr      getEvent() const { return m_event; }
   std::stringstream& getSS();
 
@@ -119,21 +125,23 @@ class LogEventWrap {
   LogEvent::ptr m_event;
 };
 
+/**
+ * @brief 负责格式化日志内容
+ *
+ */
 class LogFormatter {
  public:
   using ptr = std::shared_ptr<LogFormatter>;
   LogFormatter(const std::string& pattern);
 
-  std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level,
-                     LogEvent::ptr event);
+  std::string format(LogEvent::ptr event);
 
  public:
   class FormatItem {
    public:
     using ptr = std::shared_ptr<FormatItem>;
     virtual ~FormatItem() {}
-    virtual void format(std::ostream& os, std::shared_ptr<Logger> logger,
-                        LogLevel::Level level, LogEvent::ptr event) = 0;
+    virtual void format(std::ostream& os, LogEvent::ptr event) = 0;
   };
 
   void init();
@@ -147,17 +155,28 @@ class LogFormatter {
   bool                         m_error = false;
 };
 
+/**
+ * @brief 日志输出器封装
+ *
+ */
 class LogAppender {
   friend class Logger;
 
  public:
   using ptr       = std::shared_ptr<LogAppender>;
   using MutexType = Spinlock;
+
+  LogAppender(LogLevel::Level level = LogLevel::UNKNOWN) : m_level(level) {}
   virtual ~LogAppender() {}
 
-  virtual void        log(std::shared_ptr<Logger> logger, LogLevel::Level level,
-                          LogEvent::ptr event) = 0;
-  virtual std::string toYamlString()           = 0;
+  /**
+   * @brief 输出日志内容
+   *
+   * @param event 日志事件
+   */
+  virtual void output(LogEvent::ptr event) = 0;
+
+  virtual std::string toYamlString() = 0;
 
   void              setFormatter(LogFormatter::ptr formatter);
   LogFormatter::ptr getFormatter();
@@ -166,8 +185,7 @@ class LogAppender {
   void            setLevel(LogLevel::Level level) { m_level = level; }
 
  protected:
-  LogLevel::Level   m_level         = LogLevel::DEBUG;
-  bool              m_has_formatter = false;
+  LogLevel::Level   m_level = LogLevel::UNKNOWN;
   MutexType         m_mutex;
   LogFormatter::ptr m_formatter;
 };
@@ -180,13 +198,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
   using MutexType = Spinlock;
 
   Logger(const std::string& name = "root");
-  void log(LogLevel::Level level, LogEvent::ptr event);
-
-  void debug(LogEvent::ptr event);
-  void info(LogEvent::ptr event);
-  void warn(LogEvent::ptr event);
-  void error(LogEvent::ptr event);
-  void fatal(LogEvent::ptr event);
+  void log(LogEvent::ptr event);
 
   void            addAppender(LogAppender::ptr appender);
   void            delAppender(LogAppender::ptr appender);
@@ -213,19 +225,32 @@ class Logger : public std::enable_shared_from_this<Logger> {
 
 class StdoutLogAppender : public LogAppender {
  public:
-  typedef std::shared_ptr<StdoutLogAppender> ptr;
-  void log(Logger::ptr logger, LogLevel::Level level,
-           LogEvent::ptr event) override;
+  using ptr = std::shared_ptr<StdoutLogAppender>;
+
+  StdoutLogAppender(LogLevel::Level level = LogLevel::DEBUG);
+
+  /**
+   * @brief 输出日志内容
+   *
+   * @param event 日志事件
+   */
+  void output(LogEvent::ptr event) override;
 
   std::string toYamlString() override;
 };
 
 class FileLogAppender : public LogAppender {
  public:
-  typedef std::shared_ptr<FileLogAppender> ptr;
-  FileLogAppender(const std::string& filename);
-  void log(Logger::ptr logger, LogLevel::Level level,
-           LogEvent::ptr event) override;
+  using ptr = std::shared_ptr<FileLogAppender>;
+  FileLogAppender(const std::string& filename,
+                  LogLevel::Level    level = LogLevel::DEBUG);
+
+  /**
+   * @brief 输出日志内容
+   *
+   * @param event 日志事件
+   */
+  void output(LogEvent::ptr event) override;
 
   std::string toYamlString() override;
 

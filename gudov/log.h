@@ -33,7 +33,12 @@
       .getEvent()                                                     \
       ->format(fmt, __VA_ARGS__)
 
+#ifdef GUDOV_DEBUG
 #define LOG_DEBUG(logger) LOG_LEVEL(logger, gudov::LogLevel::DEBUG)
+#else
+#define LOG_DEBUG(logger) gudov::LogEmpty().getSS()
+#endif
+
 #define LOG_INFO(logger)  LOG_LEVEL(logger, gudov::LogLevel::INFO)
 #define LOG_WARN(logger)  LOG_LEVEL(logger, gudov::LogLevel::WARN)
 #define LOG_ERROR(logger) LOG_LEVEL(logger, gudov::LogLevel::ERROR)
@@ -71,6 +76,14 @@ class LogLevel {
 
   static const char*     ToString(LogLevel::Level level);
   static LogLevel::Level FromString(const std::string& str);
+};
+
+class LogEmpty {
+ public:
+  std::stringstream& getSS() { return m_ss; }
+
+ private:
+  std::stringstream m_ss;
 };
 
 /**

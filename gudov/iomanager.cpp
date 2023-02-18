@@ -24,6 +24,7 @@ IOManager::FdContext::EventContext& IOManager::FdContext::getContext(
     default:
       GUDOV_ASSERT2(false, "getContext");
   }
+  return write;  // unreachable
 }
 
 void IOManager::FdContext::resetContext(
@@ -117,9 +118,8 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   FdContext::MutexType::Lock lock2(fdCtx->mutex);
   if (fdCtx->events & event) {
     // 已经添加过该事件
-    LOG_ERROR(g_logger)
-        << "addEvent assert fd=" << fd << " event=" << event
-        << " fdCtx.event=" << fdCtx->events;
+    LOG_ERROR(g_logger) << "addEvent assert fd=" << fd << " event=" << event
+                        << " fdCtx.event=" << fdCtx->events;
     GUDOV_ASSERT(!(fdCtx->events & event));
   }
 
@@ -132,10 +132,9 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger)
-        << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
-        << epevent.events << "):" << rt << " (" << errno << ") ("
-        << strerror(errno) << ")";
+    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+                        << "," << epevent.events << "):" << rt << " (" << errno
+                        << ") (" << strerror(errno) << ")";
     return -1;
   }
 
@@ -185,10 +184,9 @@ bool IOManager::delEvent(int fd, Event event) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger)
-        << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
-        << epevent.events << "):" << rt << " (" << errno << ") ("
-        << strerror(errno) << ")";
+    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+                        << "," << epevent.events << "):" << rt << " (" << errno
+                        << ") (" << strerror(errno) << ")";
     return false;
   }
 
@@ -223,10 +221,9 @@ bool IOManager::cancelEvent(int fd, Event event) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger)
-        << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
-        << epevent.events << "):" << rt << " (" << errno << ") ("
-        << strerror(errno) << ")";
+    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+                        << "," << epevent.events << "):" << rt << " (" << errno
+                        << ") (" << strerror(errno) << ")";
     return false;
   }
 
@@ -256,10 +253,9 @@ bool IOManager::cancelAll(int fd) {
 
   int rt = epoll_ctl(_epfd, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger)
-        << "epoll_ctl(" << _epfd << ", " << op << "," << fd << ","
-        << epevent.events << "):" << rt << " (" << errno << ") ("
-        << strerror(errno) << ")";
+    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+                        << "," << epevent.events << "):" << rt << " (" << errno
+                        << ") (" << strerror(errno) << ")";
     return false;
   }
 
@@ -339,8 +335,7 @@ void IOManager::idle() {
     // 获取超时事件
     std::vector<std::function<void()>> cbs;
     listExpiredCb(cbs);
-    LOG_DEBUG(g_logger)
-        << "callback.size(): " << cbs.size() << ", rt: " << rt;
+    LOG_DEBUG(g_logger) << "callback.size(): " << cbs.size() << ", rt: " << rt;
     if (!cbs.empty()) {
       // 将超时事件加入调度队列
       schedule(cbs.begin(), cbs.end());
@@ -386,10 +381,9 @@ void IOManager::idle() {
 
       int rt2 = epoll_ctl(_epfd, op, fdCtx->fd, &event);
       if (rt2) {
-        LOG_ERROR(g_logger)
-            << "epoll_ctl(" << _epfd << ", " << op << "," << fdCtx->fd << ","
-            << event.events << "):" << rt2 << " (" << errno << ") ("
-            << strerror(errno) << ")";
+        LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << ","
+                            << fdCtx->fd << "," << event.events << "):" << rt2
+                            << " (" << errno << ") (" << strerror(errno) << ")";
         continue;
       }
 

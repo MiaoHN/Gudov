@@ -144,7 +144,6 @@ void Fiber::reset(std::function<void()> callback) {
 void Fiber::call() {
   SetThis(this);
   m_state = EXEC;
-  LOG_ERROR(g_logger) << getId();
   if (swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
     GUDOV_ASSERT2(false, "swapcontext");
   }

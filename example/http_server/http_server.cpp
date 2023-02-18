@@ -22,9 +22,15 @@ std::string read_file(const std::string& filename) {
 }
 
 void run() {
-  YAML::Node root = YAML::LoadFile("conf/http_server.yml");
-  gudov::Config::LoadFromYaml(root);
-  g_logger->setLevel(gudov::LogLevel::INFO);
+  if (exist_file("conf/http_server.yml")) {
+    YAML::Node root = YAML::LoadFile("conf/http_server.yml");
+    gudov::Config::LoadFromYaml(root);
+    LOG_INFO(g_logger)
+        << "Successfully load config file 'conf/http_server.yml'";
+  } else {
+    LOG_INFO(g_logger) << "config file 'conf/http_server.yml' doesn't exists, "
+                          "use default configurations";
+  }
   gudov::Address::ptr addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8020");
   if (!addr) {
     LOG_ERROR(g_logger) << "get address error";

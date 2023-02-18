@@ -21,6 +21,10 @@ link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(.)
 
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+    add_definitions(-DGUDOV_DEBUG)
+endif()
+
 add_subdirectory(gudov)
 enable_testing()
 add_subdirectory(test)

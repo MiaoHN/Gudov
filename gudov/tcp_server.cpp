@@ -59,7 +59,7 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs,
   }
 
   for (auto& i : m_socks) {
-    LOG_INFO(g_logger) << "server bind success: " << *i;
+    LOG_DEBUG(g_logger) << "server bind success: " << *i;
   }
   return true;
 }

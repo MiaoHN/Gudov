@@ -139,7 +139,7 @@ class IPv4Address : public IPAddress {
   void     setPort(uint16_t v) override;
 
  private:
-  sockaddr_in _addr;
+  sockaddr_in m_addr;
 };
 
 class IPv6Address : public IPAddress {
@@ -165,7 +165,7 @@ class IPv6Address : public IPAddress {
   void     setPort(uint16_t v) override;
 
  private:
-  sockaddr_in6 _addr;
+  sockaddr_in6 m_addr;
 };
 
 class UnixAddress : public Address {
@@ -182,8 +182,8 @@ class UnixAddress : public Address {
   std::ostream&   insert(std::ostream& os) const override;
 
  private:
-  sockaddr_un _addr;
-  socklen_t   _length;
+  sockaddr_un m_addr;
+  socklen_t   m_length;
 };
 
 class UnknownAddress : public Address {
@@ -199,7 +199,7 @@ class UnknownAddress : public Address {
   std::ostream&   insert(std::ostream& os) const override;
 
  private:
-  sockaddr _addr;
+  sockaddr m_addr;
 };
 
 std::ostream& operator<<(std::ostream& os, const Address& addr);

@@ -5,7 +5,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -ggdb -std=c++11 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined")
 include(cmake/utils.cmake)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(OUTPUT_ROOT ${PROJECT_SOURCE_DIR}/bin)
+
+set(EXECUTABLE_OUTPUT_PATH ${OUTPUT_ROOT})
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 find_library(YAMLCPP yaml-cpp)

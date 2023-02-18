@@ -21,17 +21,21 @@
 
 namespace gudov {
 
+/**
+ * @brief 配置项基类，包含公共方法
+ *
+ */
 class ConfigVarBase {
  public:
   using ptr = std::shared_ptr<ConfigVarBase>;
   ConfigVarBase(const std::string& name, const std::string& description = "")
-      : m_name(name), _description(description) {
+      : m_name(name), m_description(description) {
     std::transform(m_name.begin(), m_name.end(), m_name.begin(), ::tolower);
   }
   virtual ~ConfigVarBase() {}
 
   const std::string& getName() const { return m_name; }
-  const std::string& getDescription() const { return _description; }
+  const std::string& getDescription() const { return m_description; }
 
   virtual std::string toString()                         = 0;
   virtual bool        fromString(const std::string& val) = 0;
@@ -39,16 +43,22 @@ class ConfigVarBase {
 
  private:
   std::string m_name;
-  std::string _description;
+  std::string m_description;
 };
 
+/**
+ * @brief 通过语义转换将类型 F 的变量转换为类型 T
+ * @attention 该转换中 F 和 T 必有一个是字符串类型
+ * @details 本函数借助泛化实现了字符串与 vector, list, set, unordered_set, map,
+ * unordered_map 等的互相转换，其余类型使用 boost 提供的 `lexical_cast` 进行转换
+ *
+ * @tparam F
+ * @tparam T
+ */
 template <typename F, typename T>
 class LexicalCast {
  public:
-  T operator()(const F& v) {
-    LOG_WARN(LOG_ROOT()) << "Undefined LexicalCast type";
-    return boost::lexical_cast<T>(v);
-  }
+  T operator()(const F& v) { return boost::lexical_cast<T>(v); }
 };
 
 template <typename T>
@@ -233,26 +243,33 @@ class LexicalCast<std::unordered_map<std::string, T>, std::string> {
   }
 };
 
+/**
+ * @brief 配置项封装
+ * @details 配置项包括配置名称，配置描述以及对应的值
+ *
+ * @tparam T 配置项类型
+ */
 template <typename T, typename FromStr = LexicalCast<std::string, T>,
           typename ToStr = LexicalCast<T, std::string>>
 class ConfigVar : public ConfigVarBase {
  public:
   using RWMutexType = RWMutex;
   using ptr         = std::shared_ptr<ConfigVar>;
-  using onChangeCb  = std::function<void(const T& oldValue, const T& newValue)>;
+  using onChangeCallback =
+      std::function<void(const T& oldValue, const T& newValue)>;
 
-  ConfigVar(const std::string& name, const T& defaultValue,
+  ConfigVar(const std::string& name, const T& default_value,
             const std::string& description = "")
-      : ConfigVarBase(name, description), _val(defaultValue) {}
+      : ConfigVarBase(name, description), m_value(default_value) {}
 
   std::string toString() override {
     try {
       RWMutexType::ReadLock lock(m_mutex);
-      return ToStr()(_val);
+      return ToStr()(m_value);
     } catch (std::exception& e) {
       LOG_ERROR(LOG_ROOT())
           << "ConfigVar::toString exception" << e.what()
-          << " convert: " << typeid(_val).name() << " to string";
+          << " convert: " << typeid(m_value).name() << " to string";
     }
     return "";
   }
@@ -263,59 +280,59 @@ class ConfigVar : public ConfigVarBase {
     } catch (std::exception& e) {
       LOG_ERROR(LOG_ROOT())
           << "ConfigVar::toString exception" << e.what()
-          << " convert: string to " << typeid(_val).name() << " - " << val;
+          << " convert: string to " << typeid(m_value).name() << " - " << val;
     }
     return false;
   };
 
   const T getValue() {
     RWMutexType::ReadLock lock(m_mutex);
-    return _val;
+    return m_value;
   }
   void setValue(const T& v) {
     {
       RWMutexType::ReadLock lock(m_mutex);
-      if (v == _val) {
+      if (v == m_value) {
         return;
       }
-      for (auto& i : _cbs) {
-        i.second(_val, v);
+      for (auto& i : m_callbacks) {
+        i.second(m_value, v);
       }
     }
     RWMutexType::ReadLock lock(m_mutex);
-    _val = v;
+    m_value = v;
   }
 
   std::string getTypeName() const override { return typeid(T).name(); }
 
-  uint64_t addListener(onChangeCb callback) {
-    static uint64_t        s_funId = 0;
+  uint64_t addListener(onChangeCallback callback) {
+    static uint64_t        s_fun_id = 0;
     RWMutexType::WriteLock lock(m_mutex);
-    ++s_funId;
-    _cbs[s_funId] = callback;
-    return s_funId;
+    ++s_fun_id;
+    m_callbacks[s_fun_id] = callback;
+    return s_fun_id;
   }
 
   void delListener(uint64_t key) {
     RWMutexType::WriteLock lock(m_mutex);
-    _cbs.erase(key);
+    m_callbacks.erase(key);
   }
 
-  onChangeCb getListener(uint64_t key) {
+  onChangeCallback getListener(uint64_t key) {
     RWMutexType::ReadLock lock(m_mutex);
-    auto                  it = _cbs.find(key);
-    return it == _cbs.end() ? nullptr : it->second;
+    auto                  it = m_callbacks.find(key);
+    return it == m_callbacks.end() ? nullptr : it->second;
   }
 
   void clearListener() {
     RWMutexType::WriteLock lock(m_mutex);
-    _cbs.clear();
+    m_callbacks.clear();
   }
 
  private:
-  T                              _val;
-  RWMutexType                    m_mutex;
-  std::map<uint64_t, onChangeCb> _cbs;
+  T                                    m_value;
+  RWMutexType                          m_mutex;
+  std::map<uint64_t, onChangeCallback> m_callbacks;
 };
 
 class Config {
@@ -325,17 +342,17 @@ class Config {
 
   template <typename T>
   static typename ConfigVar<T>::ptr Lookup(
-      const std::string& name, const T& defaultValue,
+      const std::string& name, const T& default_value,
       const std::string& description = "") {
     RWMutexType::WriteLock lock(GetMutex());
     auto                   it = GetDatas().find(name);
     if (it != GetDatas().end()) {
       auto tmp = std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
       if (tmp) {
-        LOG_INFO(LOG_ROOT()) << "Lookup name=" << name << " exists";
+        LOG_DEBUG(LOG_ROOT()) << "Lookup name=" << name << " exists";
         return tmp;
       } else {
-        LOG_INFO(LOG_ROOT())
+        LOG_DEBUG(LOG_ROOT())
             << "Lookup name=" << name << " exists but type not "
             << typeid(T).name() << " real_type=" << it->second->getTypeName()
             << " " << it->second->toString();
@@ -350,7 +367,7 @@ class Config {
     }
 
     typename ConfigVar<T>::ptr v(
-        new ConfigVar<T>(name, defaultValue, description));
+        new ConfigVar<T>(name, default_value, description));
     GetDatas()[name] = v;
     return v;
   }

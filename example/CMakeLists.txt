@@ -3,10 +3,7 @@ add_dependencies(echo_server gudov)
 force_redefine_file_macro_for_sources(echo_server)
 target_link_libraries(echo_server gudov)
 
-add_executable(http_server http_server.cpp)
-add_dependencies(http_server gudov)
-force_redefine_file_macro_for_sources(http_server)
-target_link_libraries(http_server gudov)
+add_subdirectory(http_server)
 
 add_executable(echo_server_udp echo_server_udp.cpp)
 add_dependencies(echo_server_udp gudov)

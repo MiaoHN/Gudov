@@ -536,38 +536,38 @@ Logger::ptr LoggerManager::getLogger(const std::string& name) {
   return logger;
 }
 
-struct LogAppenderDefine {
+struct LogAppenderConfig {
   int             type  = 0;  // 1 File, 2 Stdout
   LogLevel::Level level = LogLevel::UNKNOWN;
   std::string     formatter;
   std::string     file;
 
-  bool operator==(const LogAppenderDefine& oth) const {
+  bool operator==(const LogAppenderConfig& oth) const {
     return type == oth.type && level == oth.level &&
            formatter == oth.formatter && file == oth.file;
   }
 };
 
-struct LogDefine {
+struct LogConfig {
   std::string                    name;
   LogLevel::Level                level = LogLevel::UNKNOWN;
   std::string                    formatter;
-  std::vector<LogAppenderDefine> appenders;
+  std::vector<LogAppenderConfig> appenders;
 
-  bool operator==(const LogDefine& oth) const {
+  bool operator==(const LogConfig& oth) const {
     return name == oth.name && level == oth.level &&
            formatter == oth.formatter && appenders == appenders;
   }
 
-  bool operator<(const LogDefine& oth) const { return name < oth.name; }
+  bool operator<(const LogConfig& oth) const { return name < oth.name; }
 };
 
 template <>
-class LexicalCast<std::string, std::set<LogDefine> > {
+class LexicalCast<std::string, std::set<LogConfig> > {
  public:
-  std::set<LogDefine> operator()(const std::string& v) {
+  std::set<LogConfig> operator()(const std::string& v) {
     YAML::Node          node = YAML::Load(v);
-    std::set<LogDefine> vec;
+    std::set<LogConfig> vec;
     for (size_t i = 0; i < node.size(); ++i) {
       auto n = node[i];
       if (!n["name"].IsDefined()) {
@@ -575,7 +575,7 @@ class LexicalCast<std::string, std::set<LogDefine> > {
         continue;
       }
 
-      LogDefine ld;
+      LogConfig ld;
       ld.name  = n["name"].as<std::string>();
       ld.level = LogLevel::FromString(
           n["level"].IsDefined() ? n["level"].as<std::string>() : "");
@@ -592,7 +592,7 @@ class LexicalCast<std::string, std::set<LogDefine> > {
             continue;
           }
           std::string       type = a["type"].as<std::string>();
-          LogAppenderDefine lad;
+          LogAppenderConfig lad;
           if (type == "FileLogAppender") {
             lad.type = 1;
             if (!a["file"].IsDefined()) {
@@ -622,9 +622,9 @@ class LexicalCast<std::string, std::set<LogDefine> > {
 };
 
 template <>
-class LexicalCast<std::set<LogDefine>, std::string> {
+class LexicalCast<std::set<LogConfig>, std::string> {
  public:
-  std::string operator()(const std::set<LogDefine>& v) {
+  std::string operator()(const std::set<LogConfig>& v) {
     YAML::Node node;
     for (auto& i : v) {
       YAML::Node n;
@@ -662,13 +662,13 @@ class LexicalCast<std::set<LogDefine>, std::string> {
   }
 };
 
-gudov::ConfigVar<std::set<LogDefine> >::ptr g_log_defines =
-    gudov::Config::Lookup("logs", std::set<LogDefine>(), "logs config");
+gudov::ConfigVar<std::set<LogConfig> >::ptr g_log_defines =
+    gudov::Config::Lookup("logs", std::set<LogConfig>(), "logs config");
 
 struct LogIniter {
   LogIniter() {
-    g_log_defines->addListener([](const std::set<LogDefine>& old_value,
-                                  const std::set<LogDefine>& new_value) {
+    g_log_defines->addListener([](const std::set<LogConfig>& old_value,
+                                  const std::set<LogConfig>& new_value) {
       LOG_INFO(LOG_ROOT()) << "on_logger_conf_changed";
       for (auto& i : new_value) {
         auto               it = old_value.find(i);

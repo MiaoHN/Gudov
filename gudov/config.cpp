@@ -13,21 +13,16 @@ ConfigVarBase::ptr Config::LookupBase(const std::string& name) {
   return it == GetDatas().end() ? nullptr : it->second;
 }
 
-static void ListAllMember(
-    const std::string& prefix, const YAML::Node& node,
-    std::list<std::pair<std::string, const YAML::Node>>& output) {
-  if (prefix.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") !=
-      std::string::npos) {
-    LOG_ERROR(LOG_ROOT())
-        << "Config invalid name: " << prefix << " : " << node;
+static void ListAllMember(const std::string& prefix, const YAML::Node& node,
+                          std::list<std::pair<std::string, const YAML::Node>>& output) {
+  if (prefix.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") != std::string::npos) {
+    LOG_ERROR(LOG_ROOT()) << "Config invalid name: " << prefix << " : " << node;
     return;
   }
   output.push_back(std::make_pair(prefix, node));
   if (node.IsMap()) {
     for (auto it = node.begin(); it != node.end(); ++it) {
-      ListAllMember(prefix.empty() ? it->first.Scalar()
-                                   : prefix + "." + it->first.Scalar(),
-                    it->second, output);
+      ListAllMember(prefix.empty() ? it->first.Scalar() : prefix + "." + it->first.Scalar(), it->second, output);
     }
   }
 }

@@ -1,5 +1,4 @@
-#ifndef __GUDOV_SINGLETON_H__
-#define __GUDOV_SINGLETON_H__
+#pragma once
 
 #include <memory>
 
@@ -24,5 +23,3 @@ class SingletonPtr {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_SINGLETON_H__

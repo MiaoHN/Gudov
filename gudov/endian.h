@@ -1,28 +1,27 @@
-#ifndef __GUDOV_ENDIAN_H__
-#define __GUDOV_ENDIAN_H__
+#pragma once
 
 #define GUDOV_LITTLE_ENDIAN 1
 #define GUDOV_BIG_ENDIAN    2
 
 #include <byteswap.h>
 
+#include <cstdint>
+#include <type_traits>
+
 namespace gudov {
 
 template <class T>
-typename std::enable_if<sizeof(T) == sizeof(uint64_t), T>::type ByteSwap(
-    T value) {
+typename std::enable_if<sizeof(T) == sizeof(uint64_t), T>::type ByteSwap(T value) {
   return (T)bswap_64((uint64_t)value);
 }
 
 template <class T>
-typename std::enable_if<sizeof(T) == sizeof(uint32_t), T>::type ByteSwap(
-    T value) {
+typename std::enable_if<sizeof(T) == sizeof(uint32_t), T>::type ByteSwap(T value) {
   return (T)bswap_32((uint32_t)value);
 }
 
 template <class T>
-typename std::enable_if<sizeof(T) == sizeof(uint16_t), T>::type ByteSwap(
-    T value) {
+typename std::enable_if<sizeof(T) == sizeof(uint16_t), T>::type ByteSwap(T value) {
   return (T)bswap_16((uint16_t)value);
 }
 
@@ -59,5 +58,3 @@ T ByteSwapOnBigEndian(T t) {
 #endif
 
 }  // namespace gudov
-
-#endif  // __GUDOV_ENDIAN_H__

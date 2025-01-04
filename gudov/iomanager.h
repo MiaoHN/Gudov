@@ -1,5 +1,4 @@
-#ifndef __GUDOV_IOMANAGER_H__
-#define __GUDOV_IOMANAGER_H__
+#pragma once
 
 #include "scheduler.h"
 #include "timer.h"
@@ -32,7 +31,7 @@ class IOManager : public Scheduler, public TimerManager {
     struct EventContext {
       Scheduler*            scheduler = nullptr;  // 待执行的 scheduler
       Fiber::ptr            fiber;                // 事件携程
-      std::function<void()> callback;                   // 事件的回调函数
+      std::function<void()> callback;             // 事件的回调函数
     };
 
     EventContext& getContext(Event event);
@@ -54,8 +53,7 @@ class IOManager : public Scheduler, public TimerManager {
   };
 
  public:
-  IOManager(size_t threads = 1, bool useCaller = true,
-            const std::string& name = "");
+  IOManager(size_t threads = 1, bool useCaller = true, const std::string& name = "");
   ~IOManager();
 
   /**
@@ -135,5 +133,3 @@ class IOManager : public Scheduler, public TimerManager {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_IOMANAGER_H__

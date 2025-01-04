@@ -2,8 +2,7 @@
 
 namespace gudov {
 
-SocketStream::SocketStream(Socket::ptr sock, bool owner)
-    : m_socket(sock), m_owner(owner) {}
+SocketStream::SocketStream(Socket::ptr sock, bool owner) : m_socket(sock), m_owner(owner) {}
 
 SocketStream::~SocketStream() {
   if (m_owner && m_socket) {
@@ -11,9 +10,7 @@ SocketStream::~SocketStream() {
   }
 }
 
-bool SocketStream::isConnected() const {
-  return m_socket && m_socket->isConnected();
-}
+bool SocketStream::isConnected() const { return m_socket && m_socket->isConnected(); }
 
 int SocketStream::read(void* buffer, size_t length) {
   if (!isConnected()) {

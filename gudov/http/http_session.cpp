@@ -6,16 +6,14 @@ namespace gudov {
 
 namespace http {
 
-HttpSession::HttpSession(Socket::ptr sock, bool owner)
-    : SocketStream(sock, owner) {}
+HttpSession::HttpSession(Socket::ptr sock, bool owner) : SocketStream(sock, owner) {}
 
 HttpRequest::ptr HttpSession::recvRequest() {
   HttpRequestParser::ptr parser(new HttpRequestParser);
-  uint64_t buff_size = HttpRequestParser::GetHttpRequestBufferSize();
-  std::shared_ptr<char> buffer(new char[buff_size],
-                               [](char* ptr) { delete[] ptr; });
-  char*                 data   = buffer.get();
-  int                   offset = 0;
+  uint64_t               buff_size = HttpRequestParser::GetHttpRequestBufferSize();
+  std::shared_ptr<char>  buffer(new char[buff_size], [](char* ptr) { delete[] ptr; });
+  char*                  data   = buffer.get();
+  int                    offset = 0;
   do {
     int len = read(data + offset, buff_size - offset);
     if (len <= 0) {

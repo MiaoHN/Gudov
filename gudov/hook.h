@@ -1,5 +1,4 @@
-#ifndef __GUDOV_HOOK_H__
-#define __GUDOV_HOOK_H__
+#pragma once
 
 #include <fcntl.h>
 #include <stdint.h>
@@ -45,8 +44,7 @@ extern nanosleepFun nanosleepF;
 typedef int (*socketFun)(int domain, int type, int protocol);
 extern socketFun socketF;
 
-typedef int (*connectFun)(int sockfd, const struct sockaddr *addr,
-                          socklen_t addrlen);
+typedef int (*connectFun)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 extern connectFun connectF;
 
 typedef int (*acceptFun)(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
@@ -62,8 +60,8 @@ extern readvFun readvF;
 typedef ssize_t (*recvFun)(int sockfd, void *buf, size_t len, int flags);
 extern recvFun recvF;
 
-typedef ssize_t (*recvfromFun)(int sockfd, void *buf, size_t len, int flags,
-                               struct sockaddr *src_addr, socklen_t *addrlen);
+typedef ssize_t (*recvfromFun)(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr,
+                               socklen_t *addrlen);
 extern recvfromFun recvfromF;
 
 typedef ssize_t (*recvmsgFun)(int sockfd, struct msghdr *msg, int flags);
@@ -79,8 +77,7 @@ extern writevFun writevF;
 typedef ssize_t (*sendFun)(int s, const void *msg, size_t len, int flags);
 extern sendFun sendF;
 
-typedef ssize_t (*sendtoFun)(int s, const void *msg, size_t len, int flags,
-                             const struct sockaddr *to, socklen_t tolen);
+typedef ssize_t (*sendtoFun)(int s, const void *msg, size_t len, int flags, const struct sockaddr *to, socklen_t tolen);
 extern sendtoFun sendtoF;
 
 typedef ssize_t (*sendmsgFun)(int s, const struct msghdr *msg, int flags);
@@ -97,16 +94,11 @@ extern fcntlFun fcntlF;
 typedef int (*ioctlFun)(int d, unsigned long request, ...);
 extern ioctlFun ioctlF;
 
-typedef int (*getsockoptFun)(int sockfd, int level, int optname, void *optval,
-                             socklen_t *optlen);
+typedef int (*getsockoptFun)(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
 extern getsockoptFun getsockoptF;
 
-typedef int (*setsockoptFun)(int sockfd, int level, int optname,
-                             const void *optval, socklen_t optlen);
+typedef int (*setsockoptFun)(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
 extern setsockoptFun setsockoptF;
 
-extern int connectWithTimeout(int fd, const struct sockaddr *addr,
-                              socklen_t addrlen, uint64_t timeoutMs);
+extern int connectWithTimeout(int fd, const struct sockaddr *addr, socklen_t addrlen, uint64_t timeoutMs);
 }
-
-#endif  // __GUDOV_HOOK_H__

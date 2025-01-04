@@ -45,8 +45,8 @@ static thread_local Fiber* t_fiber = nullptr;
  */
 static thread_local Fiber::ptr t_threadFiber = nullptr;
 
-static ConfigVar<uint32_t>::ptr g_fiberStackSize = Config::Lookup<uint32_t>(
-    "fiber.stack_size", 1024 * 1024, "fiber stack size");
+static ConfigVar<uint32_t>::ptr g_fiberStackSize =
+    Config::Lookup<uint32_t>("fiber.stack_size", 1024 * 1024, "fiber stack size");
 
 /**
  * @brief 自定义栈内存分配器
@@ -82,8 +82,7 @@ Fiber::Fiber() {
   LOG_DEBUG(g_logger) << "Fiber::Fiber";
 }
 
-Fiber::Fiber(std::function<void()> callback, size_t stackSize)
-    : m_id(++s_fiberId), m_callback(callback) {
+Fiber::Fiber(std::function<void()> callback, size_t stackSize) : m_id(++s_fiberId), m_callback(callback) {
   ++s_fiberCount;
 
   // 如果未指定栈大小则从配置文件中读取
@@ -216,8 +215,7 @@ void Fiber::MainFunc() {
   cur.reset();
   rawPtr->swapOut();
 
-  GUDOV_ASSERT2(false,
-                "never reach fiber_id=" + std::to_string(rawPtr->getId()));
+  GUDOV_ASSERT2(false, "never reach fiber_id=" + std::to_string(rawPtr->getId()));
 }
 
 };  // namespace gudov

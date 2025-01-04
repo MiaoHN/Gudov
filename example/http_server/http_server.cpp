@@ -17,16 +17,14 @@ bool exist_file(const std::string& filename) {
 
 std::string read_file(const std::string& filename) {
   std::ifstream f(filename);
-  return std::string((std::istreambuf_iterator<char>(f)),
-                     std::istreambuf_iterator<char>());
+  return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 }
 
 void run() {
   if (exist_file("conf/http_server.yml")) {
     YAML::Node root = YAML::LoadFile("conf/http_server.yml");
     gudov::Config::LoadFromYaml(root);
-    LOG_INFO(g_logger)
-        << "Successfully load config file 'conf/http_server.yml'";
+    LOG_INFO(g_logger) << "Successfully load config file 'conf/http_server.yml'";
   } else {
     LOG_INFO(g_logger) << "config file 'conf/http_server.yml' doesn't exists, "
                           "use default configurations";
@@ -45,29 +43,24 @@ void run() {
 
   auto servlet_dispatcher = http_server->getServletDispatch();
 
-  servlet_dispatcher->addServlet(
-      "/",
-      [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
-         gudov::http::HttpSession::ptr session) {
-        rsp->setBody(read_file("html/index.html"));
-        return 0;
-      });
+  servlet_dispatcher->addServlet("/", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+                                         gudov::http::HttpSession::ptr session) {
+    rsp->setBody(read_file("html/index.html"));
+    return 0;
+  });
 
   servlet_dispatcher->addServlet(
       "/index.html",
-      [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
-         gudov::http::HttpSession::ptr session) {
+      [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp, gudov::http::HttpSession::ptr session) {
         rsp->setBody(read_file("html/index.html"));
         return 0;
       });
 
-  servlet_dispatcher->addGlobServlet(
-      "/*",
-      [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
-         gudov::http::HttpSession::ptr session) {
-        rsp->setBody(read_file("html/404.html"));
-        return 0;
-      });
+  servlet_dispatcher->addGlobServlet("/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+                                              gudov::http::HttpSession::ptr session) {
+    rsp->setBody(read_file("html/404.html"));
+    return 0;
+  });
 
   http_server->start();
 }

@@ -107,9 +107,7 @@ static int32_t DecodeZigzag32(const uint32_t& v) { return (v >> 1) ^ -(v & 1); }
 
 static int64_t DecodeZigzag64(const uint64_t& v) { return (v >> 1) ^ -(v & 1); }
 
-void ByteArray::writeInt32(int32_t value) {
-  writeUint32(EncodeZigzag32(value));
-}
+void ByteArray::writeInt32(int32_t value) { writeUint32(EncodeZigzag32(value)); }
 
 void ByteArray::writeUint32(uint32_t value) {
   uint8_t tmp[5];
@@ -122,9 +120,7 @@ void ByteArray::writeUint32(uint32_t value) {
   write(tmp, i);
 }
 
-void ByteArray::writeInt64(int64_t value) {
-  writeUint64(EncodeZigzag64(value));
-}
+void ByteArray::writeInt64(int64_t value) { writeUint64(EncodeZigzag64(value)); }
 
 void ByteArray::writeUint64(uint64_t value) {
   uint8_t tmp[10];
@@ -169,9 +165,7 @@ void ByteArray::writeStringVint(const std::string& value) {
   write(value.c_str(), value.size());
 }
 
-void ByteArray::writeStringWithoutLength(const std::string& value) {
-  write(value.c_str(), value.size());
-}
+void ByteArray::writeStringWithoutLength(const std::string& value) { write(value.c_str(), value.size()); }
 
 int8_t ByteArray::readFint8() {
   int8_t v;
@@ -297,7 +291,7 @@ void ByteArray::clear() {
     tmp  = tmp->next;
     delete _cur;
   }
-  _cur        = m_root;
+  _cur         = m_root;
   m_root->next = nullptr;
 }
 
@@ -417,9 +411,7 @@ bool ByteArray::writeToFile(const std::string& name) const {
   std::ofstream ofs;
   ofs.open(name, std::ios::trunc | std::ios::binary);
   if (!ofs) {
-    LOG_ERROR(g_logger)
-        << "writeToFile name=" << name << " error , errno=" << errno
-        << " errstr=" << strerror(errno);
+    LOG_ERROR(g_logger) << "writeToFile name=" << name << " error , errno=" << errno << " errstr=" << strerror(errno);
     return false;
   }
 
@@ -429,7 +421,7 @@ bool ByteArray::writeToFile(const std::string& name) const {
 
   while (readSize > 0) {
     int     diff = pos % _baseSize;
-    int64_t len = (readSize > (int64_t)_baseSize ? _baseSize : readSize) - diff;
+    int64_t len  = (readSize > (int64_t)_baseSize ? _baseSize : readSize) - diff;
     ofs.write(cur->ptr + diff, len);
     cur = cur->next;
     pos += len;
@@ -443,14 +435,11 @@ bool ByteArray::readFromFile(const std::string& name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::binary);
   if (!ifs) {
-    LOG_ERROR(g_logger)
-        << "readFromFile name=" << name << " error, errno=" << errno
-        << " errstr=" << strerror(errno);
+    LOG_ERROR(g_logger) << "readFromFile name=" << name << " error, errno=" << errno << " errstr=" << strerror(errno);
     return false;
   }
 
-  std::shared_ptr<char> buff(new char[_baseSize],
-                             [](char* ptr) { delete[] ptr; });
+  std::shared_ptr<char> buff(new char[_baseSize], [](char* ptr) { delete[] ptr; });
   while (!ifs.eof()) {
     ifs.read(buff.get(), _baseSize);
     write(buff.get(), ifs.gcount());
@@ -458,9 +447,7 @@ bool ByteArray::readFromFile(const std::string& name) {
   return true;
 }
 
-bool ByteArray::isLittleEndian() const {
-  return _endian == GUDOV_LITTLE_ENDIAN;
-}
+bool ByteArray::isLittleEndian() const { return _endian == GUDOV_LITTLE_ENDIAN; }
 
 void ByteArray::setIsLittleEndian(bool val) {
   if (val) {
@@ -488,15 +475,13 @@ std::string ByteArray::toHexString() const {
     if (i > 0 && i % 32 == 0) {
       ss << std::endl;
     }
-    ss << std::setw(2) << std::setfill('0') << std::hex << (int)(uint8_t)str[i]
-       << " ";
+    ss << std::setw(2) << std::setfill('0') << std::hex << (int)(uint8_t)str[i] << " ";
   }
 
   return ss.str();
 }
 
-uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers,
-                                   uint64_t            len) const {
+uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len) const {
   len = len > getReadSize() ? getReadSize() : len;
   if (len == 0) {
     return 0;
@@ -527,8 +512,7 @@ uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers,
   return size;
 }
 
-uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len,
-                                   uint64_t position) const {
+uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len, uint64_t position) const {
   len = len > getReadSize() ? getReadSize() : len;
   if (len == 0) {
     return 0;

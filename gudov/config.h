@@ -1,5 +1,4 @@
-#ifndef __GUDOV_CONFIG_H__
-#define __GUDOV_CONFIG_H__
+#pragma once
 
 #include <yaml-cpp/yaml.h>
 
@@ -191,8 +190,7 @@ class LexicalCast<std::string, std::map<std::string, T>> {
     for (auto it = node.begin(); it != node.end(); ++it) {
       ss.str("");
       ss << it->second;
-      vec.insert(std::make_pair(it->first.Scalar(),
-                                LexicalCast<std::string, T>()(ss.str())));
+      vec.insert(std::make_pair(it->first.Scalar(), LexicalCast<std::string, T>()(ss.str())));
     }
     return vec;
   }
@@ -222,8 +220,7 @@ class LexicalCast<std::string, std::unordered_map<std::string, T>> {
     for (auto it = node.begin(); it != node.end(); ++it) {
       ss.str("");
       ss << it->second;
-      vec.insert(std::make_pair(it->first.Scalar(),
-                                LexicalCast<std::string, T>()(ss.str())));
+      vec.insert(std::make_pair(it->first.Scalar(), LexicalCast<std::string, T>()(ss.str())));
     }
     return vec;
   }
@@ -249,17 +246,14 @@ class LexicalCast<std::unordered_map<std::string, T>, std::string> {
  *
  * @tparam T 配置项类型
  */
-template <typename T, typename FromStr = LexicalCast<std::string, T>,
-          typename ToStr = LexicalCast<T, std::string>>
+template <typename T, typename FromStr = LexicalCast<std::string, T>, typename ToStr = LexicalCast<T, std::string>>
 class ConfigVar : public ConfigVarBase {
  public:
-  using RWMutexType = RWMutex;
-  using ptr         = std::shared_ptr<ConfigVar>;
-  using onChangeCallback =
-      std::function<void(const T& oldValue, const T& newValue)>;
+  using RWMutexType      = RWMutex;
+  using ptr              = std::shared_ptr<ConfigVar>;
+  using onChangeCallback = std::function<void(const T& oldValue, const T& newValue)>;
 
-  ConfigVar(const std::string& name, const T& default_value,
-            const std::string& description = "")
+  ConfigVar(const std::string& name, const T& default_value, const std::string& description = "")
       : ConfigVarBase(name, description), m_value(default_value) {}
 
   std::string toString() override {
@@ -267,9 +261,8 @@ class ConfigVar : public ConfigVarBase {
       RWMutexType::ReadLock lock(m_mutex);
       return ToStr()(m_value);
     } catch (std::exception& e) {
-      LOG_ERROR(LOG_ROOT())
-          << "ConfigVar::toString exception" << e.what()
-          << " convert: " << typeid(m_value).name() << " to string";
+      LOG_ERROR(LOG_ROOT()) << "ConfigVar::toString exception" << e.what() << " convert: " << typeid(m_value).name()
+                            << " to string";
     }
     return "";
   }
@@ -278,9 +271,8 @@ class ConfigVar : public ConfigVarBase {
     try {
       setValue(FromStr()(val));
     } catch (std::exception& e) {
-      LOG_ERROR(LOG_ROOT())
-          << "ConfigVar::toString exception" << e.what()
-          << " convert: string to " << typeid(m_value).name() << " - " << val;
+      LOG_ERROR(LOG_ROOT()) << "ConfigVar::toString exception" << e.what() << " convert: string to "
+                            << typeid(m_value).name() << " - " << val;
     }
     return false;
   };
@@ -341,9 +333,8 @@ class Config {
   using RWMutexType  = RWMutex;
 
   template <typename T>
-  static typename ConfigVar<T>::ptr Lookup(
-      const std::string& name, const T& default_value,
-      const std::string& description = "") {
+  static typename ConfigVar<T>::ptr Lookup(const std::string& name, const T& default_value,
+                                           const std::string& description = "") {
     RWMutexType::WriteLock lock(GetMutex());
     auto                   it = GetDatas().find(name);
     if (it != GetDatas().end()) {
@@ -352,22 +343,18 @@ class Config {
         LOG_DEBUG(LOG_ROOT()) << "Lookup name=" << name << " exists";
         return tmp;
       } else {
-        LOG_DEBUG(LOG_ROOT())
-            << "Lookup name=" << name << " exists but type not "
-            << typeid(T).name() << " real_type=" << it->second->getTypeName()
-            << " " << it->second->toString();
+        LOG_DEBUG(LOG_ROOT()) << "Lookup name=" << name << " exists but type not " << typeid(T).name()
+                              << " real_type=" << it->second->getTypeName() << " " << it->second->toString();
         return nullptr;
       }
     }
 
-    if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") !=
-        std::string::npos) {
+    if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") != std::string::npos) {
       LOG_ERROR(LOG_ROOT()) << "Lookup name invalid";
       throw std::invalid_argument(name);
     }
 
-    typename ConfigVar<T>::ptr v(
-        new ConfigVar<T>(name, default_value, description));
+    typename ConfigVar<T>::ptr v(new ConfigVar<T>(name, default_value, description));
     GetDatas()[name] = v;
     return v;
   }
@@ -400,5 +387,3 @@ class Config {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_CONFIG_H__

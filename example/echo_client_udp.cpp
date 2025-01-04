@@ -25,9 +25,7 @@ void run() {
       char buff[1024];
       int  len = sock->recvFrom(buff, 1024, addr);
       if (len > 0) {
-        std::cout << std::endl
-                  << "recv: " << std::string(buff, len) << " from: " << *addr
-                  << std::endl;
+        std::cout << std::endl << "recv: " << std::string(buff, len) << " from: " << *addr << std::endl;
       }
     }
   });
@@ -40,9 +38,8 @@ void run() {
       int len = sock->sendTo(line.c_str(), line.size(), addr);
       if (len < 0) {
         int err = sock->getError();
-        LOG_ERROR(g_logger)
-            << "send error err=" << err << " errstr=" << strerror(err)
-            << " len=" << len << " addr=" << *addr << " sock=" << *sock;
+        LOG_ERROR(g_logger) << "send error err=" << err << " errstr=" << strerror(err) << " len=" << len
+                            << " addr=" << *addr << " sock=" << *sock;
       } else {
         LOG_INFO(g_logger) << "send " << line << " len:" << len;
       }

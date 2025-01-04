@@ -1,5 +1,4 @@
-#ifndef __GUDOV_HTTP_PARSER_H__
-#define __GUDOV_HTTP_PARSER_H__
+#pragma once
 
 #include "http.h"
 #include "http11_parser.h"
@@ -76,5 +75,3 @@ class HttpResponseParser {
 }  // namespace http
 
 }  // namespace gudov
-
-#endif  // __GUDOV_HTTP_PARSER_H__

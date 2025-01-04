@@ -7,8 +7,7 @@ int main(int argc, char const *argv[]) {
   gudov::Logger::ptr logger(new gudov::Logger);
   logger->addAppender(gudov::LogAppender::ptr(new gudov::StdoutLogAppender));
 
-  gudov::FileLogAppender::ptr fileAppender(
-      new gudov::FileLogAppender("./log.txt"));
+  gudov::FileLogAppender::ptr fileAppender(new gudov::FileLogAppender("./log.txt"));
 
   gudov::LogFormatter::ptr fmt(new gudov::LogFormatter("%d%T%m%n"));
   fileAppender->setFormatter(fmt);

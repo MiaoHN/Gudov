@@ -1,5 +1,4 @@
-#ifndef __GUDOV_SCHEDULER_H__
-#define __GUDOV_SCHEDULER_H__
+#pragma once
 
 #include <functional>
 #include <list>
@@ -30,8 +29,7 @@ class Scheduler {
    * @param useCaller
    * @param name
    */
-  Scheduler(size_t threads = 1, bool useCaller = true,
-            const std::string& name = "");
+  Scheduler(size_t threads = 1, bool useCaller = true, const std::string& name = "");
   virtual ~Scheduler();
 
   const std::string& getName() const { return m_name; }
@@ -209,5 +207,3 @@ class Scheduler {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_SCHEDULER_H__

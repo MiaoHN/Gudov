@@ -1,5 +1,4 @@
-#ifndef __GUDOV_SOCKET_STREAM_H__
-#define __GUDOV_SOCKET_STREAM_H__
+#pragma once
 
 #include "socket.h"
 #include "stream.h"
@@ -28,5 +27,3 @@ class SocketStream : public Stream {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_SOCKET_STREAM_H__

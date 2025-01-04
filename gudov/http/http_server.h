@@ -1,5 +1,4 @@
-#ifndef __GUDOV_HTTP_SERVER_H__
-#define __GUDOV_HTTP_SERVER_H__
+#pragma once
 
 #include "gudov/tcp_server.h"
 #include "http_session.h"
@@ -17,7 +16,7 @@ class HttpServer : public TcpServer {
              IOManager* accept_worker = IOManager::GetThis());
 
   ServletDispatch::ptr getServletDispatch() const { return m_dispatch; }
-  void setServletDispatch(ServletDispatch::ptr v) { m_dispatch = v; }
+  void                 setServletDispatch(ServletDispatch::ptr v) { m_dispatch = v; }
 
  protected:
   virtual void handleClient(Socket::ptr client) override;
@@ -30,5 +29,3 @@ class HttpServer : public TcpServer {
 }  // namespace http
 
 }  // namespace gudov
-
-#endif  // __GUDOV_HTTP_SERVER_H__

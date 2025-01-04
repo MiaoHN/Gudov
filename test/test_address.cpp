@@ -29,8 +29,7 @@ void testIface() {
   }
 
   for (auto& i : results) {
-    LOG_INFO(g_logger) << i.first << " - " << i.second.first->toString()
-                             << " - " << i.second.second;
+    LOG_INFO(g_logger) << i.first << " - " << i.second.first->toString() << " - " << i.second.second;
   }
 }
 

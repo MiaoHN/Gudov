@@ -1,5 +1,4 @@
-#ifndef __GUDOV_ADDRESS_H__
-#define __GUDOV_ADDRESS_H__
+#pragma once
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -45,8 +44,8 @@ class Address {
    * @return true 查询成功
    * @return false 查询失败
    */
-  static bool Lookup(std::vector<Address::ptr>& result, const std::string& host,
-                     int family = AF_INET, int type = 0, int protocol = 0);
+  static bool Lookup(std::vector<Address::ptr>& result, const std::string& host, int family = AF_INET, int type = 0,
+                     int protocol = 0);
 
   /**
    * @brief 根据主机名得到任意一个可用地址
@@ -57,8 +56,7 @@ class Address {
    * @param[in] protocol 协议类型
    * @return Address::ptr 可用地址
    */
-  static Address::ptr LookupAny(const std::string& host, int family = AF_INET,
-                                int type = 0, int protocol = 0);
+  static Address::ptr LookupAny(const std::string& host, int family = AF_INET, int type = 0, int protocol = 0);
 
   /**
    * @brief 根据 host 获取任意一个可用的 IP 地址
@@ -69,17 +67,13 @@ class Address {
    * @param[in] protocol 协议类型
    * @return std::shared_ptr<IPAddress> 可用 IP 地址
    */
-  static std::shared_ptr<IPAddress> LookupAnyIPAddress(const std::string& host,
-                                                       int family   = AF_INET,
-                                                       int type     = 0,
+  static std::shared_ptr<IPAddress> LookupAnyIPAddress(const std::string& host, int family = AF_INET, int type = 0,
                                                        int protocol = 0);
 
-  static bool GetInterfaceAddress(
-      std::multimap<std::string, std::pair<Address::ptr, uint32_t>>& result,
-      int family = AF_INET);
-  static bool GetInterfaceAddress(
-      std::vector<std::pair<Address::ptr, uint32_t>>& result,
-      const std::string& iface, int family = AF_INET);
+  static bool GetInterfaceAddress(std::multimap<std::string, std::pair<Address::ptr, uint32_t>>& result,
+                                  int                                                            family = AF_INET);
+  static bool GetInterfaceAddress(std::vector<std::pair<Address::ptr, uint32_t>>& result, const std::string& iface,
+                                  int family = AF_INET);
 
   virtual ~Address() {}
 
@@ -205,5 +199,3 @@ class UnknownAddress : public Address {
 std::ostream& operator<<(std::ostream& os, const Address& addr);
 
 }  // namespace gudov
-
-#endif  // __GUDOV_ADDRESS_H__

@@ -12,42 +12,29 @@ namespace http {
 static gudov::Logger::ptr g_logger = LOG_NAME("system");
 
 static gudov::ConfigVar<uint64_t>::ptr g_http_request_buffer_size =
-    gudov::Config::Lookup("http.request.buffer_size", (uint64_t)(4 * 1024),
-                          "http request buffer size");
+    gudov::Config::Lookup("http.request.buffer_size", (uint64_t)(4 * 1024), "http request buffer size");
 
 static gudov::ConfigVar<uint64_t>::ptr g_http_request_max_body_size =
-    gudov::Config::Lookup("http.request.max_body_size",
-                          (uint64_t)(64 * 1024 * 1024),
-                          "http request max body size");
+    gudov::Config::Lookup("http.request.max_body_size", (uint64_t)(64 * 1024 * 1024), "http request max body size");
 
 static ConfigVar<uint64_t>::ptr g_http_response_buffer_size =
-    Config::Lookup("http.response.buffer_size", (uint64_t)(4 * 1024),
-                   "http response buffer size");
+    Config::Lookup("http.response.buffer_size", (uint64_t)(4 * 1024), "http response buffer size");
 
 static ConfigVar<uint64_t>::ptr g_http_response_max_body_size =
-    Config::Lookup("http.response.max_body_size", (uint64_t)(64 * 1024 * 1024),
-                   "http response max body size");
+    Config::Lookup("http.response.max_body_size", (uint64_t)(64 * 1024 * 1024), "http response max body size");
 
 static uint64_t s_http_request_buffer_size    = 0;
 static uint64_t s_http_request_max_body_size  = 0;
 static uint64_t s_http_response_buffer_size   = 0;
 static uint64_t s_http_response_max_body_size = 0;
 
-uint64_t HttpRequestParser::GetHttpRequestBufferSize() {
-  return s_http_request_buffer_size;
-}
+uint64_t HttpRequestParser::GetHttpRequestBufferSize() { return s_http_request_buffer_size; }
 
-uint64_t HttpRequestParser::GetHttpRequestMaxBodySize() {
-  return s_http_request_max_body_size;
-}
+uint64_t HttpRequestParser::GetHttpRequestMaxBodySize() { return s_http_request_max_body_size; }
 
-uint64_t HttpResponseParser::GetHttpResponseBufferSize() {
-  return s_http_response_buffer_size;
-}
+uint64_t HttpResponseParser::GetHttpResponseBufferSize() { return s_http_response_buffer_size; }
 
-uint64_t HttpResponseParser::GetHttpResponseMaxBodySize() {
-  return s_http_response_max_body_size;
-}
+uint64_t HttpResponseParser::GetHttpResponseMaxBodySize() { return s_http_response_max_body_size; }
 
 namespace {
 
@@ -59,24 +46,16 @@ struct _RequestSizeIniter {
     s_http_response_max_body_size = g_http_response_max_body_size->getValue();
 
     g_http_request_buffer_size->addListener(
-        [](const uint64_t& ov, const uint64_t& nv) {
-          s_http_request_buffer_size = nv;
-        });
+        [](const uint64_t& ov, const uint64_t& nv) { s_http_request_buffer_size = nv; });
 
     g_http_request_max_body_size->addListener(
-        [](const uint64_t& ov, const uint64_t& nv) {
-          s_http_request_max_body_size = nv;
-        });
+        [](const uint64_t& ov, const uint64_t& nv) { s_http_request_max_body_size = nv; });
 
     g_http_response_buffer_size->addListener(
-        [](const uint64_t& ov, const uint64_t& nv) {
-          s_http_response_buffer_size = nv;
-        });
+        [](const uint64_t& ov, const uint64_t& nv) { s_http_response_buffer_size = nv; });
 
     g_http_response_max_body_size->addListener(
-        [](const uint64_t& ov, const uint64_t& nv) {
-          s_http_response_max_body_size = nv;
-        });
+        [](const uint64_t& ov, const uint64_t& nv) { s_http_response_max_body_size = nv; });
   }
 };
 
@@ -89,8 +68,7 @@ void on_request_method(void* data, const char* at, size_t length) {
   HttpMethod         m      = CharsToHttpMethod(at);
 
   if (m == HttpMethod::INVALID_METHOD) {
-    LOG_WARN(g_logger)
-        << "invalid http request method: " << std::string(at, length);
+    LOG_WARN(g_logger) << "invalid http request method: " << std::string(at, length);
     parser->setError(1000);
     return;
   }
@@ -122,8 +100,7 @@ void on_request_version(void* data, const char* at, size_t length) {
   } else if (strncmp(at, "HTTP/1.0", length) == 0) {
     v = 0x10;
   } else {
-    LOG_WARN(g_logger)
-        << "invalid http request version: " << std::string(at, length);
+    LOG_WARN(g_logger) << "invalid http request version: " << std::string(at, length);
     parser->setError(1001);
     return;
   }
@@ -134,15 +111,13 @@ void on_request_header_done(void* data, const char* at, size_t length) {
   // HttpRequestParser* parser = static_cast<HttpRequestParser*>(data);
 }
 
-void on_request_http_field(void* data, const char* field, size_t flen,
-                           const char* value, size_t vlen) {
+void on_request_http_field(void* data, const char* field, size_t flen, const char* value, size_t vlen) {
   HttpRequestParser* parser = static_cast<HttpRequestParser*>(data);
   if (flen == 0) {
     LOG_WARN(g_logger) << "invalid http request field length == 0";
     return;
   }
-  parser->getData()->setHeader(std::string(field, flen),
-                               std::string(value, vlen));
+  parser->getData()->setHeader(std::string(field, flen), std::string(value, vlen));
 }
 
 HttpRequestParser::HttpRequestParser() : m_error(0) {
@@ -159,9 +134,7 @@ HttpRequestParser::HttpRequestParser() : m_error(0) {
   m_parser.data           = this;
 }
 
-uint64_t HttpRequestParser::getContentLength() {
-  return m_data->getHeaderAs<uint64_t>("content-length", 0);
-}
+uint64_t HttpRequestParser::getContentLength() { return m_data->getHeaderAs<uint64_t>("content-length", 0); }
 
 // 1: 成功
 //-1: 有错误
@@ -174,9 +147,7 @@ size_t HttpRequestParser::execute(char* data, size_t len) {
 
 int HttpRequestParser::isFinished() { return http_parser_finish(&m_parser); }
 
-int HttpRequestParser::hasError() {
-  return m_error || http_parser_has_error(&m_parser);
-}
+int HttpRequestParser::hasError() { return m_error || http_parser_has_error(&m_parser); }
 
 void on_response_reason(void* data, const char* at, size_t length) {
   HttpResponseParser* parser = static_cast<HttpResponseParser*>(data);
@@ -199,8 +170,7 @@ void on_response_version(void* data, const char* at, size_t length) {
   } else if (strncmp(at, "HTTP/1.0", length) == 0) {
     v = 0x10;
   } else {
-    LOG_WARN(g_logger)
-        << "invalid http response version: " << std::string(at, length);
+    LOG_WARN(g_logger) << "invalid http response version: " << std::string(at, length);
     parser->setError(1001);
     return;
   }
@@ -212,16 +182,14 @@ void on_response_header_done(void* data, const char* at, size_t length) {}
 
 void on_response_last_chunk(void* data, const char* at, size_t length) {}
 
-void on_response_http_field(void* data, const char* field, size_t flen,
-                            const char* value, size_t vlen) {
+void on_response_http_field(void* data, const char* field, size_t flen, const char* value, size_t vlen) {
   HttpResponseParser* parser = static_cast<HttpResponseParser*>(data);
   if (flen == 0) {
     LOG_WARN(g_logger) << "invalid http response field length == 0";
     // parser->setError(1002);
     return;
   }
-  parser->getData()->setHeader(std::string(field, flen),
-                               std::string(value, vlen));
+  parser->getData()->setHeader(std::string(field, flen), std::string(value, vlen));
 }
 
 HttpResponseParser::HttpResponseParser() : m_error(0) {
@@ -246,17 +214,11 @@ size_t HttpResponseParser::execute(char* data, size_t len, bool chunck) {
   return offset;
 }
 
-int HttpResponseParser::isFinished() {
-  return httpclient_parser_finish(&m_parser);
-}
+int HttpResponseParser::isFinished() { return httpclient_parser_finish(&m_parser); }
 
-int HttpResponseParser::hasError() {
-  return m_error || httpclient_parser_has_error(&m_parser);
-}
+int HttpResponseParser::hasError() { return m_error || httpclient_parser_has_error(&m_parser); }
 
-uint64_t HttpResponseParser::getContentLength() {
-  return m_data->getHeaderAs<uint64_t>("content-length", 0);
-}
+uint64_t HttpResponseParser::getContentLength() { return m_data->getHeaderAs<uint64_t>("content-length", 0); }
 
 }  // namespace http
 

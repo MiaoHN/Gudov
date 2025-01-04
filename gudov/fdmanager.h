@@ -8,8 +8,7 @@
  * @copyright Copyright (c) 2023
  *
  */
-#ifndef __GUDOV_FDMANAGER_H__
-#define __GUDOV_FDMANAGER_H__
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -78,5 +77,3 @@ class FdManager {
 using FdMgr = Singleton<FdManager>;
 
 }  // namespace gudov
-
-#endif  // __GUDOV_FDMANAGER_H__

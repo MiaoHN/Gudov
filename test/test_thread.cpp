@@ -10,11 +10,8 @@ int          count = 0;
 gudov::Mutex s_mutex;
 
 void fun1() {
-  LOG_INFO(g_logger) << "name: " << gudov::Thread::GetName()
-                           << " this.name: "
-                           << gudov::Thread::GetThis()->getName()
-                           << " id: " << gudov::GetThreadId()
-                           << " this.id: " << gudov::Thread::GetThis()->getId();
+  LOG_INFO(g_logger) << "name: " << gudov::Thread::GetName() << " this.name: " << gudov::Thread::GetThis()->getName()
+                     << " id: " << gudov::GetThreadId() << " this.id: " << gudov::Thread::GetThis()->getId();
 
   for (int i = 0; i < 100000; ++i) {
     gudov::Mutex::Lock lock(s_mutex);
@@ -41,8 +38,7 @@ int main(int argc, char *argv[]) {
 
   std::vector<gudov::Thread::ptr> threads;
   for (int i = 0; i < 1; ++i) {
-    gudov::Thread::ptr thread1(
-        new gudov::Thread(&fun2, "name_" + std::to_string(i * 2)));
+    gudov::Thread::ptr thread1(new gudov::Thread(&fun2, "name_" + std::to_string(i * 2)));
     threads.push_back(thread1);
   }
 

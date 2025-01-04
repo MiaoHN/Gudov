@@ -1,5 +1,4 @@
-#ifndef __GUDOV_THREAD_H__
-#define __GUDOV_THREAD_H__
+#pragma once
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -189,14 +188,11 @@ class CASLock : public NonCopyable {
   ~CASLock() {}
 
   void lock() {
-    while (std::atomic_flag_test_and_set_explicit(&m_mutex,
-                                                  std::memory_order_acquire))
+    while (std::atomic_flag_test_and_set_explicit(&m_mutex, std::memory_order_acquire))
       ;
   }
 
-  void unlock() {
-    std::atomic_flag_clear_explicit(&m_mutex, std::memory_order_release);
-  }
+  void unlock() { std::atomic_flag_clear_explicit(&m_mutex, std::memory_order_release); }
 
  private:
   volatile std::atomic_flag m_mutex;
@@ -253,5 +249,3 @@ class Thread : public NonCopyable {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_THREAD_H__

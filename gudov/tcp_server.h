@@ -1,5 +1,4 @@
-#ifndef __GUDOV_TCP_SERVER_H__
-#define __GUDOV_TCP_SERVER_H__
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -14,13 +13,11 @@ namespace gudov {
 class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
  public:
   using ptr = std::shared_ptr<TcpServer>;
-  TcpServer(IOManager* woker        = IOManager::GetThis(),
-            IOManager* accept_woker = IOManager::GetThis());
+  TcpServer(IOManager* woker = IOManager::GetThis(), IOManager* accept_woker = IOManager::GetThis());
   virtual ~TcpServer();
 
   virtual bool bind(Address::ptr addr);
-  virtual bool bind(const std::vector<Address::ptr>& addrs,
-                    std::vector<Address::ptr>&       fails);
+  virtual bool bind(const std::vector<Address::ptr>& addrs, std::vector<Address::ptr>& fails);
   virtual bool start();
   virtual void stop();
 
@@ -46,5 +43,3 @@ class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_TCP_SERVER_H__

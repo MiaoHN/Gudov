@@ -1,5 +1,4 @@
-#ifndef __GUDOV_TIMER_H__
-#define __GUDOV_TIMER_H__
+#pragma once
 
 #include <memory>
 #include <set>
@@ -22,8 +21,7 @@ class Timer : public std::enable_shared_from_this<Timer> {
   bool reset(uint64_t ms, bool fromNow);
 
  private:
-  Timer(uint64_t ms, std::function<void()> callback, bool recurring,
-        TimerManager *manager);
+  Timer(uint64_t ms, std::function<void()> callback, bool recurring, TimerManager *manager);
   Timer(uint64_t next);
 
  private:
@@ -53,11 +51,9 @@ class TimerManager {
   TimerManager();
   virtual ~TimerManager();
 
-  Timer::ptr addTimer(uint64_t ms, std::function<void()> callback,
-                      bool recurring = false);
-  Timer::ptr addConditionTimer(uint64_t ms, std::function<void()> callback,
-                               std::weak_ptr<void> weakCond,
-                               bool                recurring = false);
+  Timer::ptr addTimer(uint64_t ms, std::function<void()> callback, bool recurring = false);
+  Timer::ptr addConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weakCond,
+                               bool recurring = false);
 
   uint64_t getNextTimer();
   void     listExpiredCb(std::vector<std::function<void()>> &cbs);
@@ -87,5 +83,3 @@ class TimerManager {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_TIMER_H__

@@ -8,8 +8,7 @@
  * @copyright Copyright (c) 2023
  *
  */
-#ifndef __GUDOV_SOCKET_H__
-#define __GUDOV_SOCKET_H__
+#pragma once
 
 #include <netinet/tcp.h>
 #include <sys/socket.h>
@@ -61,10 +60,8 @@ class Socket : public std::enable_shared_from_this<Socket>, NonCopyable {
 
   int send(const void* buffer, size_t length, int flags = 0);
   int send(const iovec* buffers, size_t length, int flags = 0);
-  int sendTo(const void* buffer, size_t length, const Address::ptr to,
-             int flags = 0);
-  int sendTo(const iovec* buffers, size_t length, const Address::ptr to,
-             int flags = 0);
+  int sendTo(const void* buffer, size_t length, const Address::ptr to, int flags = 0);
+  int sendTo(const iovec* buffers, size_t length, const Address::ptr to, int flags = 0);
   int recv(void* buffer, size_t length, int flags = 0);
   int recv(iovec* buffers, size_t length, int flags = 0);
   int recvFrom(void* buffer, size_t length, Address::ptr from, int flags = 0);
@@ -160,5 +157,3 @@ class Socket : public std::enable_shared_from_this<Socket>, NonCopyable {
 std::ostream& operator<<(std::ostream& os, const Socket& addr);
 
 }  // namespace gudov
-
-#endif  // __GUDOV_SOCKET_H__

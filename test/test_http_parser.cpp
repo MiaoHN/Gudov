@@ -13,10 +13,9 @@ void test_request() {
   gudov::http::HttpRequestParser parser;
   std::string                    tmp = test_request_data;
   size_t                         s   = parser.execute(&tmp[0], tmp.size());
-  LOG_ERROR(g_logger)
-      << "execute rt=" << s << "has_error=" << parser.hasError()
-      << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
-      << " content_length=" << parser.getContentLength();
+  LOG_ERROR(g_logger) << "execute rt=" << s << "has_error=" << parser.hasError()
+                      << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
+                      << " content_length=" << parser.getContentLength();
   tmp.resize(tmp.size() - s);
   LOG_INFO(g_logger) << parser.getData()->toString();
   LOG_INFO(g_logger) << tmp;
@@ -41,12 +40,10 @@ const char test_response_data[] =
 void test_response() {
   gudov::http::HttpResponseParser parser;
   std::string                     tmp = test_response_data;
-  size_t                          s = parser.execute(&tmp[0], tmp.size(), true);
-  LOG_ERROR(g_logger)
-      << "execute rt=" << s << " has_error=" << parser.hasError()
-      << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
-      << " content_length=" << parser.getContentLength()
-      << " tmp[s]=" << tmp[s];
+  size_t                          s   = parser.execute(&tmp[0], tmp.size(), true);
+  LOG_ERROR(g_logger) << "execute rt=" << s << " has_error=" << parser.hasError()
+                      << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
+                      << " content_length=" << parser.getContentLength() << " tmp[s]=" << tmp[s];
 
   tmp.resize(tmp.size() - s);
 

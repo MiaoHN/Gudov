@@ -1,5 +1,4 @@
-#ifndef __GUDOV_LOG_H__
-#define __GUDOV_LOG_H__
+#pragma once
 
 #include <cstdarg>
 #include <cstdint>
@@ -11,26 +10,22 @@
 #include <string>
 #include <vector>
 
-#include "gudov/thread.h"
 #include "singleton.h"
 #include "thread"
+#include "thread.h"
 #include "util.h"
 
-#define LOG_LEVEL(logger, level)                                      \
-  if (logger->getLevel() <= level)                                    \
-  gudov::LogEventWrap(                                                \
-      gudov::LogEvent::ptr(new gudov::LogEvent(                       \
-          logger, level, __FILE__, __LINE__, 0, gudov::GetThreadId(), \
-          gudov::GetFiberId(), time(0))))                             \
+#define LOG_LEVEL(logger, level)                                                                                     \
+  if (logger->getLevel() <= level)                                                                                   \
+  gudov::LogEventWrap(gudov::LogEvent::ptr(new gudov::LogEvent(logger, level, __FILE__, __LINE__, 0,                 \
+                                                               gudov::GetThreadId(), gudov::GetFiberId(), time(0)))) \
       .getSS()
 
-#define LOG_FMT_LEVEL(logger, level, fmt, ...)                        \
-  if (logger->getLevel() <= level)                                    \
-  gudov::LogEventWrap(                                                \
-      gudov::LogEvent::ptr(new gudov::LogEvent(                       \
-          logger, level, __FILE__, __LINE__, 0, gudov::GetThreadId(), \
-          gudov::GetFiberId(), time(0))))                             \
-      .getEvent()                                                     \
+#define LOG_FMT_LEVEL(logger, level, fmt, ...)                                                                       \
+  if (logger->getLevel() <= level)                                                                                   \
+  gudov::LogEventWrap(gudov::LogEvent::ptr(new gudov::LogEvent(logger, level, __FILE__, __LINE__, 0,                 \
+                                                               gudov::GetThreadId(), gudov::GetFiberId(), time(0)))) \
+      .getEvent()                                                                                                    \
       ->format(fmt, __VA_ARGS__)
 
 #ifdef GUDOV_DEBUG
@@ -44,16 +39,11 @@
 #define LOG_ERROR(logger) LOG_LEVEL(logger, gudov::LogLevel::ERROR)
 #define LOG_FATAL(logger) LOG_LEVEL(logger, gudov::LogLevel::FATAL)
 
-#define LOG_FMT_DEBUG(logger, fmt, ...) \
-  LOG_FMT_LEVEL(logger, gudov::LogLevel::DEBUG, fmt, __VA_ARGS__)
-#define LOG_FMT_INFO(logger, fmt, ...) \
-  LOG_FMT_LEVEL(logger, gudov::LogLevel::INFO, fmt, __VA_ARGS__)
-#define LOG_FMT_WARN(logger, fmt, ...) \
-  LOG_FMT_LEVEL(logger, gudov::LogLevel::WARN, fmt, __VA_ARGS__)
-#define LOG_FMT_ERROR(logger, fmt, ...) \
-  LOG_FMT_LEVEL(logger, gudov::LogLevel::ERROR, fmt, __VA_ARGS__)
-#define LOG_FMT_FATAL(logger, fmt, ...) \
-  LOG_FMT_LEVEL(logger, gudov::LogLevel::FATAL, fmt, __VA_ARGS__)
+#define LOG_FMT_DEBUG(logger, fmt, ...) LOG_FMT_LEVEL(logger, gudov::LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define LOG_FMT_INFO(logger, fmt, ...)  LOG_FMT_LEVEL(logger, gudov::LogLevel::INFO, fmt, __VA_ARGS__)
+#define LOG_FMT_WARN(logger, fmt, ...)  LOG_FMT_LEVEL(logger, gudov::LogLevel::WARN, fmt, __VA_ARGS__)
+#define LOG_FMT_ERROR(logger, fmt, ...) LOG_FMT_LEVEL(logger, gudov::LogLevel::ERROR, fmt, __VA_ARGS__)
+#define LOG_FMT_FATAL(logger, fmt, ...) LOG_FMT_LEVEL(logger, gudov::LogLevel::FATAL, fmt, __VA_ARGS__)
 
 #define LOG_ROOT()     gudov::LoggerMgr::getInstance()->getRoot()
 #define LOG_NAME(name) gudov::LoggerMgr::getInstance()->getLogger(name)
@@ -95,8 +85,7 @@ class LogEvent {
  public:
   using ptr = std::shared_ptr<LogEvent>;
 
-  LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level,
-           const char* filename, int32_t line, uint32_t elapse,
+  LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* filename, int32_t line, uint32_t elapse,
            uint32_t threadId, uint32_t fiberId, uint64_t time);
 
   const char*             getFile() const { return m_file; }
@@ -255,8 +244,7 @@ class StdoutLogAppender : public LogAppender {
 class FileLogAppender : public LogAppender {
  public:
   using ptr = std::shared_ptr<FileLogAppender>;
-  FileLogAppender(const std::string& filename,
-                  LogLevel::Level    level = LogLevel::DEBUG);
+  FileLogAppender(const std::string& filename, LogLevel::Level level = LogLevel::DEBUG);
 
   /**
    * @brief 输出日志内容
@@ -296,5 +284,3 @@ class LoggerManager {
 using LoggerMgr = gudov::Singleton<LoggerManager>;
 
 }  // namespace gudov
-
-#endif  // __GUDOV_LOG_H__

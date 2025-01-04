@@ -1,5 +1,4 @@
-#ifndef __GUDOV_URI_H__
-#define __GUDOV_URI_H__
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -75,5 +74,3 @@ class Uri {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_URI_H__

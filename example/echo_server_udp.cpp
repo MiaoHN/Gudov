@@ -5,9 +5,8 @@
 static gudov::Logger::ptr g_logger = LOG_ROOT();
 
 void run() {
-  gudov::IPAddress::ptr addr =
-      gudov::Address::LookupAnyIPAddress("0.0.0.0:8050");
-  gudov::Socket::ptr sock = gudov::Socket::CreateUDP(addr);
+  gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8050");
+  gudov::Socket::ptr    sock = gudov::Socket::CreateUDP(addr);
   if (sock->bind(addr)) {
     LOG_INFO(g_logger) << "udp bind : " << *addr;
   } else {
@@ -23,8 +22,7 @@ void run() {
       LOG_INFO(g_logger) << "recv: " << buff << " from: " << *from;
       len = sock->sendTo(buff, len, from);
       if (len < 0) {
-        LOG_INFO(g_logger) << "send: " << buff << " to: " << *from
-                           << " error=" << len;
+        LOG_INFO(g_logger) << "send: " << buff << " to: " << *from << " error=" << len;
       }
     }
   }

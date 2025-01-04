@@ -1,16 +1,16 @@
 logs:
-  - name: root
-    level: info
-    formatter: '%d%T%m%n'
-    appenders:
-      - type: FileLogAppender
-        file: root.log
-      - type: StdoutLogAppender
-  - name: system
-    level: info
-    formatter: '%d%T%m%n'
-    appenders:
-      - type: FileLogAppender
-        file: system.log
-        formatter: '%d%T%c%T[%p]%T%m%n'
-      - type: StdoutLogAppender
+- name: root
+  level: info
+  formatter: '%d%T%m%n'
+  appenders:
+  - type: FileLogAppender
+    file: root.log
+  - type: StdoutLogAppender
+- name: system
+  level: info
+  formatter: '%d%T%m%n'
+  appenders:
+  - type: FileLogAppender
+    file: system.log
+    formatter: '%d%T%c%T[%p]%T%m%n'
+  - type: StdoutLogAppender

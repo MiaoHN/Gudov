@@ -29,8 +29,7 @@ int main(int argc, char *argv[]) {
 
   std::vector<gudov::Thread::ptr> threads;
   for (int i = 0; i < 3; ++i) {
-    threads.push_back(gudov::Thread::ptr(
-        new gudov::Thread(&testFiber, "name_" + std::to_string(i))));
+    threads.push_back(gudov::Thread::ptr(new gudov::Thread(&testFiber, "name_" + std::to_string(i))));
   }
 
   for (auto i : threads) {

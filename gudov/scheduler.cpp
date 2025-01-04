@@ -20,8 +20,7 @@ static thread_local Scheduler* t_scheduler = nullptr;
  */
 static thread_local Fiber* t_scheduler_fiber = nullptr;
 
-Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name)
-    : m_name(name) {
+Scheduler::Scheduler(size_t threads, bool useCaller, const std::string& name) : m_name(name) {
   GUDOV_ASSERT(threads > 0);
 
   if (useCaller) {
@@ -69,8 +68,7 @@ void Scheduler::start() {
   m_threads.resize(m_thread_count);
   for (size_t i = 0; i < m_thread_count; ++i) {
     // 创建指定数量的线程并执行 run
-    m_threads[i].reset(new Thread(std::bind(&Scheduler::run, this),
-                                  m_name + "_" + std::to_string(i)));
+    m_threads[i].reset(new Thread(std::bind(&Scheduler::run, this), m_name + "_" + std::to_string(i)));
     m_thread_ids.push_back(m_threads[i]->getId());
   }
   lock.unlock();
@@ -79,8 +77,7 @@ void Scheduler::start() {
 void Scheduler::stop() {
   m_auto_stop = true;
   if (m_root_fiber && m_thread_count == 0 &&
-      (m_root_fiber->getState() == Fiber::TERM ||
-       m_root_fiber->getState() == Fiber::READY)) {
+      (m_root_fiber->getState() == Fiber::TERM || m_root_fiber->getState() == Fiber::READY)) {
     LOG_INFO(g_logger) << this << " stopped";
     m_stopping = true;
 
@@ -245,8 +242,7 @@ void Scheduler::tickle() { LOG_INFO(g_logger) << "tickle"; }
 
 bool Scheduler::stopping() {
   MutexType::Lock lock(m_mutex);
-  return m_auto_stop && m_stopping && m_tasks.empty() &&
-         m_active_thread_count == 0;
+  return m_auto_stop && m_stopping && m_tasks.empty() && m_active_thread_count == 0;
 }
 
 void Scheduler::idle() {

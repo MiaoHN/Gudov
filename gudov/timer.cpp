@@ -7,8 +7,7 @@ namespace gudov {
 
 static Logger::ptr g_logger = LOG_NAME("system");
 
-Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring,
-             TimerManager *manager)
+Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring, TimerManager *manager)
     : m_recurring(recurring), m_ms(ms), m_callback(callback), m_manager(manager) {
   m_next = GetCurrentMS() + m_ms;
 }
@@ -18,8 +17,8 @@ Timer::Timer(uint64_t next) : m_next(next) {}
 bool Timer::cancel() {
   TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
   if (m_callback) {
-    m_callback    = nullptr;
-    auto it = m_manager->m_timers.find(shared_from_this());
+    m_callback = nullptr;
+    auto it    = m_manager->m_timers.find(shared_from_this());
     m_manager->m_timers.erase(it);
     return true;
   }
@@ -66,8 +65,7 @@ bool Timer::reset(uint64_t ms, bool fromNow) {
   return true;
 }
 
-bool Timer::Comparator::operator()(const Timer::ptr &lhs,
-                                   const Timer::ptr &rhs) const {
+bool Timer::Comparator::operator()(const Timer::ptr &lhs, const Timer::ptr &rhs) const {
   if (!lhs && !rhs) {
     return false;
   }
@@ -90,8 +88,7 @@ TimerManager::TimerManager() { m_previous_time = GetCurrentMS(); }
 
 TimerManager::~TimerManager() {}
 
-Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback,
-                                  bool recurring) {
+Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback, bool recurring) {
   LOG_DEBUG(g_logger) << "TimerManager::addTimer";
   Timer::ptr             timer(new Timer(ms, callback, recurring, this));
   RWMutexType::WriteLock lock(m_mutex);
@@ -112,10 +109,8 @@ static void OnTimer(std::weak_ptr<void> weakCond, std::function<void()> callback
   }
 }
 
-Timer::ptr TimerManager::addConditionTimer(uint64_t              ms,
-                                           std::function<void()> callback,
-                                           std::weak_ptr<void>   weakCond,
-                                           bool                  recurring) {
+Timer::ptr TimerManager::addConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weakCond,
+                                           bool recurring) {
   return addTimer(ms, std::bind(&OnTimer, weakCond, callback), recurring);
 }
 

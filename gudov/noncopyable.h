@@ -1,5 +1,4 @@
-#ifndef __GUDOV_NONCOPYABLE_H__
-#define __GUDOV_NONCOPYABLE_H__
+#pragma once
 
 namespace gudov {
 
@@ -14,5 +13,3 @@ class NonCopyable {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_NONCOPYABLE_H__

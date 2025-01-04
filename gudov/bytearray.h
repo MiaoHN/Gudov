@@ -1,10 +1,9 @@
-#ifndef __GUDOV_BYTEARRAY_H__
-#define __GUDOV_BYTEARRAY_H__
+#pragma once
 
-#include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -94,10 +93,8 @@ class ByteArray {
   std::string toHexString() const;
 
   //只获取内容，不修改position
-  uint64_t getReadBuffers(std::vector<iovec>& buffers,
-                          uint64_t            len = ~0ull) const;
-  uint64_t getReadBuffers(std::vector<iovec>& buffers, uint64_t len,
-                          uint64_t position) const;
+  uint64_t getReadBuffers(std::vector<iovec>& buffers, uint64_t len = ~0ull) const;
+  uint64_t getReadBuffers(std::vector<iovec>& buffers, uint64_t len, uint64_t position) const;
   //增加容量，不修改position
   uint64_t getWriteBuffers(std::vector<iovec>& buffers, uint64_t len);
 
@@ -118,5 +115,3 @@ class ByteArray {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_BYTEARRAY_H__

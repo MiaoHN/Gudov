@@ -15,8 +15,7 @@ void testSocket() {
   //        break;
   //    }
   //}
-  gudov::IPAddress::ptr addr =
-      gudov::Address::LookupAnyIPAddress("www.baidu.com");
+  gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress("www.baidu.com");
   if (addr) {
     LOG_INFO(g_looger) << "get address: " << addr->toString();
   } else {
@@ -55,8 +54,7 @@ void testSocket() {
 }
 
 void test2() {
-  gudov::IPAddress::ptr addr =
-      gudov::Address::LookupAnyIPAddress("www.baidu.com:80");
+  gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress("www.baidu.com:80");
   if (addr) {
     LOG_INFO(g_looger) << "get address: " << addr->toString();
   } else {
@@ -92,8 +90,7 @@ void test2() {
     static int batch = 10000000;
     if (i && (i % batch) == 0) {
       uint64_t ts2 = gudov::GetCurrentUS();
-      LOG_INFO(g_looger)
-          << "i=" << i << " used: " << ((ts2 - ts) * 1.0 / batch) << " us";
+      LOG_INFO(g_looger) << "i=" << i << " used: " << ((ts2 - ts) * 1.0 / batch) << " us";
       ts = ts2;
     }
   }

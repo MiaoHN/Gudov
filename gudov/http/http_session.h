@@ -1,5 +1,4 @@
-#ifndef __GUDOV_HTTP_SESSION_H__
-#define __GUDOV_HTTP_SESSION_H__
+#pragma once
 
 #include "gudov/socket_stream.h"
 #include "http.h"
@@ -22,5 +21,3 @@ class HttpSession : public SocketStream {
 }  // namespace http
 
 }  // namespace gudov
-
-#endif  // __GUDOV_HTTP_SESSION_H__

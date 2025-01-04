@@ -1,5 +1,4 @@
-#ifndef __GUDOV_FIBER_H__
-#define __GUDOV_FIBER_H__
+#pragma once
 
 #include <sys/ucontext.h>
 #include <ucontext.h>
@@ -133,5 +132,3 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_FIBER_H__

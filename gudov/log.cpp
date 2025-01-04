@@ -87,55 +87,42 @@ LogFormatter::ptr LogAppender::getFormatter() {
 class MessageFormatItem : public LogFormatter::FormatItem {
  public:
   MessageFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getContent();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getContent(); }
 };
 
 class LevelFormatItem : public LogFormatter::FormatItem {
  public:
   LevelFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << LogLevel::ToString(event->getLevel());
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << LogLevel::ToString(event->getLevel()); }
 };
 
 class ElapseFormatItem : public LogFormatter::FormatItem {
  public:
   ElapseFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getElapse();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getElapse(); }
 };
 
 class NameFormatItem : public LogFormatter::FormatItem {
  public:
   NameFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getLogger()->getName();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getLogger()->getName(); }
 };
 
 class ThreadIdFormatItem : public LogFormatter::FormatItem {
  public:
   ThreadIdFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getThreadId();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getThreadId(); }
 };
 
 class FiberIdFormatItem : public LogFormatter::FormatItem {
  public:
   FiberIdFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getFiberId();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getFiberId(); }
 };
 
 class DateTimeFormatItem : public LogFormatter::FormatItem {
  public:
-  DateTimeFormatItem(const std::string& format = "%Y-%m-%d %H:%M:%S")
-      : m_format(format) {
+  DateTimeFormatItem(const std::string& format = "%Y-%m-%d %H:%M:%S") : m_format(format) {
     if (m_format.empty()) {
       m_format = "%Y-%m-%d %H:%M:%S";
     }
@@ -157,25 +144,19 @@ class DateTimeFormatItem : public LogFormatter::FormatItem {
 class FilenameFormatItem : public LogFormatter::FormatItem {
  public:
   FilenameFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getFile();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getFile(); }
 };
 
 class LineFormatItem : public LogFormatter::FormatItem {
  public:
   LineFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << event->getLine();
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << event->getLine(); }
 };
 
 class NewLineFormatItem : public LogFormatter::FormatItem {
  public:
   NewLineFormatItem(const std::string& str = "") {}
-  void format(std::ostream& os, LogEvent::ptr event) override {
-    os << std::endl;
-  }
+  void format(std::ostream& os, LogEvent::ptr event) override { os << std::endl; }
 };
 
 class StringFormatItem : public LogFormatter::FormatItem {
@@ -193,9 +174,8 @@ class TabFormatItem : public LogFormatter::FormatItem {
   void format(std::ostream& os, LogEvent::ptr event) override { os << "\t"; }
 };
 
-LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level,
-                   const char* filename, int32_t line, uint32_t elapse,
-                   uint32_t threadId, uint32_t fiberId, uint64_t time)
+LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* filename, int32_t line,
+                   uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time)
     : m_file(filename),
       m_line(line),
       m_elapse(elapse),
@@ -205,10 +185,8 @@ LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level,
       m_logger(logger),
       m_level(level) {}
 
-Logger::Logger(const std::string& name)
-    : m_name(name), m_level(LogLevel::DEBUG) {
-  m_formatter.reset(new LogFormatter(
-      "%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+Logger::Logger(const std::string& name) : m_name(name), m_level(LogLevel::DEBUG) {
+  m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
 }
 
 void Logger::setFormatter(LogFormatter::ptr val) {
@@ -226,8 +204,7 @@ void Logger::setFormatter(LogFormatter::ptr val) {
 void Logger::setFormatter(const std::string& val) {
   LogFormatter::ptr newVal(new LogFormatter(val));
   if (newVal->isError()) {
-    std::cout << "Logger setFormatter name=" << m_name << " value=" << val
-              << " invalid formatter" << std::endl;
+    std::cout << "Logger setFormatter name=" << m_name << " value=" << val << " invalid formatter" << std::endl;
     return;
   }
   setFormatter(newVal);
@@ -295,8 +272,7 @@ void Logger::log(LogEvent::ptr event) {
   }
 }
 
-FileLogAppender::FileLogAppender(const std::string& filename,
-                                 LogLevel::Level    level)
+FileLogAppender::FileLogAppender(const std::string& filename, LogLevel::Level level)
     : LogAppender(level), m_filename(filename) {
   reopen();
 }
@@ -339,8 +315,7 @@ bool FileLogAppender::reopen() {
   return !!m_filestream;
 }
 
-StdoutLogAppender::StdoutLogAppender(LogLevel::Level level)
-    : LogAppender(level) {}
+StdoutLogAppender::StdoutLogAppender(LogLevel::Level level) : LogAppender(level) {}
 
 void StdoutLogAppender::output(LogEvent::ptr event) {
   if (event->getLevel() >= m_level) {
@@ -363,9 +338,7 @@ std::string StdoutLogAppender::toYamlString() {
   return ss.str();
 }
 
-LogFormatter::LogFormatter(const std::string& pattern) : m_pattern(pattern) {
-  init();
-}
+LogFormatter::LogFormatter(const std::string& pattern) : m_pattern(pattern) { init(); }
 
 std::string LogFormatter::format(LogEvent::ptr event) {
   std::stringstream ss;
@@ -399,8 +372,7 @@ void LogFormatter::init() {
     std::string str;
     std::string fmt;
     while (n < m_pattern.size()) {
-      if (!fmt_status && (!isalpha(m_pattern[n]) && m_pattern[n] != '{' &&
-                          m_pattern[n] != '}')) {
+      if (!fmt_status && (!isalpha(m_pattern[n]) && m_pattern[n] != '{' && m_pattern[n] != '}')) {
         str = m_pattern.substr(i + 1, n - i - 1);
         break;
       }
@@ -438,8 +410,7 @@ void LogFormatter::init() {
       vec.push_back(std::make_tuple(str, fmt, 1));
       i = n - 1;
     } else if (fmt_status == 1) {
-      std::cout << "pattern parse error: " << m_pattern << " - "
-                << m_pattern.substr(i) << std::endl;
+      std::cout << "pattern parse error: " << m_pattern << " - " << m_pattern.substr(i) << std::endl;
       m_error = true;
       vec.push_back(std::make_tuple("<<pattern_error>>", fmt, 0));
     }
@@ -448,22 +419,17 @@ void LogFormatter::init() {
   if (!nstr.empty()) {
     vec.push_back(std::make_tuple(nstr, "", 0));
   }
-  static std::map<std::string,
-                  std::function<FormatItem::ptr(const std::string& str)> >
-      s_format_items = {
+  static std::map<std::string, std::function<FormatItem::ptr(const std::string& str)> > s_format_items = {
 #define XX(str, C)                                                           \
   {                                                                          \
 #str, [](const std::string& fmt) { return FormatItem::ptr(new C(fmt)); } \
   }
 
-          XX(m, MessageFormatItem),  XX(p, LevelFormatItem),
-          XX(r, ElapseFormatItem),   XX(c, NameFormatItem),
-          XX(t, ThreadIdFormatItem), XX(n, NewLineFormatItem),
-          XX(d, DateTimeFormatItem), XX(f, FilenameFormatItem),
-          XX(l, LineFormatItem),     XX(T, TabFormatItem),
-          XX(F, FiberIdFormatItem),
+      XX(m, MessageFormatItem),  XX(p, LevelFormatItem),   XX(r, ElapseFormatItem),   XX(c, NameFormatItem),
+      XX(t, ThreadIdFormatItem), XX(n, NewLineFormatItem), XX(d, DateTimeFormatItem), XX(f, FilenameFormatItem),
+      XX(l, LineFormatItem),     XX(T, TabFormatItem),     XX(F, FiberIdFormatItem),
 #undef XX
-      };
+  };
 
   for (auto& i : vec) {
     if (std::get<2>(i) == 0) {
@@ -471,8 +437,7 @@ void LogFormatter::init() {
     } else {
       auto it = s_format_items.find(std::get<0>(i));
       if (it == s_format_items.end()) {
-        m_items.push_back(FormatItem::ptr(
-            new StringFormatItem("<<error_format %" + std::get<0>(i) + ">>")));
+        m_items.push_back(FormatItem::ptr(new StringFormatItem("<<error_format %" + std::get<0>(i) + ">>")));
         m_error = true;
       } else {
         m_items.push_back(it->second(std::get<1>(i)));
@@ -509,8 +474,7 @@ struct LogAppenderConfig {
   std::string     file;
 
   bool operator==(const LogAppenderConfig& oth) const {
-    return type == oth.type && level == oth.level &&
-           formatter == oth.formatter && file == oth.file;
+    return type == oth.type && level == oth.level && formatter == oth.formatter && file == oth.file;
   }
 };
 
@@ -521,8 +485,7 @@ struct LogConfig {
   std::vector<LogAppenderConfig> appenders;
 
   bool operator==(const LogConfig& oth) const {
-    return name == oth.name && level == oth.level &&
-           formatter == oth.formatter && appenders == appenders;
+    return name == oth.name && level == oth.level && formatter == oth.formatter && appenders == appenders;
   }
 
   bool operator<(const LogConfig& oth) const { return name < oth.name; }
@@ -543,8 +506,7 @@ class LexicalCast<std::string, std::set<LogConfig> > {
 
       LogConfig ld;
       ld.name  = n["name"].as<std::string>();
-      ld.level = LogLevel::FromString(
-          n["level"].IsDefined() ? n["level"].as<std::string>() : "");
+      ld.level = LogLevel::FromString(n["level"].IsDefined() ? n["level"].as<std::string>() : "");
       if (n["formatter"].IsDefined()) {
         ld.formatter = n["formatter"].as<std::string>();
       }
@@ -553,8 +515,7 @@ class LexicalCast<std::string, std::set<LogConfig> > {
         for (size_t x = 0; x < n["appenders"].size(); ++x) {
           auto a = n["appenders"][x];
           if (!a["type"].IsDefined()) {
-            std::cout << "log config error: appender type is null, " << a
-                      << std::endl;
+            std::cout << "log config error: appender type is null, " << a << std::endl;
             continue;
           }
           std::string       type = a["type"].as<std::string>();
@@ -562,8 +523,7 @@ class LexicalCast<std::string, std::set<LogConfig> > {
           if (type == "FileLogAppender") {
             lad.type = 1;
             if (!a["file"].IsDefined()) {
-              std::cout << "log config error: fileappender file is null, " << a
-                        << std::endl;
+              std::cout << "log config error: fileappender file is null, " << a << std::endl;
               continue;
             }
             lad.file = a["file"].as<std::string>();
@@ -573,8 +533,7 @@ class LexicalCast<std::string, std::set<LogConfig> > {
           } else if (type == "StdoutLogAppender") {
             lad.type = 2;
           } else {
-            std::cout << "log config error: appender type is invalid, " << a
-                      << std::endl;
+            std::cout << "log config error: appender type is invalid, " << a << std::endl;
             continue;
           }
 
@@ -633,8 +592,7 @@ gudov::ConfigVar<std::set<LogConfig> >::ptr g_log_defines =
 
 struct LogIniter {
   LogIniter() {
-    g_log_defines->addListener([](const std::set<LogConfig>& old_value,
-                                  const std::set<LogConfig>& new_value) {
+    g_log_defines->addListener([](const std::set<LogConfig>& old_value, const std::set<LogConfig>& new_value) {
       LOG_INFO(LOG_ROOT()) << "on_logger_conf_changed";
       for (auto& i : new_value) {
         auto               it = old_value.find(i);
@@ -667,10 +625,8 @@ struct LogIniter {
             if (!fmt->isError()) {
               log_appender->setFormatter(fmt);
             } else {
-              std::cout << "log.name=" << i.name
-                        << " appender type=" << appender.type
-                        << " formatter=" << appender.formatter << " is invalid"
-                        << std::endl;
+              std::cout << "log.name=" << i.name << " appender type=" << appender.type
+                        << " formatter=" << appender.formatter << " is invalid" << std::endl;
             }
           }
           logger->addAppender(log_appender);

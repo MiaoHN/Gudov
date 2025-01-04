@@ -1,5 +1,4 @@
-#ifndef __GUDOV_UTIL_H__
-#define __GUDOV_UTIL_H__
+#pragma once
 
 #include <pthread.h>
 #include <sys/syscall.h>
@@ -18,13 +17,10 @@ uint32_t GetFiberId();
 
 void BackTrace(std::vector<std::string>& bt, int size = 64, int skip = 1);
 
-std::string BacktraceToString(int size = 64, int skip = 2,
-                              const std::string& prefix = "");
+std::string BacktraceToString(int size = 64, int skip = 2, const std::string& prefix = "");
 
 uint64_t GetCurrentMS();
 
 uint64_t GetCurrentUS();
 
 }  // namespace gudov
-
-#endif  // __GUDOV_UTIL_H__

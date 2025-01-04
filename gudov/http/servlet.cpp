@@ -6,22 +6,15 @@ namespace gudov {
 
 namespace http {
 
-FunctionServlet::FunctionServlet(callback callback)
-    : Servlet("FunctionServlet"), m_callback(callback) {}
+FunctionServlet::FunctionServlet(callback callback) : Servlet("FunctionServlet"), m_callback(callback) {}
 
-int32_t FunctionServlet::handle(HttpRequest::ptr  request,
-                                HttpResponse::ptr response,
-                                HttpSession::ptr  session) {
+int32_t FunctionServlet::handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
   return m_callback(request, response, session);
 }
 
-ServletDispatch::ServletDispatch() : Servlet("ServletDispatch") {
-  m_default.reset(new NotFoundServlet());
-}
+ServletDispatch::ServletDispatch() : Servlet("ServletDispatch") { m_default.reset(new NotFoundServlet()); }
 
-int32_t ServletDispatch::handle(HttpRequest::ptr  request,
-                                HttpResponse::ptr response,
-                                HttpSession::ptr  session) {
+int32_t ServletDispatch::handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
   auto slt = getMatchedServlet(request->getPath());
   if (slt) {
     slt->handle(request, response, session);
@@ -34,8 +27,7 @@ void ServletDispatch::addServlet(const std::string& uri, Servlet::ptr slt) {
   m_datas[uri] = slt;
 }
 
-void ServletDispatch::addServlet(const std::string&        uri,
-                                 FunctionServlet::callback callback) {
+void ServletDispatch::addServlet(const std::string& uri, FunctionServlet::callback callback) {
   RWMutexType::WriteLock lock(m_mutex);
   m_datas[uri].reset(new FunctionServlet(callback));
 }
@@ -51,8 +43,7 @@ void ServletDispatch::addGlobServlet(const std::string& uri, Servlet::ptr slt) {
   m_globs.push_back(std::make_pair(uri, slt));
 }
 
-void ServletDispatch::addGlobServlet(const std::string&        uri,
-                                     FunctionServlet::callback callback) {
+void ServletDispatch::addGlobServlet(const std::string& uri, FunctionServlet::callback callback) {
   return addGlobServlet(uri, FunctionServlet::ptr(new FunctionServlet(callback)));
 }
 
@@ -103,9 +94,7 @@ Servlet::ptr ServletDispatch::getMatchedServlet(const std::string& uri) {
 
 NotFoundServlet::NotFoundServlet() : Servlet("NotFoundServlet") {}
 
-int32_t NotFoundServlet::handle(HttpRequest::ptr  request,
-                                HttpResponse::ptr response,
-                                HttpSession::ptr  session) {
+int32_t NotFoundServlet::handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
   static const std::string& RSP_BODY =
       "<html><head><title>404 Not Found"
       "</title></head><body><center><h1>404 Not Found</h1></center>"

@@ -1,5 +1,4 @@
-#ifndef __GUDOV_HTTP_SERVLET_H__
-#define __GUDOV_HTTP_SERVLET_H__
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -21,8 +20,7 @@ class Servlet {
 
   Servlet(const std::string& name) : m_name(name) {}
   virtual ~Servlet() {}
-  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response,
-                         HttpSession::ptr session) = 0;
+  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) = 0;
 
   const std::string& getName() const { return m_name; }
 
@@ -32,15 +30,13 @@ class Servlet {
 
 class FunctionServlet : public Servlet {
  public:
-  using ptr      = std::shared_ptr<FunctionServlet>;
-  using callback = std::function<int32_t(HttpRequest::ptr  request,
-                                         HttpResponse::ptr response,
-                                         HttpSession::ptr  session)>;
+  using ptr = std::shared_ptr<FunctionServlet>;
+  using callback =
+      std::function<int32_t(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session)>;
 
   FunctionServlet(callback callback);
 
-  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response,
-                         HttpSession::ptr session) override;
+  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 
  private:
   callback m_callback;
@@ -52,8 +48,7 @@ class ServletDispatch : public Servlet {
   using RWMutexType = RWMutex;
 
   ServletDispatch();
-  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response,
-                         HttpSession::ptr session) override;
+  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 
   void addServlet(const std::string& uri, Servlet::ptr slt);
   void addServlet(const std::string& uri, FunctionServlet::callback callback);
@@ -85,12 +80,9 @@ class NotFoundServlet : public Servlet {
  public:
   using ptr = std::shared_ptr<NotFoundServlet>;
   NotFoundServlet();
-  int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response,
-                 HttpSession::ptr session) override;
+  int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 };
 
 }  // namespace http
 
 }  // namespace gudov
-
-#endif  // __GUDOV_HTTP_SERVLET_H__

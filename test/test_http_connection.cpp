@@ -8,8 +8,8 @@
 static gudov::Logger::ptr g_logger = LOG_ROOT();
 
 void test_pool() {
-  gudov::http::HttpConnectionPool::ptr pool(new gudov::http::HttpConnectionPool(
-      "www.baidu.com", "", 80, 10, 1000 * 30, 5));
+  gudov::http::HttpConnectionPool::ptr pool(
+      new gudov::http::HttpConnectionPool("www.baidu.com", "", 80, 10, 1000 * 30, 5));
 
   gudov::IOManager::GetThis()->addTimer(
       1000,
@@ -21,8 +21,7 @@ void test_pool() {
 }
 
 void run() {
-  gudov::Address::ptr addr =
-      gudov::Address::LookupAnyIPAddress("miaohn.github.io:80");
+  gudov::Address::ptr addr = gudov::Address::LookupAnyIPAddress("miaohn.github.io:80");
   if (!addr) {
     LOG_INFO(g_logger) << "get addr error";
     return;
@@ -57,8 +56,7 @@ void run() {
 
   auto r = gudov::http::HttpConnection::DoGet("http://www.baidu.com", 300);
   LOG_INFO(g_logger) << "result=" << r->result << " error=" << r->error
-                           << " rsp="
-                           << (r->response ? r->response->toString() : "");
+                     << " rsp=" << (r->response ? r->response->toString() : "");
 
   LOG_INFO(g_logger) << "=========================";
   test_pool();

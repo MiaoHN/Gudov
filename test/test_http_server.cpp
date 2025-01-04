@@ -8,28 +8,25 @@ gudov ::IOManager::ptr worker;
 void run() {
   g_logger->setLevel(gudov::LogLevel::INFO);
   gudov::http::HttpServer::ptr server(new gudov::http::HttpServer(true));
-  gudov::Address::ptr addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8020");
+  gudov::Address::ptr          addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8020");
   while (!server->bind(addr)) {
     sleep(2);
   }
   auto sd = server->getServletDispatch();
-  sd->addServlet("/gudov/xx", [](gudov::http::HttpRequest::ptr  req,
-                                 gudov::http::HttpResponse::ptr rsp,
-                                 gudov::http::HttpSession::ptr  session) {
+  sd->addServlet("/gudov/xx", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+                                 gudov::http::HttpSession::ptr session) {
     rsp->setBody(req->toString());
     return 0;
   });
 
-  sd->addGlobServlet("/gudov/*", [](gudov::http::HttpRequest::ptr  req,
-                                    gudov::http::HttpResponse::ptr rsp,
-                                    gudov::http::HttpSession::ptr  session) {
+  sd->addGlobServlet("/gudov/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+                                    gudov::http::HttpSession::ptr session) {
     rsp->setBody("Glob:\r\n" + req->toString());
     return 0;
   });
 
-  sd->addGlobServlet("/gudovx/*", [](gudov::http::HttpRequest::ptr  req,
-                                     gudov::http::HttpResponse::ptr rsp,
-                                     gudov::http::HttpSession::ptr  session) {
+  sd->addGlobServlet("/gudovx/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+                                     gudov::http::HttpSession::ptr session) {
     rsp->setBody(
         "<html>"
         "<head><title>404 Not Found</title></head>"

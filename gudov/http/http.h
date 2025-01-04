@@ -1,5 +1,4 @@
-#ifndef __GUDOV_HTTP_H__
-#define __GUDOV_HTTP_H__
+#pragma once
 
 #include <boost/lexical_cast.hpp>
 #include <iostream>
@@ -142,8 +141,7 @@ struct CaseInsensitiveLess {
 };
 
 template <class MapType, class T>
-bool checkGetAs(const MapType& m, const std::string& key, T& val,
-                const T& def = T()) {
+bool checkGetAs(const MapType& m, const std::string& key, T& val, const T& def = T()) {
   auto it = m.find(key);
   if (it == m.end()) {
     val = def;
@@ -201,12 +199,9 @@ class HttpRequest {
   void setParams(const MapType& v) { m_params = v; }
   void setCookies(const MapType& v) { m_cookies = v; }
 
-  std::string getHeader(const std::string& key,
-                        const std::string& def = "") const;
-  std::string getParam(const std::string& key,
-                       const std::string& def = "") const;
-  std::string getCookie(const std::string& key,
-                        const std::string& def = "") const;
+  std::string getHeader(const std::string& key, const std::string& def = "") const;
+  std::string getParam(const std::string& key, const std::string& def = "") const;
+  std::string getCookie(const std::string& key, const std::string& def = "") const;
 
   void setHeader(const std::string& key, const std::string& val);
   void setParam(const std::string& key, const std::string& val);
@@ -290,8 +285,7 @@ class HttpResponse {
   bool isClose() const { return m_close; }
   void setClose(bool v) { m_close = v; }
 
-  std::string getHeader(const std::string& key,
-                        const std::string& def = "") const;
+  std::string getHeader(const std::string& key, const std::string& def = "") const;
   void        setHeader(const std::string& key, const std::string& val);
   void        delHeader(const std::string& key);
 
@@ -323,5 +317,3 @@ std::ostream& operator<<(std::ostream& os, const HttpResponse& rsp);
 }  // namespace http
 
 }  // namespace gudov
-
-#endif  // __GUDOV_HTTP_H__

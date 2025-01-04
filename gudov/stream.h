@@ -1,5 +1,4 @@
-#ifndef __GUDOV_STREAM_H__
-#define __GUDOV_STREAM_H__
+#pragma once
 
 #include <memory>
 
@@ -25,5 +24,3 @@ class Stream {
 };
 
 }  // namespace gudov
-
-#endif  // __GUDOV_STREAM_H__

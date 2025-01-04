@@ -30,8 +30,7 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
       LOG_INFO(g_logger) << "client close: " << *client;
       break;
     } else if (rt < 0) {
-      LOG_INFO(g_logger) << "client error rt=" << rt << " errno=" << errno
-                         << " errstr=" << strerror(errno);
+      LOG_INFO(g_logger) << "client error rt=" << rt << " errno=" << errno << " errstr=" << strerror(errno);
       break;
     }
     ba->setPosition(ba->getPosition() + rt);
@@ -60,8 +59,7 @@ void run() {
 
 int main(int argc, char const *argv[]) {
   if (argc < 2) {
-    LOG_INFO(g_logger) << "used as[" << argv[0] << " -t] or [" << argv[0]
-                       << " -b]";
+    LOG_INFO(g_logger) << "used as[" << argv[0] << " -t] or [" << argv[0] << " -b]";
     return 0;
   }
 

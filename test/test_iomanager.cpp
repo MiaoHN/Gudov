@@ -33,11 +33,9 @@ void test_fiber() {
 
   if (!connect(sock, (const sockaddr*)&addr, sizeof(addr))) {
   } else if (errno == EINPROGRESS) {
-    LOG_INFO(g_logger)
-        << "add event errno=" << errno << " " << strerror(errno);
-    gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::READ, []() {
-      LOG_INFO(g_logger) << "read callback";
-    });
+    LOG_INFO(g_logger) << "add event errno=" << errno << " " << strerror(errno);
+    gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::READ,
+                                          []() { LOG_INFO(g_logger) << "read callback"; });
     gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::WRITE, []() {
       LOG_INFO(g_logger) << "write callback";
       // close(sock);

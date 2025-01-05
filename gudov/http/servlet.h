@@ -18,14 +18,14 @@ class Servlet {
  public:
   using ptr = std::shared_ptr<Servlet>;
 
-  Servlet(const std::string& name) : m_name(name) {}
+  Servlet(const std::string& name) : name_(name) {}
   virtual ~Servlet() {}
   virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) = 0;
 
-  const std::string& getName() const { return m_name; }
+  const std::string& GetName() const { return name_; }
 
  protected:
-  std::string m_name;
+  std::string name_;
 };
 
 class FunctionServlet : public Servlet {
@@ -67,7 +67,7 @@ class ServletDispatch : public Servlet {
   Servlet::ptr getMatchedServlet(const std::string& uri);
 
  private:
-  RWMutexType m_mutex;
+  RWMutexType mutex_;
   // uri(/sylar/xxx) -> servlet
   std::unordered_map<std::string, Servlet::ptr> m_datas;
   // uri(/sylar/*) -> servlet

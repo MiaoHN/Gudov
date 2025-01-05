@@ -40,7 +40,7 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   Fiber();
 
  public:
-  Fiber(std::function<void()> callback, size_t stackSize = 0);
+  Fiber(std::function<void()> callback, size_t stack_size = 0);
   ~Fiber();
 
   /**
@@ -48,51 +48,53 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
    *
    * @param callback
    */
-  void reset(std::function<void()> callback);
+  void Reset(std::function<void()> callback);
 
   /**
    * @brief 转入当前协程执行
    *
    */
-  void swapIn();
+  void SwapIn();
 
   /**
    * @brief 当前协程返回到主协程
    *
    */
-  void swapOut();
+  void SwapOut();
 
   /**
    * @brief 执行此协程
    * @details 从主协程转到子协程
    *
    */
-  void call();
+  void Call();
 
   /**
    * @brief 返回主协程
    *
    */
-  void back();
+  void Back();
 
-  uint64_t getId() const { return m_id; }
-  State    getState() const { return m_state; }
+  uint64_t GetID() const { return id_; }
+  State    GetState() const { return state_; }
 
  public:
   /**
    * @brief 设置当前运行协程
+   * @warning thread_local
    *
    * @param f
    */
-  static void SetThis(Fiber* f);
+  static void SetRunningFiber(Fiber* f);
 
   /**
    * @brief 获得当前运行协程
    * @details 如果当前线程还未创建协程，则创建主协程并返回
+   * @warning thread_local
    *
    * @return Fiber::ptr
    */
-  static Fiber::ptr GetThis();
+  static Fiber::ptr GetRunningFiber();
 
   /**
    * @brief 暂停执行当前协程，并将当前协程状态转为 Ready
@@ -118,17 +120,17 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
    *
    * @return uint64_t
    */
-  static uint64_t GetFiberId();
+  static uint64_t GetRunningFiberId();
 
  private:
-  uint64_t m_id         = 0;
-  uint32_t m_stack_size = 0;
-  State    m_state      = READY;
+  uint64_t id_         = 0;
+  uint32_t stack_size_ = 0;
+  State    state_      = READY;
 
-  ucontext_t m_ctx;
-  void*      m_stack = nullptr;
+  ucontext_t ctx_;
+  void*      stack_ = nullptr;
 
-  std::function<void()> m_callback;
+  std::function<void()> callback_;
 };
 
 }  // namespace gudov

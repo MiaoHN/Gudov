@@ -74,7 +74,7 @@ class TimerManager {
   bool detectClockRollover(uint64_t now_ms);
 
  private:
-  RWMutexType m_mutex;
+  RWMutexType mutex_;
 
   std::set<Timer::ptr, Timer::Comparator> m_timers;
 

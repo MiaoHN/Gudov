@@ -41,9 +41,9 @@ void IOManager::FdContext::triggerEvent(IOManager::Event event) {
   EventContext& ctx = getContext(event);
 
   if (ctx.callback) {
-    ctx.scheduler->schedule(&ctx.callback);
+    ctx.scheduler->Schedule(&ctx.callback);
   } else {
-    ctx.scheduler->schedule(&ctx.fiber);
+    ctx.scheduler->Schedule(&ctx.fiber);
   }
   ctx.scheduler = nullptr;
   return;
@@ -73,11 +73,11 @@ IOManager::IOManager(size_t threads, bool useCaller, const std::string& name)
 
   contextResize(32);
 
-  start();
+  Start();
 }
 
 IOManager::~IOManager() {
-  stop();
+  Stop();
   close(_epfd);
   close(_tickleFds[0]);
   close(_tickleFds[1]);
@@ -103,19 +103,19 @@ void IOManager::contextResize(size_t size) {
 int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   FdContext* fdCtx = nullptr;
   // 得到对应 fd 下标的 context，如果越界就将 _fdContexts 扩容
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   if ((int)_fdContexts.size() > fd) {
     fdCtx = _fdContexts[fd];
-    lock.unlock();
+    lock.Unlock();
   } else {
-    lock.unlock();
-    RWMutexType::WriteLock lock2(m_mutex);
+    lock.Unlock();
+    RWMutexType::WriteLock lock2(mutex_);
     contextResize(fd * 1.5);
     GUDOV_ASSERT((int)_fdContexts.size() > fd);
     fdCtx = _fdContexts[fd];
   }
 
-  FdContext::MutexType::Lock lock2(fdCtx->mutex);
+  FdContext::MutexType::Locker lock2(fdCtx->mutex);
   if (fdCtx->events & event) {
     // 已经添加过该事件
     LOG_ERROR(g_logger) << "addEvent assert fd=" << fd << " event=" << event
@@ -147,29 +147,29 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   GUDOV_ASSERT(!eventCtx.scheduler && !eventCtx.fiber && !eventCtx.callback);
 
   // 为该事件分配调用资源
-  eventCtx.scheduler = Scheduler::GetThis();
+  eventCtx.scheduler = Scheduler::GetScheduler();
   if (callback) {
     // 如果指定了调度函数则执行该函数
     eventCtx.callback.swap(callback);
   } else {
     // 执行当前协程
-    eventCtx.fiber = Fiber::GetThis();
-    GUDOV_ASSERT2(eventCtx.fiber->getState() == Fiber::EXEC,
-                  "state=" << eventCtx.fiber->getState());
+    eventCtx.fiber = Fiber::GetRunningFiber();
+    GUDOV_ASSERT2(eventCtx.fiber->GetState() == Fiber::EXEC,
+                  "state=" << eventCtx.fiber->GetState());
   }
   return 0;
 }
 
 bool IOManager::delEvent(int fd, Event event) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   if ((int)_fdContexts.size() <= fd) {
     // 该 fd 超出范围
     return false;
   }
   FdContext* fdCtx = _fdContexts[fd];
-  lock.unlock();
+  lock.Unlock();
 
-  FdContext::MutexType::Lock lock2(fdCtx->mutex);
+  FdContext::MutexType::Locker lock2(fdCtx->mutex);
   if (!(fdCtx->events & event)) {
     // 该 fd 不包含此事件
     return false;
@@ -201,14 +201,14 @@ bool IOManager::delEvent(int fd, Event event) {
 }
 
 bool IOManager::cancelEvent(int fd, Event event) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   if ((int)_fdContexts.size() <= fd) {
     return false;
   }
   FdContext* fdCtx = _fdContexts[fd];
-  lock.unlock();
+  lock.Unlock();
 
-  FdContext::MutexType::Lock lock2(fdCtx->mutex);
+  FdContext::MutexType::Locker lock2(fdCtx->mutex);
   if (!(fdCtx->events & event)) {
     return false;
   }
@@ -234,14 +234,14 @@ bool IOManager::cancelEvent(int fd, Event event) {
 }
 
 bool IOManager::cancelAll(int fd) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   if ((int)_fdContexts.size() <= fd) {
     return false;
   }
   FdContext* fdCtx = _fdContexts[fd];
-  lock.unlock();
+  lock.Unlock();
 
-  FdContext::MutexType::Lock lock2(fdCtx->mutex);
+  FdContext::MutexType::Locker lock2(fdCtx->mutex);
   if (!fdCtx->events) {
     return false;
   }
@@ -273,11 +273,11 @@ bool IOManager::cancelAll(int fd) {
 }
 
 IOManager* IOManager::GetThis() {
-  return dynamic_cast<IOManager*>(Scheduler::GetThis());
+  return dynamic_cast<IOManager*>(Scheduler::GetScheduler());
 }
 
-void IOManager::tickle() {
-  if (hasIdleThreads()) {
+void IOManager::Tickle() {
+  if (HasIdleThreads()) {
     return;
   }
   int rt = write(_tickleFds[1], "T", 1);
@@ -285,17 +285,17 @@ void IOManager::tickle() {
   GUDOV_ASSERT(rt == 1);
 }
 
-bool IOManager::stopping(uint64_t& timeout) {
+bool IOManager::Stopping(uint64_t& timeout) {
   timeout = getNextTimer();
-  return timeout == ~0ull && _pendingEventCount == 0 && Scheduler::stopping();
+  return timeout == ~0ull && _pendingEventCount == 0 && Scheduler::Stopping();
 }
 
-bool IOManager::stopping() {
+bool IOManager::Stopping() {
   uint64_t timeout = 0;
-  return stopping(timeout);
+  return Stopping(timeout);
 }
 
-void IOManager::idle() {
+void IOManager::Idle() {
   LOG_DEBUG(g_logger) << "idle";
   static const uint64_t maxEvents = 64;
 
@@ -307,8 +307,8 @@ void IOManager::idle() {
 
   while (true) {
     uint64_t nextTimeout = 0;
-    if (stopping(nextTimeout)) {
-      LOG_INFO(g_logger) << "name=" << getName() << " idle stopping exit";
+    if (Stopping(nextTimeout)) {
+      LOG_INFO(g_logger) << "name=" << GetName() << " idle stopping exit";
       break;
     }
 
@@ -338,7 +338,7 @@ void IOManager::idle() {
     LOG_DEBUG(g_logger) << "callback.size(): " << cbs.size() << ", rt: " << rt;
     if (!cbs.empty()) {
       // 将超时事件加入调度队列
-      schedule(cbs.begin(), cbs.end());
+      Schedule(cbs.begin(), cbs.end());
       cbs.clear();
     }
 
@@ -356,7 +356,7 @@ void IOManager::idle() {
       // 获得事件对应句柄内容(包括执行体)
       FdContext* fdCtx = (FdContext*)event.data.ptr;
 
-      FdContext::MutexType::Lock lock(fdCtx->mutex);
+      FdContext::MutexType::Locker lock(fdCtx->mutex);
 
       // 出错或者套接字对端关闭，此时需要同时打开读写事件，否则可能注册事件无法执行
       if (event.events & (EPOLLERR | EPOLLHUP)) {
@@ -399,15 +399,15 @@ void IOManager::idle() {
       }
     }
 
-    Fiber::ptr cur     = Fiber::GetThis();
+    Fiber::ptr cur     = Fiber::GetRunningFiber();
     auto       raw_ptr = cur.get();
     cur.reset();
 
     // 当前协程退出，scheduler 继续执行 run 进行调度
-    raw_ptr->swapOut();
+    raw_ptr->SwapOut();
   }
 }
 
-void IOManager::onTimerInsertedAtFront() { tickle(); }
+void IOManager::onTimerInsertedAtFront() { Tickle(); }
 
 }  // namespace gudov

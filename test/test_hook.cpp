@@ -15,12 +15,12 @@ gudov::Logger::ptr g_logger = LOG_ROOT();
 void testSleep() {
   gudov::IOManager iom(1);
 
-  iom.schedule([]() {
+  iom.Schedule([]() {
     sleep(2);
     LOG_INFO(g_logger) << "sleep 2";
   });
 
-  iom.schedule([]() {
+  iom.Schedule([]() {
     sleep(3);
     LOG_INFO(g_logger) << "sleep 3";
   });

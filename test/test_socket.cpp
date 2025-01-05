@@ -99,6 +99,6 @@ void test2() {
 int main(int argc, char** argv) {
   gudov::IOManager iom;
   // iom.schedule(&testSocket);
-  iom.schedule(&test2);
+  iom.Schedule(&test2);
   return 0;
 }

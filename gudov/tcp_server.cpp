@@ -13,8 +13,8 @@ static Logger::ptr g_logger = LOG_NAME("system");
 TcpServer::TcpServer(IOManager* woker, IOManager* accept_woker)
     : m_worker(woker),
       m_accept_worker(accept_woker),
-      m_recv_timeout(g_tcp_server_read_timeout->getValue()),
-      m_name("gudov/1.0.0"),
+      m_recv_timeout(g_tcp_server_read_timeout->GetValue()),
+      name_("gudov/1.0.0"),
       m_is_stop(true) {}
 
 TcpServer::~TcpServer() {
@@ -65,7 +65,7 @@ void TcpServer::startAccept(Socket::ptr sock) {
     Socket::ptr client = sock->accept();
     if (client) {
       client->setRecvTimeout(m_recv_timeout);
-      m_worker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
+      m_worker->Schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
     } else {
       LOG_ERROR(g_logger) << "accept errno=" << errno << " errstr=" << strerror(errno);
     }
@@ -78,7 +78,7 @@ bool TcpServer::start() {
   }
   m_is_stop = false;
   for (auto& sock : m_socks) {
-    m_accept_worker->schedule(std::bind(&TcpServer::startAccept, shared_from_this(), sock));
+    m_accept_worker->Schedule(std::bind(&TcpServer::startAccept, shared_from_this(), sock));
   }
   return true;
 }
@@ -86,7 +86,7 @@ bool TcpServer::start() {
 void TcpServer::stop() {
   m_is_stop = true;
   auto self = shared_from_this();
-  m_accept_worker->schedule([this, self]() {
+  m_accept_worker->Schedule([this, self]() {
     for (auto& sock : m_socks) {
       sock->cancelAll();
       sock->close();

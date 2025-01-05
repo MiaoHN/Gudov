@@ -188,7 +188,7 @@ class LogAppender {
 
  protected:
   LogLevel::Level   m_level = LogLevel::UNKNOWN;
-  MutexType         m_mutex;
+  MutexType         mutex_;
   LogFormatter::ptr m_formatter;
 };
 
@@ -208,7 +208,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
   LogLevel::Level getLevel() const { return m_level; }
   void            setLevel(LogLevel::Level level) { m_level = level; }
 
-  const std::string& getName() const { return m_name; }
+  const std::string& GetName() const { return name_; }
 
   void              setFormatter(LogFormatter::ptr val);
   void              setFormatter(const std::string& val);
@@ -217,9 +217,9 @@ class Logger : public std::enable_shared_from_this<Logger> {
   std::string toYamlString();
 
  private:
-  std::string                 m_name;
+  std::string                 name_;
   LogLevel::Level             m_level;
-  MutexType                   m_mutex;
+  MutexType                   mutex_;
   std::list<LogAppender::ptr> m_appenders;
   LogFormatter::ptr           m_formatter;
   Logger::ptr                 m_root;
@@ -276,7 +276,7 @@ class LoggerManager {
   std::string toYamlString();
 
  private:
-  MutexType                          m_mutex;
+  MutexType                          mutex_;
   std::map<std::string, Logger::ptr> m_loggers;
   Logger::ptr                        m_root;
 };

@@ -15,14 +15,14 @@ namespace gudov {
  * @return true
  * @return false
  */
-bool isHookEnable();
+bool IsHookEnable();
 
 /**
  * @brief 开启或关闭 hook
  *
  * @param flag
  */
-void setHookEnable(bool flag);
+void SetHookEnable(bool flag);
 
 }  // namespace gudov
 

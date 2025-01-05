@@ -15,7 +15,7 @@ Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring, TimerM
 Timer::Timer(uint64_t next) : m_next(next) {}
 
 bool Timer::cancel() {
-  TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+  TimerManager::RWMutexType::WriteLock lock(m_manager->mutex_);
   if (m_callback) {
     m_callback = nullptr;
     auto it    = m_manager->m_timers.find(shared_from_this());
@@ -26,7 +26,7 @@ bool Timer::cancel() {
 }
 
 bool Timer::refresh() {
-  TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+  TimerManager::RWMutexType::WriteLock lock(m_manager->mutex_);
   if (!m_callback) {
     return false;
   }
@@ -44,7 +44,7 @@ bool Timer::reset(uint64_t ms, bool fromNow) {
   if (ms == m_ms && !fromNow) {
     return true;
   }
-  TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+  TimerManager::RWMutexType::WriteLock lock(m_manager->mutex_);
   if (!m_callback) {
     return false;
   }
@@ -91,7 +91,7 @@ TimerManager::~TimerManager() {}
 Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback, bool recurring) {
   LOG_DEBUG(g_logger) << "TimerManager::addTimer";
   Timer::ptr             timer(new Timer(ms, callback, recurring, this));
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   addTimer(timer, lock);
   return timer;
 }
@@ -115,7 +115,7 @@ Timer::ptr TimerManager::addConditionTimer(uint64_t ms, std::function<void()> ca
 }
 
 uint64_t TimerManager::getNextTimer() {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   m_tickled = false;
   if (m_timers.empty()) {
     return ~0ull;
@@ -135,12 +135,12 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
 
   std::vector<Timer::ptr> expired;
   {
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutexType::ReadLock lock(mutex_);
     if (m_timers.empty()) {
       return;
     }
   }
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
 
   if (m_timers.empty()) {
     return;
@@ -178,7 +178,7 @@ void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
   if (at_front) {
     m_tickled = true;
   }
-  lock.unlock();
+  lock.Unlock();
 
   if (at_front) {
     onTimerInsertedAtFront();
@@ -195,7 +195,7 @@ bool TimerManager::detectClockRollover(uint64_t now_ms) {
 }
 
 bool TimerManager::hasTimer() {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   return !m_timers.empty();
 }
 

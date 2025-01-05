@@ -25,7 +25,7 @@ void HttpServer::handleClient(Socket::ptr client) {
     }
 
     HttpResponse::ptr rsp(new HttpResponse(req->getVersion(), req->isClose() || !m_is_keep_alive));
-    rsp->setHeader("Server", getName());
+    rsp->setHeader("Server", GetName());
     m_dispatch->handle(req, rsp, session);
     session->sendResponse(rsp);
 

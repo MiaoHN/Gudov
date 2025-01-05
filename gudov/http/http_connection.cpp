@@ -246,7 +246,7 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
   uint64_t                     now_ms = GetCurrentMS();
   std::vector<HttpConnection*> invalid_conns;
   HttpConnection*              ptr = nullptr;
-  MutexType::Lock              lock(m_mutex);
+  MutexType::Locker              lock(mutex_);
   while (!m_conns.empty()) {
     auto conn = *m_conns.begin();
     m_conns.pop_front();
@@ -261,7 +261,7 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
     ptr = conn;
     break;
   }
-  lock.unlock();
+  lock.Unlock();
   for (auto i : invalid_conns) {
     delete i;
   }
@@ -298,7 +298,7 @@ void HttpConnectionPool::ReleasePtr(HttpConnection* ptr, HttpConnectionPool* poo
     --pool->m_total;
     return;
   }
-  MutexType::Lock lock(pool->m_mutex);
+  MutexType::Locker lock(pool->mutex_);
   pool->m_conns.push_back(ptr);
 }
 

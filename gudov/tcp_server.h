@@ -22,9 +22,9 @@ class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
   virtual void stop();
 
   uint64_t    getRecvTimeout() const { return m_recv_timeout; }
-  std::string getName() const { return m_name; }
+  std::string GetName() const { return name_; }
   void        setRecvTimeout(uint64_t v) { m_recv_timeout = v; }
-  void        setName(const std::string& v) { m_name = v; }
+  void        setName(const std::string& v) { name_ = v; }
 
   bool isStop() const { return m_is_stop; }
 
@@ -38,7 +38,7 @@ class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
   IOManager*  m_worker;
   IOManager*  m_accept_worker;
   uint64_t    m_recv_timeout;
-  std::string m_name;
+  std::string name_;
   bool        m_is_stop;
 };
 

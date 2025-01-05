@@ -50,7 +50,7 @@ void test_fiber() {
 void test1() {
   std::cout << "EPOLLIN=" << EPOLLIN << " EPOLLOUT=" << EPOLLOUT << std::endl;
   gudov::IOManager iom(2, false);
-  iom.schedule(&test_fiber);
+  iom.Schedule(&test_fiber);
 }
 
 gudov::Timer::ptr s_timer;

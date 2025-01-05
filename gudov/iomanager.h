@@ -105,9 +105,9 @@ class IOManager : public Scheduler, public TimerManager {
    * @details 会触发一次 epoll_wait
    *
    */
-  void tickle() override;
-  bool stopping() override;
-  void idle() override;
+  void Tickle() override;
+  bool Stopping() override;
+  void Idle() override;
 
   /**
    * @brief 添加定时器后做适当处理
@@ -117,7 +117,7 @@ class IOManager : public Scheduler, public TimerManager {
   void onTimerInsertedAtFront() override;
 
   void contextResize(size_t size);
-  bool stopping(uint64_t& timeout);
+  bool Stopping(uint64_t& timeout);
 
  private:
   int _epfd = 0;
@@ -127,7 +127,7 @@ class IOManager : public Scheduler, public TimerManager {
 
   // 当前未执行的 IO 事件数量
   std::atomic<size_t> _pendingEventCount{0};
-  RWMutexType         m_mutex;
+  RWMutexType         mutex_;
 
   std::vector<FdContext*> _fdContexts;
 };

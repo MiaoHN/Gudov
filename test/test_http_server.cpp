@@ -49,6 +49,6 @@ void run() {
 int main(int argc, char** argv) {
   gudov::IOManager iom(1, true, "main");
   worker.reset(new gudov::IOManager(3, false, "worker"));
-  iom.schedule(run);
+  iom.Schedule(run);
   return 0;
 }

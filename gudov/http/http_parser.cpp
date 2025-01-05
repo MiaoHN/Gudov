@@ -40,10 +40,10 @@ namespace {
 
 struct _RequestSizeIniter {
   _RequestSizeIniter() {
-    s_http_request_buffer_size    = g_http_request_buffer_size->getValue();
-    s_http_request_max_body_size  = g_http_request_max_body_size->getValue();
-    s_http_response_buffer_size   = g_http_response_buffer_size->getValue();
-    s_http_response_max_body_size = g_http_response_max_body_size->getValue();
+    s_http_request_buffer_size    = g_http_request_buffer_size->GetValue();
+    s_http_request_max_body_size  = g_http_request_max_body_size->GetValue();
+    s_http_response_buffer_size   = g_http_response_buffer_size->GetValue();
+    s_http_response_max_body_size = g_http_response_max_body_size->GetValue();
 
     g_http_request_buffer_size->addListener(
         [](const uint64_t& ov, const uint64_t& nv) { s_http_request_buffer_size = nv; });

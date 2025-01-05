@@ -30,6 +30,6 @@ void run() {
 
 int main(int argc, char const *argv[]) {
   gudov::IOManager iom(1);
-  iom.schedule(run);
+  iom.Schedule(run);
   return 0;
 }

@@ -60,7 +60,7 @@ static uint64_t s_connectTimeout = -1;
 struct _HookIniter {
   _HookIniter() {
     hookInit();
-    s_connectTimeout = g_tcpConnectTimeout->getValue();
+    s_connectTimeout = g_tcpConnectTimeout->GetValue();
 
     g_tcpConnectTimeout->addListener([](const int& oldValue, const int& newValue) {
       LOG_INFO(g_logger) << "tcp connect timeout changed from " << oldValue << " to " << newValue;
@@ -72,9 +72,9 @@ struct _HookIniter {
 // 使用结构体在初始化时完成 hook
 static _HookIniter s_hookIniter;
 
-bool isHookEnable() { return t_hookEnable; }
+bool IsHookEnable() { return t_hookEnable; }
 
-void setHookEnable(bool flag) { t_hookEnable = flag; }
+void SetHookEnable(bool flag) { t_hookEnable = flag; }
 
 }  // namespace gudov
 
@@ -98,7 +98,7 @@ struct TimerInfo {
 template <typename OriginFun, typename... Args>
 static ssize_t doIO(int fd, OriginFun fun, const std::string& hookFunName, uint32_t event, int timeoutSo,
                     Args&&... args) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     // 未启用 hook 时直接调用原有函数
     return fun(fd, std::forward<Args>(args)...);
   }
@@ -192,51 +192,51 @@ HOOK_FUN(XX)
 #undef XX
 
 unsigned int sleep(unsigned int seconds) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     return sleepF(seconds);
   }
 
-  gudov::Fiber::ptr fiber = gudov::Fiber::GetThis();
+  gudov::Fiber::ptr fiber = gudov::Fiber::GetRunningFiber();
   gudov::IOManager* iom   = gudov::IOManager::GetThis();
   iom->addTimer(seconds * 1000,
-                std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) & gudov::IOManager::schedule, iom,
+                std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) & gudov::IOManager::Schedule, iom,
                           fiber, -1));
   gudov::Fiber::Yield();
   return 0;
 }
 
 int usleep(useconds_t usec) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     return usleepF(usec);
   }
 
-  gudov::Fiber::ptr fiber = gudov::Fiber::GetThis();
+  gudov::Fiber::ptr fiber = gudov::Fiber::GetRunningFiber();
   gudov::IOManager* iom   = gudov::IOManager::GetThis();
   iom->addTimer(usec / 1000,
-                std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) & gudov::IOManager::schedule, iom,
+                std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) & gudov::IOManager::Schedule, iom,
                           fiber, -1));
   gudov::Fiber::Yield();
   return 0;
 }
 
 int nanosleep(const struct timespec* req, struct timespec* rem) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     return nanosleepF(req, rem);
   }
 
   int timeoutMs = req->tv_sec * 1000 + req->tv_nsec / 1000000;
 
-  gudov::Fiber::ptr fiber = gudov::Fiber::GetThis();
+  gudov::Fiber::ptr fiber = gudov::Fiber::GetRunningFiber();
   gudov::IOManager* iom   = gudov::IOManager::GetThis();
   iom->addTimer(timeoutMs,
-                std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) & gudov::IOManager::schedule, iom,
+                std::bind((void(gudov::Scheduler::*)(gudov::Fiber::ptr, int thread)) & gudov::IOManager::Schedule, iom,
                           fiber, -1));
   gudov::Fiber::Yield();
   return 0;
 }
 
 int socket(int domain, int type, int protocol) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     return socketF(domain, type, protocol);
   }
   int fd = socketF(domain, type, protocol);
@@ -248,7 +248,7 @@ int socket(int domain, int type, int protocol) {
 }
 
 int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen, uint64_t timeoutMs) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     // 未 hook 时使用原始函数
     return connectF(fd, addr, addrlen);
   }
@@ -381,7 +381,7 @@ ssize_t sendmsg(int s, const struct msghdr* msg, int flags) {
 }
 
 int close(int fd) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     return closeF(fd);
   }
 
@@ -496,7 +496,7 @@ int getsockopt(int sockfd, int level, int optname, void* optval, socklen_t* optl
 }
 
 int setsockopt(int sockfd, int level, int optname, const void* optval, socklen_t optlen) {
-  if (!gudov::isHookEnable()) {
+  if (!gudov::IsHookEnable()) {
     return setsockoptF(sockfd, level, optname, optval, optlen);
   }
   if (level == SOL_SOCKET) {

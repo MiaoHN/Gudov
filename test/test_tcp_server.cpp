@@ -21,6 +21,6 @@ void run() {
 }
 int main(int argc, char** argv) {
   gudov::IOManager iom(2);
-  iom.schedule(run);
+  iom.Schedule(run);
   return 0;
 }

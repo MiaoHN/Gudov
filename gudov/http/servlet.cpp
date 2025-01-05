@@ -23,17 +23,17 @@ int32_t ServletDispatch::handle(HttpRequest::ptr request, HttpResponse::ptr resp
 }
 
 void ServletDispatch::addServlet(const std::string& uri, Servlet::ptr slt) {
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   m_datas[uri] = slt;
 }
 
 void ServletDispatch::addServlet(const std::string& uri, FunctionServlet::callback callback) {
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   m_datas[uri].reset(new FunctionServlet(callback));
 }
 
 void ServletDispatch::addGlobServlet(const std::string& uri, Servlet::ptr slt) {
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   for (auto it = m_globs.begin(); it != m_globs.end(); ++it) {
     if (it->first == uri) {
       m_globs.erase(it);
@@ -48,12 +48,12 @@ void ServletDispatch::addGlobServlet(const std::string& uri, FunctionServlet::ca
 }
 
 void ServletDispatch::delServlet(const std::string& uri) {
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   m_datas.erase(uri);
 }
 
 void ServletDispatch::delGlobServlet(const std::string& uri) {
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   for (auto it = m_globs.begin(); it != m_globs.end(); ++it) {
     if (it->first == uri) {
       m_globs.erase(it);
@@ -63,13 +63,13 @@ void ServletDispatch::delGlobServlet(const std::string& uri) {
 }
 
 Servlet::ptr ServletDispatch::getServlet(const std::string& uri) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   auto                  it = m_datas.find(uri);
   return it == m_datas.end() ? nullptr : it->second;
 }
 
 Servlet::ptr ServletDispatch::getGlobServlet(const std::string& uri) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   for (auto it = m_globs.begin(); it != m_globs.end(); ++it) {
     if (it->first == uri) {
       return it->second;
@@ -79,7 +79,7 @@ Servlet::ptr ServletDispatch::getGlobServlet(const std::string& uri) {
 }
 
 Servlet::ptr ServletDispatch::getMatchedServlet(const std::string& uri) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   auto                  mit = m_datas.find(uri);
   if (mit != m_datas.end()) {
     return mit->second;

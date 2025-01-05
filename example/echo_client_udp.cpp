@@ -19,7 +19,7 @@ void run() {
 
   gudov::Socket::ptr sock = gudov::Socket::CreateUDP(addr);
 
-  gudov::IOManager::GetThis()->schedule([addr, sock]() {
+  gudov::IOManager::GetThis()->Schedule([addr, sock]() {
     LOG_INFO(g_logger) << "begin recv";
     while (true) {
       char buff[1024];
@@ -55,6 +55,6 @@ int main(int argc, char** argv) {
   ip   = argv[1];
   port = atoi(argv[2]);
   gudov::IOManager iom(2);
-  iom.schedule(run);
+  iom.Schedule(run);
   return 0;
 }

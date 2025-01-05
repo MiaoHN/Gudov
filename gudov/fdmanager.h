@@ -69,7 +69,7 @@ class FdManager {
   void           del(int fd);
 
  private:
-  RWMutexType m_mutex;
+  RWMutexType mutex_;
 
   std::vector<FdContext::ptr> _datas;
 };

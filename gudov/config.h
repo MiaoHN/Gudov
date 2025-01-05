@@ -28,12 +28,12 @@ class ConfigVarBase {
  public:
   using ptr = std::shared_ptr<ConfigVarBase>;
   ConfigVarBase(const std::string& name, const std::string& description = "")
-      : m_name(name), m_description(description) {
-    std::transform(m_name.begin(), m_name.end(), m_name.begin(), ::tolower);
+      : name_(name), m_description(description) {
+    std::transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
   }
   virtual ~ConfigVarBase() {}
 
-  const std::string& getName() const { return m_name; }
+  const std::string& GetName() const { return name_; }
   const std::string& getDescription() const { return m_description; }
 
   virtual std::string toString()                         = 0;
@@ -41,7 +41,7 @@ class ConfigVarBase {
   virtual std::string getTypeName() const                = 0;
 
  private:
-  std::string m_name;
+  std::string name_;
   std::string m_description;
 };
 
@@ -258,7 +258,7 @@ class ConfigVar : public ConfigVarBase {
 
   std::string toString() override {
     try {
-      RWMutexType::ReadLock lock(m_mutex);
+      RWMutexType::ReadLock lock(mutex_);
       return ToStr()(m_value);
     } catch (std::exception& e) {
       LOG_ERROR(LOG_ROOT()) << "ConfigVar::toString exception" << e.what() << " convert: " << typeid(m_value).name()
@@ -277,13 +277,13 @@ class ConfigVar : public ConfigVarBase {
     return false;
   };
 
-  const T getValue() {
-    RWMutexType::ReadLock lock(m_mutex);
+  const T GetValue() {
+    RWMutexType::ReadLock lock(mutex_);
     return m_value;
   }
   void setValue(const T& v) {
     {
-      RWMutexType::ReadLock lock(m_mutex);
+      RWMutexType::ReadLock lock(mutex_);
       if (v == m_value) {
         return;
       }
@@ -291,7 +291,7 @@ class ConfigVar : public ConfigVarBase {
         i.second(m_value, v);
       }
     }
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutexType::ReadLock lock(mutex_);
     m_value = v;
   }
 
@@ -299,31 +299,31 @@ class ConfigVar : public ConfigVarBase {
 
   uint64_t addListener(onChangeCallback callback) {
     static uint64_t        s_fun_id = 0;
-    RWMutexType::WriteLock lock(m_mutex);
+    RWMutexType::WriteLock lock(mutex_);
     ++s_fun_id;
     m_callbacks[s_fun_id] = callback;
     return s_fun_id;
   }
 
   void delListener(uint64_t key) {
-    RWMutexType::WriteLock lock(m_mutex);
+    RWMutexType::WriteLock lock(mutex_);
     m_callbacks.erase(key);
   }
 
   onChangeCallback getListener(uint64_t key) {
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutexType::ReadLock lock(mutex_);
     auto                  it = m_callbacks.find(key);
     return it == m_callbacks.end() ? nullptr : it->second;
   }
 
   void clearListener() {
-    RWMutexType::WriteLock lock(m_mutex);
+    RWMutexType::WriteLock lock(mutex_);
     m_callbacks.clear();
   }
 
  private:
   T                                    m_value;
-  RWMutexType                          m_mutex;
+  RWMutexType                          mutex_;
   std::map<uint64_t, onChangeCallback> m_callbacks;
 };
 
@@ -373,6 +373,11 @@ class Config {
   static ConfigVarBase::ptr LookupBase(const std::string& name);
 
   static void Visit(std::function<void(ConfigVarBase::ptr)> callback);
+
+  static void Clear() {
+    RWMutexType::WriteLock lock(GetMutex());
+    GetDatas().clear();
+  }
 
  private:
   static ConfigVarMap& GetDatas() {

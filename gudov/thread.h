@@ -27,16 +27,16 @@ class Semaphore : public NonCopyable {
    * @brief 信号量不为 0 时减 1
    *
    */
-  void wait();
+  void Wait();
 
   /**
    * @brief 信号量加 1
    *
    */
-  void notify();
+  void Notify();
 
  private:
-  sem_t _semaphore;
+  sem_t semaphore_;
 };
 
 /**
@@ -47,27 +47,27 @@ class Semaphore : public NonCopyable {
 template <typename T>
 class ScopedLockImpl {
  public:
-  ScopedLockImpl(T& mutex) : m_mutex(mutex) { lock(); }
+  ScopedLockImpl(T& mutex) : mutex_(mutex) { Lock(); }
 
-  ~ScopedLockImpl() { unlock(); }
+  ~ScopedLockImpl() { Unlock(); }
 
-  void lock() {
-    if (!_locked) {
-      m_mutex.lock();
-      _locked = true;
+  void Lock() {
+    if (!locked_) {
+      mutex_.Lock();
+      locked_ = true;
     }
   }
 
-  void unlock() {
-    if (_locked) {
-      m_mutex.unlock();
-      _locked = false;
+  void Unlock() {
+    if (locked_) {
+      mutex_.Unlock();
+      locked_ = false;
     }
   }
 
  private:
-  T&   m_mutex;
-  bool _locked = false;
+  T&   mutex_;
+  bool locked_ = false;
 };
 
 /**
@@ -78,27 +78,27 @@ class ScopedLockImpl {
 template <typename T>
 class ReadScopedLockImpl {
  public:
-  ReadScopedLockImpl(T& mutex) : m_mutex(mutex) { lock(); }
+  ReadScopedLockImpl(T& mutex) : mutex_(mutex) { Lock(); }
 
-  ~ReadScopedLockImpl() { unlock(); }
+  ~ReadScopedLockImpl() { Unlock(); }
 
-  void lock() {
-    if (!_locked) {
-      m_mutex.rdlock();
-      _locked = true;
+  void Lock() {
+    if (!locked_) {
+      mutex_.rdlock();
+      locked_ = true;
     }
   }
 
-  void unlock() {
-    if (_locked) {
-      m_mutex.unlock();
-      _locked = false;
+  void Unlock() {
+    if (locked_) {
+      mutex_.unlock();
+      locked_ = false;
     }
   }
 
  private:
-  T&   m_mutex;
-  bool _locked = false;
+  T&   mutex_;
+  bool locked_ = false;
 };
 
 /**
@@ -109,41 +109,41 @@ class ReadScopedLockImpl {
 template <typename T>
 class WriteScopedLockImpl {
  public:
-  WriteScopedLockImpl(T& mutex) : m_mutex(mutex) { lock(); }
+  WriteScopedLockImpl(T& mutex) : mutex_(mutex) { Lock(); }
 
-  ~WriteScopedLockImpl() { unlock(); }
+  ~WriteScopedLockImpl() { Unlock(); }
 
-  void lock() {
-    if (!_locked) {
-      m_mutex.wrlock();
-      _locked = true;
+  void Lock() {
+    if (!locked_) {
+      mutex_.wrlock();
+      locked_ = true;
     }
   }
 
-  void unlock() {
-    if (_locked) {
-      m_mutex.unlock();
-      _locked = false;
+  void Unlock() {
+    if (locked_) {
+      mutex_.unlock();
+      locked_ = false;
     }
   }
 
  private:
-  T&   m_mutex;
-  bool _locked = false;
+  T&   mutex_;
+  bool locked_ = false;
 };
 
 class Mutex : public NonCopyable {
  public:
-  using Lock = ScopedLockImpl<Mutex>;
+  using Locker = ScopedLockImpl<Mutex>;
 
-  Mutex() { pthread_mutex_init(&m_mutex, nullptr); }
-  ~Mutex() { pthread_mutex_destroy(&m_mutex); }
+  Mutex() { pthread_mutex_init(&mutex_, nullptr); }
+  ~Mutex() { pthread_mutex_destroy(&mutex_); }
 
-  void lock() { pthread_mutex_lock(&m_mutex); }
-  void unlock() { pthread_mutex_unlock(&m_mutex); }
+  void Lock() { pthread_mutex_lock(&mutex_); }
+  void Unlock() { pthread_mutex_unlock(&mutex_); }
 
  private:
-  pthread_mutex_t m_mutex;
+  pthread_mutex_t mutex_;
 };
 
 /**
@@ -168,34 +168,34 @@ class RWMutex : public NonCopyable {
 
 class Spinlock : public NonCopyable {
  public:
-  using Lock = ScopedLockImpl<Spinlock>;
+  using Locker = ScopedLockImpl<Spinlock>;
 
-  Spinlock() { pthread_spin_init(&m_mutex, 0); }
-  ~Spinlock() { pthread_spin_destroy(&m_mutex); }
+  Spinlock() { pthread_spin_init(&mutex_, 0); }
+  ~Spinlock() { pthread_spin_destroy(&mutex_); }
 
-  void lock() { pthread_spin_lock(&m_mutex); }
-  void unlock() { pthread_spin_unlock(&m_mutex); }
+  void Lock() { pthread_spin_lock(&mutex_); }
+  void Unlock() { pthread_spin_unlock(&mutex_); }
 
  private:
-  pthread_spinlock_t m_mutex;
+  pthread_spinlock_t mutex_;
 };
 
 class CASLock : public NonCopyable {
  public:
-  using Lock = ScopedLockImpl<CASLock>;
+  using Locker = ScopedLockImpl<CASLock>;
 
-  CASLock() { m_mutex.clear(); }
+  CASLock() { mutex_.clear(); }
   ~CASLock() {}
 
-  void lock() {
-    while (std::atomic_flag_test_and_set_explicit(&m_mutex, std::memory_order_acquire))
+  void Lock() {
+    while (std::atomic_flag_test_and_set_explicit(&mutex_, std::memory_order_acquire))
       ;
   }
 
-  void unlock() { std::atomic_flag_clear_explicit(&m_mutex, std::memory_order_release); }
+  void Unlock() { std::atomic_flag_clear_explicit(&mutex_, std::memory_order_release); }
 
  private:
-  volatile std::atomic_flag m_mutex;
+  volatile std::atomic_flag mutex_;
 };
 
 class Thread : public NonCopyable {
@@ -209,43 +209,43 @@ class Thread : public NonCopyable {
    *
    * @return pid_t
    */
-  pid_t getId() const { return m_id; }
+  pid_t GetID() const { return id_; }
 
-  const std::string& getName() const { return m_name; }
+  const std::string& GetName() const { return name_; }
 
   /**
    * @brief 等待线程结束
    *
    */
-  void join();
+  void Join();
 
   /**
    * @brief 获取当前运行的线程
    *
    * @return Thread*
    */
-  static Thread* GetThis();
+  static Thread* GetRunningThread();
 
   /**
    * @brief 获取当前运行的线程的名称
    *
    * @return Thread*
    */
-  static const std::string& GetName();
+  static const std::string& GetRunningThreadName();
 
-  static void SetName(const std::string& name);
-
- private:
-  static void* run(void* args);
+  static void SetRunningThreadName(const std::string& name);
 
  private:
-  pid_t       m_id     = -1;  // 全局 ID，通过 syscall() 得到
-  pthread_t   m_thread = 0;   // 进程内 ID，pthread_create() 创建时得到
-  std::string m_name;         // 线程名称
+  static void* Run(void* args);
 
-  std::function<void()> m_callback;  // 线程内运行的函数
+ private:
+  pid_t       id_     = -1;  // 全局 ID，通过 syscall() 得到
+  pthread_t   thread_ = 0;   // 进程内 ID，pthread_create() 创建时得到
+  std::string name_;         // 线程名称
 
-  Semaphore _semaphore;
+  std::function<void()> callback_;  // 线程内运行的函数
+
+  Semaphore semaphore_;
 };
 
 }  // namespace gudov

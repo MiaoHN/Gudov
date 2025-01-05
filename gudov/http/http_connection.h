@@ -129,7 +129,7 @@ class HttpConnectionPool {
   uint32_t    m_max_alive_time;
   uint32_t    m_max_request;
 
-  MutexType                  m_mutex;
+  MutexType                  mutex_;
   std::list<HttpConnection*> m_conns;
   std::atomic<int32_t>       m_total = {0};
 };

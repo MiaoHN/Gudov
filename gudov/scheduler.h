@@ -26,20 +26,22 @@ class Scheduler {
    * @brief 创建一个线程协程调度器
    *
    * @param threads 创建的线程数
-   * @param useCaller
-   * @param name
+   * @param use_caller 是否使用当前线程
+   * @param name 调度器名称
+   * @param auto_stop 是否自动停止
    */
-  Scheduler(size_t threads = 1, bool useCaller = true, const std::string& name = "");
+  Scheduler(size_t threads = 1, bool use_caller = true, const std::string& name = "");
   virtual ~Scheduler();
 
-  const std::string& getName() const { return m_name; }
+  const std::string& GetName() const { return name_; }
 
   /**
    * @brief 获取当前 Scheduler
+   * @warning thread_local
    *
    * @return Scheduler*
    */
-  static Scheduler* GetThis();
+  static Scheduler* GetScheduler();
 
   /**
    * @brief 获取主协程
@@ -52,9 +54,9 @@ class Scheduler {
    * @brief 开始执行
    *
    */
-  void start();
+  void Start();
 
-  void stop();
+  void Stop();
 
   /**
    * @brief 将待调度的协程或执行体加入调度队列中
@@ -64,15 +66,15 @@ class Scheduler {
    * @param thread
    */
   template <typename FiberOrCb>
-  void schedule(FiberOrCb fc, int thread = -1) {
-    bool needTickle = false;
+  void Schedule(FiberOrCb fc, int thread = -1) {
+    bool need_tickle = false;
     {
-      MutexType::Lock lock(m_mutex);
-      needTickle = scheduleNoLock(fc, thread);
+      MutexType::Locker lock(mutex_);
+      need_tickle = ScheduleNoLock(fc, thread);
     }
 
-    if (needTickle) {
-      tickle();
+    if (need_tickle) {
+      Tickle();
     }
   }
 
@@ -84,18 +86,18 @@ class Scheduler {
    * @param end
    */
   template <typename InputIterator>
-  void schedule(InputIterator begin, InputIterator end) {
+  void Schedule(InputIterator begin, InputIterator end) {
     bool needTickle = false;
     {
-      MutexType::Lock lock(m_mutex);
+      MutexType::Locker lock(mutex_);
       while (begin != end) {
-        needTickle = scheduleNoLock(&*begin, -1) || needTickle;
+        needTickle = ScheduleNoLock(&*begin, -1) || needTickle;
         ++begin;
       }
     }
 
     if (needTickle) {
-      tickle();
+      Tickle();
     }
   }
 
@@ -104,25 +106,25 @@ class Scheduler {
    * @brief 通知协程有未执行任务
    *
    */
-  virtual void tickle();
+  virtual void Tickle();
 
   /**
    * @brief 处理调度的函数
    *
    */
-  void run();
+  void Run();
 
-  virtual bool stopping();
+  virtual bool Stopping();
 
   /**
    * @brief 没有待调度执行体时执行该函数
    *
    */
-  virtual void idle();
+  virtual void Idle();
 
-  void setThis();
+  void SetThis();
 
-  bool hasIdleThreads() { return m_idle_thread_count > 0; }
+  bool HasIdleThreads() { return idle_thread_count_ > 0; }
 
  private:
   /**
@@ -136,14 +138,14 @@ class Scheduler {
    * @return false 执行队列非空
    */
   template <typename FiberOrCb>
-  bool scheduleNoLock(FiberOrCb fc, int thread) {
-    bool needTickle = m_tasks.empty();
+  bool ScheduleNoLock(FiberOrCb fc, int thread) {
+    bool need_tickle = tasks_.empty();
     Task task(fc, thread);
     if (task.fiber || task.callback) {
-      m_tasks.push_back(task);
+      tasks_.push_back(task);
     }
 
-    return needTickle;
+    return need_tickle;
   }
 
  private:
@@ -163,7 +165,7 @@ class Scheduler {
 
     Task() : thread(-1) {}
 
-    void reset() {
+    void Reset() {
       fiber    = nullptr;
       callback = nullptr;
       thread   = -1;
@@ -171,39 +173,39 @@ class Scheduler {
   };
 
  private:
-  MutexType m_mutex;
+  MutexType mutex_;
 
   /**
    * @brief 线程池 (不包括主协程)
    *
    */
-  std::vector<Thread::ptr> m_threads;
+  std::vector<Thread::ptr> threads_;
 
   /**
    * @brief 待处理的协程(业务)
    *
    */
-  std::list<Task> m_tasks;
+  std::list<Task> tasks_;
 
   /**
    * @brief 主协程
    *
    */
-  Fiber::ptr m_root_fiber;
+  Fiber::ptr root_fiber_;
 
-  std::string m_name;
+  std::string name_;
 
  protected:
   // 所有线程的 id (包括主协程)
-  std::vector<int> m_thread_ids;
+  std::vector<int> thread_ids_;
   // 待调度的线程数
-  size_t              m_thread_count;
-  std::atomic<size_t> m_active_thread_count = {0};
-  std::atomic<size_t> m_idle_thread_count   = {0};
-  bool                m_stopping            = true;
-  bool                m_auto_stop           = false;
+  size_t              thread_count_;
+  std::atomic<size_t> active_thread_count_ = {0};
+  std::atomic<size_t> idle_thread_count_   = {0};
+  bool                stopping_            = true;
+  bool                auto_stop_           = false;
   // 主线程 ID
-  int m_root_thread = 0;
+  int root_thread_ = 0;
 };
 
 }  // namespace gudov

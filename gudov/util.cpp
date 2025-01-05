@@ -15,7 +15,7 @@ static Logger::ptr g_logger = LOG_NAME("system");
 
 pid_t GetThreadId() { return syscall(SYS_gettid); }
 
-uint32_t GetFiberId() { return Fiber::GetFiberId(); }
+uint32_t GetFiberId() { return Fiber::GetRunningFiberId(); }
 
 void BackTrace(std::vector<std::string>& bt, int size, int skip) {
   void** array = (void**)malloc(sizeof(void*) * size);

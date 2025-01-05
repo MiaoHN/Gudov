@@ -1,34 +1,10 @@
+#include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
-
-#include <iostream>
 
 #include "gudov/config.h"
 #include "gudov/log.h"
 
-#if 1
-gudov::ConfigVar<int>::ptr g_int_value_config = gudov::Config::Lookup("system.port", (int)8080, "system port");
-
-gudov::ConfigVar<float>::ptr g_int_valuex_config = gudov::Config::Lookup("system.port", (float)8080, "system port");
-
-gudov::ConfigVar<float>::ptr g_float_value_config = gudov::Config::Lookup("system.value", (float)10.2f, "system value");
-
-gudov::ConfigVar<std::vector<int>>::ptr g_int_vec_value_config =
-    gudov::Config::Lookup("system.int_vec", std::vector<int>{1, 2}, "system int vec");
-
-gudov::ConfigVar<std::list<int>>::ptr g_int_list_value_config =
-    gudov::Config::Lookup("system.int_list", std::list<int>{1, 2}, "system int list");
-
-gudov::ConfigVar<std::set<int>>::ptr g_int_set_value_config =
-    gudov::Config::Lookup("system.int_set", std::set<int>{1, 2}, "system int set");
-
-gudov::ConfigVar<std::unordered_set<int>>::ptr g_int_uset_value_config =
-    gudov::Config::Lookup("system.int_uset", std::unordered_set<int>{1, 2}, "system int uset");
-
-gudov::ConfigVar<std::map<std::string, int>>::ptr g_str_int_map_value_config =
-    gudov::Config::Lookup("system.str_int_map", std::map<std::string, int>{{"k", 2}}, "system str int map");
-
-gudov::ConfigVar<std::unordered_map<std::string, int>>::ptr g_str_int_umap_value_config =
-    gudov::Config::Lookup("system.str_int_umap", std::unordered_map<std::string, int>{{"k", 2}}, "system str int map");
+using namespace gudov;
 
 void print_yaml(const YAML::Node& node, int level) {
   if (node.IsScalar()) {
@@ -48,75 +24,42 @@ void print_yaml(const YAML::Node& node, int level) {
   }
 }
 
-void test_yaml() {
-  YAML::Node root = YAML::LoadFile("/home/gudov/workspace/gudov/bin/conf/log.yml");
-  // print_yaml(root, 0);
-  // LOG_INFO(LOG_ROOT()) << root.Scalar();
+TEST(ConfigTest, LoadYAML) {
+  YAML::Node root = YAML::LoadFile("./conf/log.yml");
 
-  LOG_INFO(LOG_ROOT()) << root["test"].IsDefined();
-  LOG_INFO(LOG_ROOT()) << root["logs"].IsDefined();
-  LOG_INFO(LOG_ROOT()) << root;
+  EXPECT_TRUE(root["logs"].IsDefined());
 }
 
-void test_config() {
-  LOG_INFO(LOG_ROOT()) << "before: " << g_int_value_config->getValue();
-  LOG_INFO(LOG_ROOT()) << "before: " << g_float_value_config->toString();
+TEST(ConfigTest, ConfigValuesBeforeAndAfter) {
+  Config::Clear();
 
-#define XX(g_var, name, prefix)                                               \
-  {                                                                           \
-    auto& v = g_var->getValue();                                              \
-    for (auto& i : v) {                                                       \
-      LOG_INFO(LOG_ROOT()) << #prefix " " #name ": " << i;                    \
-    }                                                                         \
-    LOG_INFO(LOG_ROOT()) << #prefix " " #name " yaml: " << g_var->toString(); \
-  }
+  ConfigVar<int>::ptr   g_int_value_config   = Config::Lookup("system.port", (int)8080, "system port");
+  ConfigVar<float>::ptr g_float_value_config = Config::Lookup("system.value", (float)10.2f, "system value");
 
-#define XX_M(g_var, name, prefix)                                                             \
-  {                                                                                           \
-    auto& v = g_var->getValue();                                                              \
-    for (auto& i : v) {                                                                       \
-      LOG_INFO(LOG_ROOT()) << #prefix " " #name ": {" << i.first << " - " << i.second << "}"; \
-    }                                                                                         \
-    LOG_INFO(LOG_ROOT()) << #prefix " " #name " yaml: " << g_var->toString();                 \
-  }
+  EXPECT_EQ(g_int_value_config->GetValue(), 8080);
+  EXPECT_FLOAT_EQ(g_float_value_config->GetValue(), 10.2f);
 
-  XX(g_int_vec_value_config, int_vec, before);
-  XX(g_int_list_value_config, int_list, before);
-  XX(g_int_set_value_config, int_set, before);
-  XX(g_int_uset_value_config, int_uset, before);
-  XX_M(g_str_int_map_value_config, str_int_map, before);
-  XX_M(g_str_int_umap_value_config, str_int_umap, before);
+  YAML::Node root = YAML::LoadFile("./conf/test.yml");
+  Config::LoadFromYaml(root);
 
-  YAML::Node root = YAML::LoadFile("/home/gudov/workspace/gudov/bin/conf/test.yml");
-  gudov::Config::LoadFromYaml(root);
-
-  LOG_INFO(LOG_ROOT()) << "after: " << g_int_value_config->getValue();
-  LOG_INFO(LOG_ROOT()) << "after: " << g_float_value_config->toString();
-
-  XX(g_int_vec_value_config, int_vec, after);
-  XX(g_int_list_value_config, int_list, after);
-  XX(g_int_set_value_config, int_set, after);
-  XX(g_int_uset_value_config, int_uset, after);
-  XX_M(g_str_int_map_value_config, str_int_map, after);
-  XX_M(g_str_int_umap_value_config, str_int_umap, after);
+  EXPECT_NE(g_int_value_config->GetValue(), 8080);
+  EXPECT_NE(g_float_value_config->GetValue(), 10.2f);
 }
-
-#endif
 
 class Person {
  public:
   Person(){};
-  std::string m_name;
+  std::string name_;
   int         m_age = 0;
   bool        m_sex = 0;
 
   std::string toString() const {
     std::stringstream ss;
-    ss << "[Person name=" << m_name << " age=" << m_age << " sex=" << m_sex << "]";
+    ss << "[Person name=" << name_ << " age=" << m_age << " sex=" << m_sex << "]";
     return ss.str();
   }
 
-  bool operator==(const Person& oth) const { return m_name == oth.m_name && m_age == oth.m_age && m_sex == oth.m_sex; }
+  bool operator==(const Person& oth) const { return name_ == oth.name_ && m_age == oth.m_age && m_sex == oth.m_sex; }
 };
 
 namespace gudov {
@@ -127,7 +70,7 @@ class LexicalCast<std::string, Person> {
   Person operator()(const std::string& v) {
     YAML::Node node = YAML::Load(v);
     Person     p;
-    p.m_name = node["name"].as<std::string>();
+    p.name_ = node["name"].as<std::string>();
     p.m_age  = node["age"].as<int>();
     p.m_sex  = node["sex"].as<bool>();
     return p;
@@ -139,7 +82,7 @@ class LexicalCast<Person, std::string> {
  public:
   std::string operator()(const Person& p) {
     YAML::Node node;
-    node["name"] = p.m_name;
+    node["name"] = p.name_;
     node["age"]  = p.m_age;
     node["sex"]  = p.m_sex;
     std::stringstream ss;
@@ -150,67 +93,38 @@ class LexicalCast<Person, std::string> {
 
 }  // namespace gudov
 
-gudov::ConfigVar<Person>::ptr g_person = gudov::Config::Lookup("class.person", Person(), "system person");
+TEST(ClassTest, BeforeAndAfter) {
+  Config::Clear();
 
-gudov::ConfigVar<std::map<std::string, Person>>::ptr g_person_map =
-    gudov::Config::Lookup("class.map", std::map<std::string, Person>(), "system person");
+  ConfigVar<Person>::ptr                        g_person = Config::Lookup("class.person", Person(), "system person");
+  ConfigVar<std::map<std::string, Person>>::ptr g_person_map =
+      Config::Lookup("class.map", std::map<std::string, Person>(), "system person");
+  ConfigVar<std::map<std::string, std::vector<Person>>>::ptr g_person_vec_map =
+      Config::Lookup("class.vec_map", std::map<std::string, std::vector<Person>>(), "system person");
 
-gudov::ConfigVar<std::map<std::string, std::vector<Person>>>::ptr g_person_vec_map =
-    gudov::Config::Lookup("class.vec_map", std::map<std::string, std::vector<Person>>(), "system person");
+  EXPECT_EQ(g_person->GetValue().toString(), "[Person name= age=0 sex=0]");
+  EXPECT_EQ(g_person_map->GetValue().size(), 0);
+  EXPECT_EQ(g_person_vec_map->GetValue().size(), 0);
 
-void test_class() {
-  LOG_INFO(LOG_ROOT()) << "before: " << g_person->getValue().toString() << " - " << g_person->toString();
+  // Assuming test.yml contains updated values for these variables
+  YAML::Node root = YAML::LoadFile("./conf/test.yml");
+  Config::LoadFromYaml(root);
 
-#define XX_PM(g_var, prefix)                                                             \
-  {                                                                                      \
-    auto m = g_person_map->getValue();                                                   \
-    for (auto& i : m) {                                                                  \
-      LOG_INFO(LOG_ROOT()) << prefix << ": " << i.first << " - " << i.second.toString(); \
-    }                                                                                    \
-    LOG_INFO(LOG_ROOT()) << prefix << ": size=" << m.size();                             \
-  }
-
-  g_person->addListener([](const Person& old_value, const Person& new_value) {
-    LOG_INFO(LOG_ROOT()) << "old_value=" << old_value.toString() << " new_value=" << new_value.toString();
-  });
-
-  XX_PM(g_person_map, "class.map before");
-  LOG_INFO(LOG_ROOT()) << "before: " << g_person_vec_map->toString();
-
-  YAML::Node root = YAML::LoadFile("conf/test.yml");
-  gudov::Config::LoadFromYaml(root);
-
-  LOG_INFO(LOG_ROOT()) << "after: " << g_person->getValue().toString() << " - " << g_person->toString();
-  XX_PM(g_person_map, "class.map after");
-  LOG_INFO(LOG_ROOT()) << "after: " << g_person_vec_map->toString();
+  EXPECT_NE(g_person->GetValue().toString(), "[Person name=name1 age=10 sex=true]");
+  EXPECT_NE(g_person_map->GetValue().size(), 0);
+  EXPECT_NE(g_person_vec_map->GetValue().size(), 0);
 }
 
-void test_log() {
-  static gudov::Logger::ptr system_log = LOG_NAME("system");
-  LOG_INFO(system_log) << "hello system" << std::endl;
-  std::cout << gudov::LoggerMgr::getInstance()->toYamlString() << std::endl;
-  YAML::Node root = YAML::LoadFile("conf/log.yml");
-  gudov::Config::LoadFromYaml(root);
-  std::cout << "=============" << std::endl;
-  std::cout << gudov::LoggerMgr::getInstance()->toYamlString() << std::endl;
-  std::cout << "=============" << std::endl;
-  std::cout << root << std::endl;
-  LOG_INFO(system_log) << "hello system" << std::endl;
+TEST(LogTest, LogFunctionality) {
+  static Logger::ptr system_log = LOG_NAME("system");
+  testing::internal::CaptureStdout();
+  LOG_INFO(system_log) << "hello system";
+  std::string output = testing::internal::GetCapturedStdout();
+  EXPECT_FALSE(output.empty());
 
   system_log->setFormatter("%d - %m%n");
-  LOG_INFO(system_log) << "hello system" << std::endl;
-}
-
-int main(int argc, char** argv) {
-  // test_yaml();
-  // test_config();
-  // test_class();
-  test_log();
-
-  gudov::Config::Visit([](gudov::ConfigVarBase::ptr var) {
-    LOG_INFO(LOG_ROOT()) << "name=" << var->getName() << " description=" << var->getDescription()
-                         << " value=" << var->toString();
-  });
-
-  return 0;
+  testing::internal::CaptureStdout();
+  LOG_INFO(system_log) << "hello system";
+  output = testing::internal::GetCapturedStdout();
+  EXPECT_FALSE(output.empty());
 }

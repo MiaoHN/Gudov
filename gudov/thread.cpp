@@ -8,88 +8,88 @@
 namespace gudov {
 
 // 当前运行的线程
-static thread_local Thread* t_thread = nullptr;
+static thread_local Thread* t_running_thread = nullptr;
 // 当前运行的线程的名称
-static thread_local std::string t_threadName = "UNKNOWN";
+static thread_local std::string t_running_thread_name = "UNKNOWN";
 
 static Logger::ptr g_logger = LOG_NAME("system");
 
 Semaphore::Semaphore(uint32_t count) {
-  if (sem_init(&_semaphore, 0, count)) {
+  if (sem_init(&semaphore_, 0, count)) {
     throw std::logic_error("sem_init error");
   }
 }
 
-Semaphore::~Semaphore() { sem_destroy(&_semaphore); }
+Semaphore::~Semaphore() { sem_destroy(&semaphore_); }
 
-void Semaphore::wait() {
-  if (sem_wait(&_semaphore)) {
+void Semaphore::Wait() {
+  if (sem_wait(&semaphore_)) {
     throw std::logic_error("sem_wait error");
   }
 }
 
-void Semaphore::notify() {
-  if (sem_post(&_semaphore)) {
+void Semaphore::Notify() {
+  if (sem_post(&semaphore_)) {
     throw std::logic_error("sem_post error");
   }
 }
 
-Thread* Thread::GetThis() { return t_thread; }
+Thread* Thread::GetRunningThread() { return t_running_thread; }
 
-const std::string& Thread::GetName() { return t_threadName; }
+const std::string& Thread::GetRunningThreadName() { return t_running_thread_name; }
 
-void Thread::SetName(const std::string& name) {
-  if (t_thread) {
-    t_thread->m_name = name;
+void Thread::SetRunningThreadName(const std::string& name) {
+  if (t_running_thread) {
+    t_running_thread->name_ = name;
   }
-  t_threadName = name;
+  t_running_thread_name = name;
 }
 
-Thread::Thread(std::function<void()> callback, const std::string& name) : m_name(name), m_callback(callback) {
+Thread::Thread(std::function<void()> callback, const std::string& name) : name_(name), callback_(callback) {
   if (name.empty()) {
-    m_name = "UNKNOWN";
+    name_ = "UNKNOWN";
   }
-  int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
+  int rt = pthread_create(&thread_, nullptr, &Thread::Run, this);
   if (rt) {
     LOG_ERROR(g_logger) << "pthread_create thread fail, rt=" << rt << " name=" << name;
     throw std::logic_error("pthread_create error");
   }
 
   // 等待线程创建完毕 (运行到 notify()) 后执行函数体
-  _semaphore.wait();
+  semaphore_.Wait();
 }
 
 Thread::~Thread() {
-  if (m_thread) {
-    pthread_detach(m_thread);
+  if (thread_) {
+    pthread_detach(thread_);
   }
 }
 
-void Thread::join() {
-  if (m_thread) {
-    int rt = pthread_join(m_thread, nullptr);
+void Thread::Join() {
+  if (thread_) {
+    int rt = pthread_join(thread_, nullptr);
     if (rt) {
-      LOG_ERROR(g_logger) << "pthread_join thread fail, rt=" << rt << " name=" << m_name;
+      LOG_ERROR(g_logger) << "pthread_join thread fail, rt=" << rt << " name=" << name_;
       throw std::logic_error("pthread_join error");
     }
-    m_thread = 0;
+    thread_ = 0;
   }
 }
 
-void* Thread::run(void* arg) {
-  Thread* thread = (Thread*)arg;
-  t_thread       = thread;
-  t_threadName   = thread->m_name;
-  thread->m_id   = GetThreadId();
+void* Thread::Run(void* arg) {
+  Thread* thread        = (Thread*)arg;
+  t_running_thread      = thread;
+  t_running_thread_name = thread->name_;
+  thread->id_           = GetThreadId();
 
   // 设置线程名
-  pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
+  pthread_setname_np(pthread_self(), thread->name_.substr(0, 15).c_str());
 
   std::function<void()> callback;
-  callback.swap(thread->m_callback);
+  callback.swap(thread->callback_);
 
   // 线程创建成功，准备执行
-  thread->_semaphore.notify();
+  thread->semaphore_.Notify();
 
   callback();
   return 0;

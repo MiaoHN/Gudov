@@ -72,7 +72,7 @@ FdManager::FdManager() { _datas.resize(64); }
 FdManager::~FdManager() {}
 
 FdContext::ptr FdManager::get(int fd, bool autoCreate) {
-  RWMutexType::ReadLock lock(m_mutex);
+  RWMutexType::ReadLock lock(mutex_);
   if (_datas.size() <= static_cast<size_t>(fd)) {
     if (autoCreate == false) {
       return nullptr;
@@ -82,9 +82,9 @@ FdContext::ptr FdManager::get(int fd, bool autoCreate) {
       return _datas[fd];
     }
   }
-  lock.unlock();
+  lock.Unlock();
 
-  RWMutexType::WriteLock lock2(m_mutex);
+  RWMutexType::WriteLock lock2(mutex_);
 
   FdContext::ptr ctx(new FdContext(fd));
   _datas[fd] = ctx;
@@ -93,7 +93,7 @@ FdContext::ptr FdManager::get(int fd, bool autoCreate) {
 }
 
 void FdManager::del(int fd) {
-  RWMutexType::WriteLock lock(m_mutex);
+  RWMutexType::WriteLock lock(mutex_);
   if (_datas.size() <= static_cast<size_t>(fd)) {
     return;
   }

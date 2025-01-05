@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(gudov)
+
+# GoogleTest requires at least C++14
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -ggdb -std=c++11 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -ggdb -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined")
 include(cmake/utils.cmake)
 
 set(OUTPUT_ROOT ${PROJECT_SOURCE_DIR}/bin)
@@ -29,3 +34,11 @@ add_subdirectory(gudov)
 enable_testing()
 add_subdirectory(test)
 add_subdirectory(example)
+
+# move `conf` to bin
+
+add_custom_target(move_conf ALL
+    COMMAND cp -r ${PROJECT_SOURCE_DIR}/conf ${OUTPUT_ROOT}
+    COMMENT "move conf to bin"
+    VERBATIM
+)

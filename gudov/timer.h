@@ -55,7 +55,7 @@ class TimerManager {
   Timer::ptr AddConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weakCond,
                                bool recurring = false);
 
-  uint64_t GetNextTimer();
+  uint64_t GetNextTimeout();
   void     ListExpiredCallbacks(std::vector<std::function<void()>> &cbs);
   bool     HasTimer();
 

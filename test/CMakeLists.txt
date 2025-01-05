@@ -57,7 +57,7 @@ add_executable(test_iomanager test_iomanager.cpp)
 add_dependencies(test_iomanager gudov)
 force_redefine_file_macro_for_sources(test_iomanager)
 target_link_libraries(test_iomanager gudov gtest gtest_main)
-# add_test(NAME test_iomanager COMMAND test_iomanager)
+add_test(NAME test_iomanager COMMAND test_iomanager)
 
 add_executable(test_hook test_hook.cpp)
 add_dependencies(test_hook gudov)

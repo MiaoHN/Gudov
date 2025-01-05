@@ -34,8 +34,8 @@ class IOManager : public Scheduler, public TimerManager {
       std::function<void()> callback;             // 事件的回调函数
     };
 
-    EventContext& getContext(Event event);
-    void          resetContext(EventContext& ctx);
+    EventContext& GetContext(Event event);
+    void          ResetContext(EventContext& ctx);
 
     /**
      * @brief 触发对应事件
@@ -43,7 +43,7 @@ class IOManager : public Scheduler, public TimerManager {
      *
      * @param event
      */
-    void triggerEvent(Event event);
+    void TriggerEvent(Event event);
 
     EventContext read;
     EventContext write;

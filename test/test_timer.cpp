@@ -31,7 +31,7 @@ TEST(TimerManagerTest, AddTimerTest) {
   });
 
   // 获取到下一个定时器的超时时间
-  uint64_t nextTimeout = timerManager.GetNextTimer();
+  uint64_t nextTimeout = timerManager.GetNextTimeout();
   EXPECT_GE(nextTimeout, 50);  // 应该至少为 50ms
 
   // 等待 100ms，确保定时器触发

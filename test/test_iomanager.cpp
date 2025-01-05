@@ -1,6 +1,8 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <gtest/gtest.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -10,67 +12,123 @@
 #include "gudov/gudov.h"
 #include "gudov/iomanager.h"
 
-gudov::Logger::ptr g_logger = LOG_ROOT();
+using namespace gudov;
 
-int sock = 0;
-
-void test_fiber() {
-  LOG_INFO(g_logger) << "test_fiber sock=" << sock;
-
-  // sleep(3);
-
-  // close(sock);
-  // gudov::IOManager::GetThis()->cancelAll(sock);
-
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  fcntl(sock, F_SETFL, O_NONBLOCK);
-
-  sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port   = htons(80);
-  inet_pton(AF_INET, "115.239.210.27", &addr.sin_addr.s_addr);
-
-  if (!connect(sock, (const sockaddr*)&addr, sizeof(addr))) {
-  } else if (errno == EINPROGRESS) {
-    LOG_INFO(g_logger) << "add event errno=" << errno << " " << strerror(errno);
-    gudov::IOManager::GetThis()->AddEvent(sock, gudov::IOManager::Read,
-                                          []() { LOG_INFO(g_logger) << "read callback"; });
-    gudov::IOManager::GetThis()->AddEvent(sock, gudov::IOManager::Write, []() {
-      LOG_INFO(g_logger) << "write callback";
-      // close(sock);
-      gudov::IOManager::GetThis()->CancelEvent(sock, gudov::IOManager::Read);
-      close(sock);
-    });
-  } else {
-    LOG_INFO(g_logger) << "else " << errno << " " << strerror(errno);
+class IOManagerTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // 初始化 IOManager
+    io_manager = std::make_shared<IOManager>(1, true, "TestIOManager");
+    ASSERT_NE(io_manager, nullptr) << "Failed to initialize IOManager";
   }
+
+  void TearDown() override { io_manager.reset(); }
+
+  IOManager::ptr io_manager;
+};
+
+// 测试 AddEvent 功能
+TEST_F(IOManagerTest, AddEventTest) {
+  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);  // 创建 eventfd
+  ASSERT_GT(efd, 0) << "Failed to create eventfd";
+
+  bool callback_executed = false;
+
+  // 添加事件
+  int result = io_manager->AddEvent(efd, IOManager::Read, [&]() { callback_executed = true; });
+  EXPECT_EQ(result, 0) << "AddEvent failed";
+
+  // 模拟触发事件
+  uint64_t value = 1;
+  ASSERT_EQ(write(efd, &value, sizeof(value)), sizeof(value)) << "Failed to write to eventfd";
+
+  // 运行 IOManager
+  io_manager->Stop();  // 停止前运行所有事件
+  EXPECT_TRUE(callback_executed) << "Callback was not executed";
+
+  close(efd);  // 关闭 eventfd
 }
 
-void test1() {
-  std::cout << "EPOLLIN=" << EPOLLIN << " EPOLLOUT=" << EPOLLOUT << std::endl;
-  gudov::IOManager iom(2, false);
-  iom.Schedule(&test_fiber);
+// 测试 DelEvent 功能
+TEST_F(IOManagerTest, DelEventTest) {
+  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);  // 创建 eventfd
+  ASSERT_GT(efd, 0) << "Failed to create eventfd";
+
+  bool callback_executed = false;
+
+  // 添加事件
+  int result = io_manager->AddEvent(efd, IOManager::Read, [&]() { callback_executed = true; });
+  EXPECT_EQ(result, 0) << "AddEvent failed";
+
+  // 删除事件
+  bool del_result = io_manager->DelEvent(efd, IOManager::Read);
+  EXPECT_TRUE(del_result) << "DelEvent failed";
+
+  // 模拟触发事件
+  uint64_t value = 1;
+  ASSERT_EQ(write(efd, &value, sizeof(value)), sizeof(value)) << "Failed to write to eventfd";
+
+  // 运行 IOManager
+  io_manager->Stop();
+  EXPECT_FALSE(callback_executed) << "Callback should not be executed after event deletion";
+
+  close(efd);  // 关闭 eventfd
 }
 
-gudov::Timer::ptr s_timer;
-void              testTimer() {
-               gudov::IOManager iom(2);
-               s_timer = iom.AddTimer(
-                   1000,
-                   []() {
-        static int i = 0;
-        LOG_INFO(g_logger) << "hello timer i=" << i;
-        if (++i == 3) {
-          s_timer->Reset(2000, true);
-          // s_timer->cancel();
-        }
-      },
-                   true);
+// 测试 CancelEvent 功能
+TEST_F(IOManagerTest, CancelEventTest) {
+  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);  // 创建 eventfd
+  ASSERT_GT(efd, 0) << "Failed to create eventfd";
+
+  bool callback_executed = false;
+
+  // 添加事件
+  int result = io_manager->AddEvent(efd, IOManager::Read, [&]() { callback_executed = true; });
+  EXPECT_EQ(result, 0) << "AddEvent failed";
+
+  // 取消事件
+  bool cancel_result = io_manager->CancelEvent(efd, IOManager::Read);
+  EXPECT_TRUE(cancel_result) << "CancelEvent failed";
+
+  // 模拟触发事件
+  uint64_t value = 1;
+  ASSERT_EQ(write(efd, &value, sizeof(value)), sizeof(value)) << "Failed to write to eventfd";
+
+  // 运行 IOManager
+  io_manager->Stop();
+  EXPECT_TRUE(callback_executed) << "Callback should be executed after event cancellation";
+
+  close(efd);  // 关闭 eventfd
 }
 
-int main(int argc, char** argv) {
-  // test1();
-  testTimer();
-  return 0;
+// 测试 CancelAll 功能
+TEST_F(IOManagerTest, CancelAllTest) {
+  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);  // 创建 eventfd
+  ASSERT_GT(efd, 0) << "Failed to create eventfd";
+
+  bool read_callback_executed  = false;
+  bool write_callback_executed = false;
+
+  // 添加读事件
+  int read_result = io_manager->AddEvent(efd, IOManager::Read, [&]() { read_callback_executed = true; });
+  EXPECT_EQ(read_result, 0) << "AddEvent (Read) failed";
+
+  // 添加写事件
+  int write_result = io_manager->AddEvent(efd, IOManager::Write, [&]() { write_callback_executed = true; });
+  EXPECT_EQ(write_result, 0) << "AddEvent (Write) failed";
+
+  // 取消所有事件
+  bool cancel_all_result = io_manager->CancelAll(efd);
+  EXPECT_TRUE(cancel_all_result) << "CancelAll failed";
+
+  // 模拟触发事件
+  uint64_t value = 1;
+  ASSERT_EQ(write(efd, &value, sizeof(value)), sizeof(value)) << "Failed to write to eventfd";
+
+  // 运行 IOManager
+  io_manager->Stop();
+  EXPECT_TRUE(read_callback_executed) << "Read callback should be executed after CancelAll";
+  EXPECT_TRUE(write_callback_executed) << "Write callback should be executed after CancelAll";
+
+  close(efd);  // 关闭 eventfd
 }

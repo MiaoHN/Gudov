@@ -114,7 +114,7 @@ Timer::ptr TimerManager::AddConditionTimer(uint64_t ms, std::function<void()> ca
   return AddTimer(ms, std::bind(&OnTimer, weak_cond, callback), recurring);
 }
 
-uint64_t TimerManager::GetNextTimer() {
+uint64_t TimerManager::GetNextTimeout() {
   RWMutexType::ReadLock lock(mutex_);
   tickled_ = false;
   if (timers_.empty()) {

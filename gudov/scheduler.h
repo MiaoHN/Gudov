@@ -87,16 +87,16 @@ class Scheduler {
    */
   template <typename InputIterator>
   void Schedule(InputIterator begin, InputIterator end) {
-    bool needTickle = false;
+    bool need_tickle = false;
     {
       MutexType::Locker lock(mutex_);
       while (begin != end) {
-        needTickle = ScheduleNoLock(&*begin, -1) || needTickle;
+        need_tickle = ScheduleNoLock(&*begin, -1) || need_tickle;
         ++begin;
       }
     }
 
-    if (needTickle) {
+    if (need_tickle) {
       Tickle();
     }
   }

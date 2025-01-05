@@ -154,7 +154,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   } else {
     // 执行当前协程
     eventCtx.fiber = Fiber::GetRunningFiber();
-    GUDOV_ASSERT2(eventCtx.fiber->GetState() == Fiber::EXEC,
+    GUDOV_ASSERT2(eventCtx.fiber->GetState() == Fiber::Running,
                   "state=" << eventCtx.fiber->GetState());
   }
   return 0;
@@ -404,7 +404,7 @@ void IOManager::Idle() {
     cur.reset();
 
     // 当前协程退出，scheduler 继续执行 run 进行调度
-    raw_ptr->SwapOut();
+    raw_ptr->Yield();
   }
 }
 

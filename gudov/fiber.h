@@ -27,9 +27,9 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   using ptr = std::shared_ptr<Fiber>;
 
   enum State {
-    EXEC,   // 执行状态
-    TERM,   // 结束状态
-    READY,  // 准备状态
+    Running,  // 执行状态
+    Term,     // 结束状态
+    Ready,    // 准备状态
   };
 
  private:
@@ -40,7 +40,7 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   Fiber();
 
  public:
-  Fiber(std::function<void()> callback, size_t stack_size = 0);
+  Fiber(std::function<void()> callback, size_t stack_size = 0, bool run_in_scheduler = true);
   ~Fiber();
 
   /**
@@ -50,30 +50,9 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
    */
   void Reset(std::function<void()> callback);
 
-  /**
-   * @brief 转入当前协程执行
-   *
-   */
-  void SwapIn();
+  void Resume();
 
-  /**
-   * @brief 当前协程返回到主协程
-   *
-   */
-  void SwapOut();
-
-  /**
-   * @brief 执行此协程
-   * @details 从主协程转到子协程
-   *
-   */
-  void Call();
-
-  /**
-   * @brief 返回主协程
-   *
-   */
-  void Back();
+  void Yield();
 
   uint64_t GetID() const { return id_; }
   State    GetState() const { return state_; }
@@ -95,12 +74,6 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
    * @return Fiber::ptr
    */
   static Fiber::ptr GetRunningFiber();
-
-  /**
-   * @brief 暂停执行当前协程，并将当前协程状态转为 Ready
-   *
-   */
-  static void Yield();
 
   /**
    * @brief 获得协程总数量
@@ -125,12 +98,14 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
  private:
   uint64_t id_         = 0;
   uint32_t stack_size_ = 0;
-  State    state_      = READY;
+  State    state_      = Ready;
 
   ucontext_t ctx_;
   void*      stack_ = nullptr;
 
   std::function<void()> callback_;
+
+  bool run_in_scheduler_;
 };
 
 }  // namespace gudov

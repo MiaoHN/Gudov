@@ -33,7 +33,7 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string& name) :
     GUDOV_ASSERT(GetScheduler() == nullptr);
     t_scheduler = this;
 
-    root_fiber_.reset(new Fiber(std::bind(&Scheduler::Run, this), 0));
+    root_fiber_.reset(new Fiber(std::bind(&Scheduler::Run, this), 0, false));
     LOG_DEBUG(g_logger) << "Scheduler::Scheduler Root Fiber Create";
     gudov::Thread::SetRunningThreadName(name_);
 
@@ -75,9 +75,8 @@ void Scheduler::Start() {
 }
 
 void Scheduler::Stop() {
-  auto_stop_ = true;
   if (root_fiber_ && thread_count_ == 0 &&
-      (root_fiber_->GetState() == Fiber::TERM || root_fiber_->GetState() == Fiber::READY)) {
+      (root_fiber_->GetState() == Fiber::Term || root_fiber_->GetState() == Fiber::Ready)) {
     LOG_INFO(g_logger) << this << " stopped";
     stopping_ = true;
 
@@ -104,7 +103,7 @@ void Scheduler::Stop() {
   if (root_fiber_) {
     if (!Stopping()) {
       // 主协程执行入口
-      root_fiber_->Call();
+      root_fiber_->Resume();
     }
   }
 
@@ -156,7 +155,7 @@ void Scheduler::Run() {
         }
 
         GUDOV_ASSERT(it->fiber || it->callback);
-        if (it->fiber && it->fiber->GetState() == Fiber::EXEC) {
+        if (it->fiber && it->fiber->GetState() == Fiber::Running) {
           // 正在运行中的协程
           ++it;
           continue;
@@ -175,17 +174,17 @@ void Scheduler::Run() {
       Tickle();
     }
 
-    if (task.fiber && (task.fiber->GetState() != Fiber::TERM)) {
+    if (task.fiber && (task.fiber->GetState() != Fiber::Term)) {
       // 如果是可运行的协程，则将该协程执行完
-      task.fiber->SwapIn();
+      task.fiber->Resume();
       --active_thread_count_;
 
-      if (task.fiber->GetState() == Fiber::READY) {
-        // 如果状态为 READY 则重新调度
+      if (task.fiber->GetState() == Fiber::Ready) {
+        // 如果状态为 Ready 则重新调度
         Schedule(task.fiber);
-      } else if (task.fiber->GetState() != Fiber::TERM) {
+      } else if (task.fiber->GetState() != Fiber::Term) {
         // 未进行调度，设为挂起状态
-        task.fiber->state_ = Fiber::READY;
+        task.fiber->state_ = Fiber::Ready;
       }
       task.Reset();
     } else if (task.callback) {
@@ -199,19 +198,19 @@ void Scheduler::Run() {
       }
       task.Reset();
       // 执行 callback_fiber
-      callback_fiber->SwapIn();
+      callback_fiber->Resume();
       --active_thread_count_;
-      if (callback_fiber->GetState() == Fiber::READY) {
-        // 状态为 READY 时重新调度
+      if (callback_fiber->GetState() == Fiber::Ready) {
+        // 状态为 Ready 时重新调度
         Schedule(callback_fiber);
         callback_fiber.reset();
-      } else if (callback_fiber->GetState() == Fiber::TERM) {
+      } else if (callback_fiber->GetState() == Fiber::Term) {
         // 执行结束，释放资源
         callback_fiber->Reset(nullptr);
       } else {
         // 未进行调度转为 HOLD 状态
         // TODO 这里的执行过程有点混乱
-        callback_fiber->state_ = Fiber::READY;
+        callback_fiber->state_ = Fiber::Ready;
         callback_fiber.reset();
       }
     } else {
@@ -221,8 +220,8 @@ void Scheduler::Run() {
         continue;
       }
 
-      if (idle_fiber->GetState() == Fiber::TERM) {
-        // idle 协程状态为 TERM 时退出该函数
+      if (idle_fiber->GetState() == Fiber::Term) {
+        // idle 协程状态为 Term 时退出该函数
         LOG_INFO(g_logger) << "idle fiber term";
         break;
       }
@@ -230,10 +229,10 @@ void Scheduler::Run() {
       ++idle_thread_count_;
       // 转入 idle 协程处理函数中
       LOG_DEBUG(g_logger) << "swap to idle_fiber...";
-      idle_fiber->SwapIn();
+      idle_fiber->Resume();
       --idle_thread_count_;
-      if (idle_fiber->GetState() != Fiber::TERM) {
-        idle_fiber->state_ = Fiber::READY;
+      if (idle_fiber->GetState() != Fiber::Term) {
+        idle_fiber->state_ = Fiber::Ready;
       }
     }
   }
@@ -243,13 +242,13 @@ void Scheduler::Tickle() { LOG_INFO(g_logger) << "tickle"; }
 
 bool Scheduler::Stopping() {
   MutexType::Locker lock(mutex_);
-  return auto_stop_ && stopping_ && tasks_.empty() && active_thread_count_ == 0;
+  return stopping_ && tasks_.empty() && active_thread_count_ == 0;
 }
 
 void Scheduler::Idle() {
   LOG_INFO(g_logger) << "idle";
   while (!Stopping()) {
-    Fiber::Yield();
+    Fiber::GetRunningFiber()->Yield();
   }
 }
 

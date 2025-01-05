@@ -203,7 +203,6 @@ class Scheduler {
   std::atomic<size_t> active_thread_count_ = {0};
   std::atomic<size_t> idle_thread_count_   = {0};
   bool                stopping_            = true;
-  bool                auto_stop_           = false;
   // 主线程 ID
   int root_thread_ = 0;
 };

@@ -56,7 +56,7 @@ uint64_t Fiber::GetRunningFiberId() {
 }
 
 Fiber::Fiber() {
-  state_ = EXEC;
+  state_ = Running;
   // 将当前运行的协程设为此协程
   SetRunningFiber(this);
 
@@ -70,7 +70,8 @@ Fiber::Fiber() {
   LOG_DEBUG(g_logger) << "Fiber::Fiber";
 }
 
-Fiber::Fiber(std::function<void()> callback, size_t stack_size) : id_(++s_fiber_id), callback_(callback) {
+Fiber::Fiber(std::function<void()> callback, size_t stack_size, bool run_in_scheduler)
+    : id_(++s_fiber_id), callback_(callback), run_in_scheduler_(run_in_scheduler) {
   ++s_fiber_count;
 
   // 如果未指定栈大小则从配置文件中读取
@@ -98,11 +99,11 @@ Fiber::Fiber(std::function<void()> callback, size_t stack_size) : id_(++s_fiber_
 Fiber::~Fiber() {
   --s_fiber_count;
   if (stack_) {
-    GUDOV_ASSERT(state_ == TERM || state_ == READY);
+    GUDOV_ASSERT(state_ == Term || state_ == Ready);
     StackAllocator::Dealloc(stack_, stack_size_);
   } else {
     GUDOV_ASSERT(!callback_);
-    GUDOV_ASSERT(state_ == EXEC);
+    GUDOV_ASSERT(state_ == Running);
 
     Fiber* cur = t_running_fiber;
     if (cur == this) {
@@ -114,7 +115,7 @@ Fiber::~Fiber() {
 
 void Fiber::Reset(std::function<void()> callback) {
   GUDOV_ASSERT(stack_);
-  GUDOV_ASSERT(state_ == TERM || state_ == READY);
+  GUDOV_ASSERT(state_ == Term || state_ == Ready);
   callback_ = callback;
   if (getcontext(&ctx_)) {
     GUDOV_ASSERT2(false, "getcontext");
@@ -125,47 +126,40 @@ void Fiber::Reset(std::function<void()> callback) {
   ctx_.uc_stack.ss_size = stack_size_;
 
   makecontext(&ctx_, &Fiber::MainFunc, 0);
-  state_ = READY;
+  state_ = Ready;
 }
 
-void Fiber::Call() {
+void Fiber::Resume() {
+  GUDOV_ASSERT(state_ != Term && state_ != Running);
   SetRunningFiber(this);
-  state_ = EXEC;
-  if (swapcontext(&t_thread_fiber->ctx_, &ctx_)) {
-    GUDOV_ASSERT2(false, "swapcontext");
-  }
-}
+  state_ = Running;
 
-void Fiber::Back() {
-  SetRunningFiber(t_thread_fiber.get());
-  if (swapcontext(&ctx_, &t_thread_fiber->ctx_)) {
-    GUDOV_ASSERT2(false, "swapcontext");
-  }
-}
-
-void Fiber::SwapIn() {
-  SetRunningFiber(this);
-  GUDOV_ASSERT(state_ != EXEC);
-  state_ = EXEC;
-  if (Scheduler::GetMainFiber() == this) {
-    // 如果是主协程，则转入当前线程的主协程
-    if (swapcontext(&ctx_, &t_thread_fiber->ctx_)) {
+  if (run_in_scheduler_) {
+    if (swapcontext(&(Scheduler::GetMainFiber()->ctx_), &ctx_)) {
       GUDOV_ASSERT2(false, "swapcontext");
     }
   } else {
-    // 如果不是主协程，则转入当前协程
     if (swapcontext(&t_thread_fiber->ctx_, &ctx_)) {
       GUDOV_ASSERT2(false, "swapcontext");
     }
   }
 }
 
-void Fiber::SwapOut() {
-  SetRunningFiber(Scheduler::GetMainFiber());
+void Fiber::Yield() {
+  GUDOV_ASSERT(state_ == Running || state_ == Term);
+  SetRunningFiber(t_thread_fiber.get());
+  if (state_ != Term) {
+    state_ = Ready;
+  }
 
-  // 从当前协程切换到主协程
-  if (swapcontext(&ctx_, &Scheduler::GetMainFiber()->ctx_)) {
-    GUDOV_ASSERT2(false, "swapcontext");
+  if (run_in_scheduler_) {
+    if (swapcontext(&ctx_, &(Scheduler::GetMainFiber()->ctx_))) {
+      GUDOV_ASSERT2(false, "swapcontext");
+    }
+  } else {
+    if (swapcontext(&ctx_, &t_thread_fiber->ctx_)) {
+      GUDOV_ASSERT2(false, "swapcontext");
+    }
   }
 }
 
@@ -183,12 +177,6 @@ Fiber::ptr Fiber::GetRunningFiber() {
   return t_running_fiber->shared_from_this();
 }
 
-void Fiber::Yield() {
-  Fiber::ptr cur = GetRunningFiber();
-  // cur->m_state    = READY;
-  cur->SwapOut();
-}
-
 uint64_t Fiber::TotalFibers() { return s_fiber_count; }
 
 void Fiber::MainFunc() {
@@ -199,19 +187,19 @@ void Fiber::MainFunc() {
   try {
     cur->callback_();
     cur->callback_ = nullptr;
-    cur->state_    = TERM;
+    cur->state_    = Term;
   } catch (std::exception& ex) {
     LOG_ERROR(g_logger) << "Fiber exception: " << ex.what();
-    cur->state_ = TERM;
+    cur->state_ = Term;
   } catch (...) {
     LOG_ERROR(g_logger) << "Fiber unknown exception";
-    cur->state_ = TERM;
+    cur->state_ = Term;
   }
 
   auto raw_ptr = cur.get();
   cur.reset();               // 销毁当前协程
   SetRunningFiber(nullptr);  // 防止 t_running_fiber 指向已销毁的协程
-  raw_ptr->SwapOut();
+  raw_ptr->Yield();
 
   GUDOV_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->GetID()));
 }

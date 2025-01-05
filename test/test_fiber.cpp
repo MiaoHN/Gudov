@@ -19,11 +19,11 @@ TEST(FiberTest, FiberExecution) {
 
   // 创建 Fiber，并执行
   gudov::Fiber::ptr fiber = std::make_shared<gudov::Fiber>(func);
-  EXPECT_EQ(fiber->GetState(), gudov::Fiber::READY);
+  EXPECT_EQ(fiber->GetState(), gudov::Fiber::Ready);
 
-  fiber->SwapIn();  // 进入协程执行
+  fiber->Resume();  // 进入协程执行
   EXPECT_EQ(fiber_counter, 10);
-  EXPECT_EQ(fiber->GetState(), gudov::Fiber::TERM);
+  EXPECT_EQ(fiber->GetState(), gudov::Fiber::Term);
 }
 
 // 测试 Fiber 的重置功能
@@ -36,12 +36,12 @@ TEST(FiberTest, FiberReset) {
 
   // 创建 Fiber，并执行第一个任务
   gudov::Fiber::ptr fiber = std::make_shared<gudov::Fiber>(func1);
-  fiber->SwapIn();
+  fiber->Resume();
   EXPECT_EQ(fiber_counter, 11);  // 前面的测试累积到 10，此处增加 1
 
   // 重置 Fiber，并执行第二个任务
   fiber->Reset(func2);
-  fiber->SwapIn();
+  fiber->Resume();
   EXPECT_EQ(fiber_counter, 13);  // 增加 2
 }
 
@@ -49,22 +49,22 @@ TEST(FiberTest, FiberReset) {
 TEST(FiberTest, FiberStateTransition) {
   auto func = []() {
     fiber_counter += 5;
-    gudov::Fiber::Yield();  // 暂停当前 Fiber
+    gudov::Fiber::GetRunningFiber()->Yield();  // 暂停当前 Fiber
     fiber_counter += 5;
   };
 
   gudov::Fiber::ptr fiber = std::make_shared<gudov::Fiber>(func);
-  EXPECT_EQ(fiber->GetState(), gudov::Fiber::READY);
+  EXPECT_EQ(fiber->GetState(), gudov::Fiber::Ready);
 
-  // 首次执行 Fiber，进入 EXEC 状态
-  fiber->SwapIn();
+  // 首次执行 Fiber，进入 Running 状态
+  fiber->Resume();
   EXPECT_EQ(fiber_counter, 18);                       // 增加 5
-  EXPECT_EQ(fiber->GetState(), gudov::Fiber::READY);  // Yield 返回时应该是 READY 状态
+  EXPECT_EQ(fiber->GetState(), gudov::Fiber::Ready);  // Yield 返回时应该是 Ready 状态
 
   // 再次执行 Fiber
-  fiber->SwapIn();
+  fiber->Resume();
   EXPECT_EQ(fiber_counter, 23);                      // 增加 5
-  EXPECT_EQ(fiber->GetState(), gudov::Fiber::TERM);  // 执行完成
+  EXPECT_EQ(fiber->GetState(), gudov::Fiber::Term);  // 执行完成
 }
 
 // 测试多个 Fiber 的协作切换
@@ -74,14 +74,14 @@ TEST(FiberTest, MultiFiberSwitching) {
   // 定义 Fiber1
   auto func1 = [&]() {
     shared_value += 1;
-    gudov::Fiber::Yield();  // 切换出去
+    gudov::Fiber::GetRunningFiber()->Yield();  // 切换出去
     shared_value += 2;
   };
 
   // 定义 Fiber2
   auto func2 = [&]() {
     shared_value += 10;
-    gudov::Fiber::Yield();  // 切换出去
+    gudov::Fiber::GetRunningFiber()->Yield();  // 切换出去
     shared_value += 20;
   };
 
@@ -90,19 +90,19 @@ TEST(FiberTest, MultiFiberSwitching) {
   gudov::Fiber::ptr fiber2 = std::make_shared<gudov::Fiber>(func2);
 
   // 切换进入第一个 Fiber
-  fiber1->SwapIn();
+  fiber1->Resume();
   EXPECT_EQ(shared_value, 1);  // Fiber1 执行到 Yield
 
   // 切换进入第二个 Fiber
-  fiber2->SwapIn();
+  fiber2->Resume();
   EXPECT_EQ(shared_value, 11);  // Fiber2 执行到 Yield
 
   // 再次切换进入第一个 Fiber
-  fiber1->SwapIn();
+  fiber1->Resume();
   EXPECT_EQ(shared_value, 13);  // Fiber1 完成剩余任务
 
   // 再次切换进入第二个 Fiber
-  fiber2->SwapIn();
+  fiber2->Resume();
   EXPECT_EQ(shared_value, 33);  // Fiber2 完成剩余任务
 }
 
@@ -119,7 +119,7 @@ TEST(FiberTest, FiberIdAndCount) {
   EXPECT_EQ(gudov::Fiber::TotalFibers(), initial_count + 1);
 
   // 执行后 Fiber 数量不变（已完成不会减少计数）
-  fiber->SwapIn();
+  fiber->Resume();
   EXPECT_EQ(fiber_counter, 24);  // 累计执行
   EXPECT_EQ(gudov::Fiber::TotalFibers(), initial_count + 1);
 }
@@ -129,9 +129,9 @@ TEST(FiberTest, MainFiber) {
   // 获取主协程
   gudov::Fiber::ptr main_fiber = gudov::Fiber::GetRunningFiber();
 
-  // 确保主协程存在且状态为 EXEC
+  // 确保主协程存在且状态为 Running
   EXPECT_NE(main_fiber, nullptr);
-  EXPECT_EQ(main_fiber->GetState(), gudov::Fiber::EXEC);
+  EXPECT_EQ(main_fiber->GetState(), gudov::Fiber::Running);
 }
 
 // 测试静态方法 GetFiberId

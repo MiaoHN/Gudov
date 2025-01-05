@@ -8,60 +8,60 @@ namespace gudov {
 static Logger::ptr g_logger = LOG_NAME("system");
 
 Timer::Timer(uint64_t ms, std::function<void()> callback, bool recurring, TimerManager *manager)
-    : m_recurring(recurring), m_ms(ms), m_callback(callback), m_manager(manager) {
-  m_next = GetCurrentMS() + m_ms;
+    : recurring_(recurring), ms_(ms), callback_(callback), manager_(manager) {
+  next_ = GetCurrentMS() + ms_;
 }
 
-Timer::Timer(uint64_t next) : m_next(next) {}
+Timer::Timer(uint64_t next) : next_(next) {}
 
-bool Timer::cancel() {
-  TimerManager::RWMutexType::WriteLock lock(m_manager->mutex_);
-  if (m_callback) {
-    m_callback = nullptr;
-    auto it    = m_manager->m_timers.find(shared_from_this());
-    m_manager->m_timers.erase(it);
+bool Timer::Cancel() {
+  TimerManager::RWMutexType::WriteLock lock(manager_->mutex_);
+  if (callback_) {
+    callback_ = nullptr;
+    auto it   = manager_->timers_.find(shared_from_this());
+    manager_->timers_.erase(it);
     return true;
   }
   return false;
 }
 
-bool Timer::refresh() {
-  TimerManager::RWMutexType::WriteLock lock(m_manager->mutex_);
-  if (!m_callback) {
+bool Timer::Refresh() {
+  TimerManager::RWMutexType::WriteLock lock(manager_->mutex_);
+  if (!callback_) {
     return false;
   }
-  auto it = m_manager->m_timers.find(shared_from_this());
-  if (it == m_manager->m_timers.end()) {
+  auto it = manager_->timers_.find(shared_from_this());
+  if (it == manager_->timers_.end()) {
     return false;
   }
-  m_manager->m_timers.erase(it);
-  m_next = GetCurrentMS() + m_ms;
-  m_manager->m_timers.insert(shared_from_this());
+  manager_->timers_.erase(it);
+  next_ = GetCurrentMS() + ms_;
+  manager_->timers_.insert(shared_from_this());
   return true;
 }
 
-bool Timer::reset(uint64_t ms, bool fromNow) {
-  if (ms == m_ms && !fromNow) {
+bool Timer::Reset(uint64_t ms, bool fromNow) {
+  if (ms == ms_ && !fromNow) {
     return true;
   }
-  TimerManager::RWMutexType::WriteLock lock(m_manager->mutex_);
-  if (!m_callback) {
+  TimerManager::RWMutexType::WriteLock lock(manager_->mutex_);
+  if (!callback_) {
     return false;
   }
-  auto it = m_manager->m_timers.find(shared_from_this());
-  if (it == m_manager->m_timers.end()) {
+  auto it = manager_->timers_.find(shared_from_this());
+  if (it == manager_->timers_.end()) {
     return false;
   }
-  m_manager->m_timers.erase(it);
+  manager_->timers_.erase(it);
   uint64_t start = 0;
   if (fromNow) {
     start = GetCurrentMS();
   } else {
-    start = m_next - m_ms;
+    start = next_ - ms_;
   }
-  m_ms   = ms;
-  m_next = start + m_ms;
-  m_manager->addTimer(shared_from_this(), lock);
+  ms_   = ms;
+  next_ = start + ms_;
+  manager_->AddTimer(shared_from_this(), lock);
   return true;
 }
 
@@ -75,24 +75,24 @@ bool Timer::Comparator::operator()(const Timer::ptr &lhs, const Timer::ptr &rhs)
   if (!rhs) {
     return false;
   }
-  if (lhs->m_next < rhs->m_next) {
+  if (lhs->next_ < rhs->next_) {
     return true;
   }
-  if (lhs->m_next > rhs->m_next) {
+  if (lhs->next_ > rhs->next_) {
     return false;
   }
   return lhs.get() < rhs.get();
 }
 
-TimerManager::TimerManager() { m_previous_time = GetCurrentMS(); }
+TimerManager::TimerManager() { previous_time_ = GetCurrentMS(); }
 
 TimerManager::~TimerManager() {}
 
-Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback, bool recurring) {
-  LOG_DEBUG(g_logger) << "TimerManager::addTimer";
+Timer::ptr TimerManager::AddTimer(uint64_t ms, std::function<void()> callback, bool recurring) {
+  LOG_DEBUG(g_logger) << "TimerManager::AddTimer";
   Timer::ptr             timer(new Timer(ms, callback, recurring, this));
   RWMutexType::WriteLock lock(mutex_);
-  addTimer(timer, lock);
+  AddTimer(timer, lock);
   return timer;
 }
 
@@ -102,101 +102,101 @@ Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> callback, b
  * @param weakCond
  * @param callback
  */
-static void OnTimer(std::weak_ptr<void> weakCond, std::function<void()> callback) {
-  std::shared_ptr<void> tmp = weakCond.lock();
+static void OnTimer(std::weak_ptr<void> weak_cond, std::function<void()> callback) {
+  std::shared_ptr<void> tmp = weak_cond.lock();
   if (tmp) {
     callback();
   }
 }
 
-Timer::ptr TimerManager::addConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weakCond,
+Timer::ptr TimerManager::AddConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weak_cond,
                                            bool recurring) {
-  return addTimer(ms, std::bind(&OnTimer, weakCond, callback), recurring);
+  return AddTimer(ms, std::bind(&OnTimer, weak_cond, callback), recurring);
 }
 
-uint64_t TimerManager::getNextTimer() {
+uint64_t TimerManager::GetNextTimer() {
   RWMutexType::ReadLock lock(mutex_);
-  m_tickled = false;
-  if (m_timers.empty()) {
+  tickled_ = false;
+  if (timers_.empty()) {
     return ~0ull;
   }
 
-  const Timer::ptr &next   = *m_timers.begin();
+  const Timer::ptr &next   = *timers_.begin();
   uint64_t          now_ms = GetCurrentMS();
-  if (now_ms >= next->m_next) {
+  if (now_ms >= next->next_) {
     return 0;
   } else {
-    return next->m_next - now_ms;
+    return next->next_ - now_ms;
   }
 }
 
-void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
+void TimerManager::ListExpiredCallbacks(std::vector<std::function<void()>> &callbacks) {
   uint64_t now_ms = GetCurrentMS();
 
   std::vector<Timer::ptr> expired;
   {
     RWMutexType::ReadLock lock(mutex_);
-    if (m_timers.empty()) {
+    if (timers_.empty()) {
       return;
     }
   }
   RWMutexType::WriteLock lock(mutex_);
 
-  if (m_timers.empty()) {
+  if (timers_.empty()) {
     return;
   }
-  bool roll_over = detectClockRollover(now_ms);
-  if (!roll_over && ((*m_timers.begin())->m_next > now_ms)) {
+  bool roll_over = DetectClockRollover(now_ms);
+  if (!roll_over && ((*timers_.begin())->next_ > now_ms)) {
     return;
   }
 
   Timer::ptr now_timer(new Timer(now_ms));
-  auto       it = roll_over ? m_timers.end() : m_timers.lower_bound(now_timer);
-  while (it != m_timers.end() && (*it)->m_next == now_ms) {
+  auto       it = roll_over ? timers_.end() : timers_.lower_bound(now_timer);
+  while (it != timers_.end() && (*it)->next_ == now_ms) {
     ++it;
   }
-  expired.insert(expired.begin(), m_timers.begin(), it);
-  m_timers.erase(m_timers.begin(), it);
-  cbs.reserve(expired.size());
+  expired.insert(expired.begin(), timers_.begin(), it);
+  timers_.erase(timers_.begin(), it);
+  callbacks.reserve(expired.size());
 
   for (auto &timer : expired) {
-    cbs.push_back(timer->m_callback);
-    if (timer->m_recurring) {
-      timer->m_next = now_ms + timer->m_ms;
-      m_timers.insert(timer);
+    callbacks.push_back(timer->callback_);
+    if (timer->recurring_) {
+      timer->next_ = now_ms + timer->ms_;
+      timers_.insert(timer);
     } else {
-      timer->m_callback = nullptr;
+      timer->callback_ = nullptr;
     }
   }
 }
 
-void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
-  auto it = m_timers.insert(val).first;
+void TimerManager::AddTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
+  auto it = timers_.insert(val).first;
 
   // m_timers 原本为空并且未 tickle
-  bool at_front = (it == m_timers.begin()) && !m_tickled;
+  bool at_front = (it == timers_.begin()) && !tickled_;
   if (at_front) {
-    m_tickled = true;
+    tickled_ = true;
   }
   lock.Unlock();
 
   if (at_front) {
-    onTimerInsertedAtFront();
+    OnTimerInsertedAtFront();
   }
 }
 
-bool TimerManager::detectClockRollover(uint64_t now_ms) {
+bool TimerManager::DetectClockRollover(uint64_t now_ms) {
   bool roll_over = false;
-  if (now_ms < m_previous_time && now_ms < (m_previous_time - 60 * 60 * 1000)) {
+  if (now_ms < previous_time_ && now_ms < (previous_time_ - 60 * 60 * 1000)) {
     roll_over = true;
   }
-  m_previous_time = now_ms;
+  previous_time_ = now_ms;
   return roll_over;
 }
 
-bool TimerManager::hasTimer() {
+bool TimerManager::HasTimer() {
   RWMutexType::ReadLock lock(mutex_);
-  return !m_timers.empty();
+  return !timers_.empty();
 }
 
 }  // namespace gudov

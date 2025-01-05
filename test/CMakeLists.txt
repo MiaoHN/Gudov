@@ -47,6 +47,12 @@ force_redefine_file_macro_for_sources(test_fiber)
 target_link_libraries(test_fiber gudov gtest gtest_main)
 add_test(NAME test_fiber_test COMMAND test_fiber)
 
+add_executable(test_timer test_timer.cpp)
+add_dependencies(test_timer gudov)
+force_redefine_file_macro_for_sources(test_timer)
+target_link_libraries(test_timer gudov gtest gtest_main)
+add_test(NAME test_timer_test COMMAND test_timer)
+
 add_executable(test_iomanager test_iomanager.cpp)
 add_dependencies(test_iomanager gudov)
 force_redefine_file_macro_for_sources(test_iomanager)

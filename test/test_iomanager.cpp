@@ -34,12 +34,12 @@ void test_fiber() {
   if (!connect(sock, (const sockaddr*)&addr, sizeof(addr))) {
   } else if (errno == EINPROGRESS) {
     LOG_INFO(g_logger) << "add event errno=" << errno << " " << strerror(errno);
-    gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::READ,
+    gudov::IOManager::GetThis()->AddEvent(sock, gudov::IOManager::Read,
                                           []() { LOG_INFO(g_logger) << "read callback"; });
-    gudov::IOManager::GetThis()->addEvent(sock, gudov::IOManager::WRITE, []() {
+    gudov::IOManager::GetThis()->AddEvent(sock, gudov::IOManager::Write, []() {
       LOG_INFO(g_logger) << "write callback";
       // close(sock);
-      gudov::IOManager::GetThis()->cancelEvent(sock, gudov::IOManager::READ);
+      gudov::IOManager::GetThis()->CancelEvent(sock, gudov::IOManager::Read);
       close(sock);
     });
   } else {
@@ -56,13 +56,13 @@ void test1() {
 gudov::Timer::ptr s_timer;
 void              testTimer() {
                gudov::IOManager iom(2);
-               s_timer = iom.addTimer(
+               s_timer = iom.AddTimer(
                    1000,
                    []() {
         static int i = 0;
         LOG_INFO(g_logger) << "hello timer i=" << i;
         if (++i == 3) {
-          s_timer->reset(2000, true);
+          s_timer->Reset(2000, true);
           // s_timer->cancel();
         }
       },

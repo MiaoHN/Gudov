@@ -11,7 +11,7 @@ void test_pool() {
   gudov::http::HttpConnectionPool::ptr pool(
       new gudov::http::HttpConnectionPool("www.baidu.com", "", 80, 10, 1000 * 30, 5));
 
-  gudov::IOManager::GetThis()->addTimer(
+  gudov::IOManager::GetThis()->AddTimer(
       1000,
       [pool]() {
         auto r = pool->doGet("/", 300);

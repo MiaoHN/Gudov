@@ -17,9 +17,9 @@ static Logger::ptr g_logger = LOG_NAME("system");
 IOManager::FdContext::EventContext& IOManager::FdContext::getContext(
     IOManager::Event event) {
   switch (event) {
-    case IOManager::Event::READ:
+    case IOManager::Event::Read:
       return read;
-    case IOManager::Event::WRITE:
+    case IOManager::Event::Write:
       return write;
     default:
       GUDOV_ASSERT2(false, "getContext");
@@ -51,68 +51,68 @@ void IOManager::FdContext::triggerEvent(IOManager::Event event) {
 
 IOManager::IOManager(size_t threads, bool useCaller, const std::string& name)
     : Scheduler(threads, useCaller, name) {
-  _epfd = epoll_create(5000);
-  GUDOV_ASSERT(_epfd > 0);
+  epfd_ = epoll_create(5000);
+  GUDOV_ASSERT(epfd_ > 0);
 
-  int rt = pipe(_tickleFds);
+  int rt = pipe(tickle_fds_);
   GUDOV_ASSERT(!rt);
 
   // 将管道读端放入 epoll 进行监听
   epoll_event event;
   memset(&event, 0, sizeof(epoll_event));
   event.events  = EPOLLIN | EPOLLET;
-  event.data.fd = _tickleFds[0];
+  event.data.fd = tickle_fds_[0];
 
   // 非阻塞方式
-  rt = fcntl(_tickleFds[0], F_SETFL, O_NONBLOCK);
+  rt = fcntl(tickle_fds_[0], F_SETFL, O_NONBLOCK);
   GUDOV_ASSERT(!rt);
 
   // 如果管道可读，epoll_wait() 就会返回
-  rt = epoll_ctl(_epfd, EPOLL_CTL_ADD, _tickleFds[0], &event);
+  rt = epoll_ctl(epfd_, EPOLL_CTL_ADD, tickle_fds_[0], &event);
   GUDOV_ASSERT(!rt);
 
-  contextResize(32);
+  ContextResize(32);
 
   Start();
 }
 
 IOManager::~IOManager() {
   Stop();
-  close(_epfd);
-  close(_tickleFds[0]);
-  close(_tickleFds[1]);
+  close(epfd_);
+  close(tickle_fds_[0]);
+  close(tickle_fds_[1]);
 
-  for (size_t i = 0; i < _fdContexts.size(); ++i) {
-    if (_fdContexts[i]) {
-      delete _fdContexts[i];
+  for (size_t i = 0; i < fd_contexts_.size(); ++i) {
+    if (fd_contexts_[i]) {
+      delete fd_contexts_[i];
     }
   }
 }
 
-void IOManager::contextResize(size_t size) {
-  _fdContexts.resize(size);
+void IOManager::ContextResize(size_t size) {
+  fd_contexts_.resize(size);
 
-  for (size_t i = 0; i < _fdContexts.size(); ++i) {
-    if (!_fdContexts[i]) {
-      _fdContexts[i]     = new FdContext;
-      _fdContexts[i]->fd = i;
+  for (size_t i = 0; i < fd_contexts_.size(); ++i) {
+    if (!fd_contexts_[i]) {
+      fd_contexts_[i]     = new FdContext;
+      fd_contexts_[i]->fd = i;
     }
   }
 }
 
-int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
+int IOManager::AddEvent(int fd, Event event, std::function<void()> callback) {
   FdContext* fdCtx = nullptr;
   // 得到对应 fd 下标的 context，如果越界就将 _fdContexts 扩容
   RWMutexType::ReadLock lock(mutex_);
-  if ((int)_fdContexts.size() > fd) {
-    fdCtx = _fdContexts[fd];
+  if ((int)fd_contexts_.size() > fd) {
+    fdCtx = fd_contexts_[fd];
     lock.Unlock();
   } else {
     lock.Unlock();
     RWMutexType::WriteLock lock2(mutex_);
-    contextResize(fd * 1.5);
-    GUDOV_ASSERT((int)_fdContexts.size() > fd);
-    fdCtx = _fdContexts[fd];
+    ContextResize(fd * 1.5);
+    GUDOV_ASSERT((int)fd_contexts_.size() > fd);
+    fdCtx = fd_contexts_[fd];
   }
 
   FdContext::MutexType::Locker lock2(fdCtx->mutex);
@@ -130,15 +130,15 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   epevent.events   = EPOLLET | fdCtx->events | event;
   epevent.data.ptr = fdCtx;
 
-  int rt = epoll_ctl(_epfd, op, fd, &epevent);
+  int rt = epoll_ctl(epfd_, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+    LOG_ERROR(g_logger) << "epoll_ctl(" << epfd_ << ", " << op << "," << fd
                         << "," << epevent.events << "):" << rt << " (" << errno
                         << ") (" << strerror(errno) << ")";
     return -1;
   }
 
-  ++_pendingEventCount;
+  ++pending_event_cnt_;
 
   fdCtx->events                     = (Event)(fdCtx->events | event);
   FdContext::EventContext& eventCtx = fdCtx->getContext(event);
@@ -160,13 +160,13 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> callback) {
   return 0;
 }
 
-bool IOManager::delEvent(int fd, Event event) {
+bool IOManager::DelEvent(int fd, Event event) {
   RWMutexType::ReadLock lock(mutex_);
-  if ((int)_fdContexts.size() <= fd) {
+  if ((int)fd_contexts_.size() <= fd) {
     // 该 fd 超出范围
     return false;
   }
-  FdContext* fdCtx = _fdContexts[fd];
+  FdContext* fdCtx = fd_contexts_[fd];
   lock.Unlock();
 
   FdContext::MutexType::Locker lock2(fdCtx->mutex);
@@ -182,15 +182,15 @@ bool IOManager::delEvent(int fd, Event event) {
   epevent.events   = EPOLLET | newEvents;
   epevent.data.ptr = fdCtx;
 
-  int rt = epoll_ctl(_epfd, op, fd, &epevent);
+  int rt = epoll_ctl(epfd_, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+    LOG_ERROR(g_logger) << "epoll_ctl(" << epfd_ << ", " << op << "," << fd
                         << "," << epevent.events << "):" << rt << " (" << errno
                         << ") (" << strerror(errno) << ")";
     return false;
   }
 
-  --_pendingEventCount;
+  --pending_event_cnt_;
 
   // 重置该 fdContext
   fdCtx->events                      = newEvents;
@@ -200,12 +200,12 @@ bool IOManager::delEvent(int fd, Event event) {
   return true;
 }
 
-bool IOManager::cancelEvent(int fd, Event event) {
+bool IOManager::CancelEvent(int fd, Event event) {
   RWMutexType::ReadLock lock(mutex_);
-  if ((int)_fdContexts.size() <= fd) {
+  if ((int)fd_contexts_.size() <= fd) {
     return false;
   }
-  FdContext* fdCtx = _fdContexts[fd];
+  FdContext* fdCtx = fd_contexts_[fd];
   lock.Unlock();
 
   FdContext::MutexType::Locker lock2(fdCtx->mutex);
@@ -219,9 +219,9 @@ bool IOManager::cancelEvent(int fd, Event event) {
   epevent.events   = EPOLLET | newEvents;
   epevent.data.ptr = fdCtx;
 
-  int rt = epoll_ctl(_epfd, op, fd, &epevent);
+  int rt = epoll_ctl(epfd_, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+    LOG_ERROR(g_logger) << "epoll_ctl(" << epfd_ << ", " << op << "," << fd
                         << "," << epevent.events << "):" << rt << " (" << errno
                         << ") (" << strerror(errno) << ")";
     return false;
@@ -229,16 +229,16 @@ bool IOManager::cancelEvent(int fd, Event event) {
 
   // 删除前触发一次
   fdCtx->triggerEvent(event);
-  --_pendingEventCount;
+  --pending_event_cnt_;
   return true;
 }
 
-bool IOManager::cancelAll(int fd) {
+bool IOManager::CancelAll(int fd) {
   RWMutexType::ReadLock lock(mutex_);
-  if ((int)_fdContexts.size() <= fd) {
+  if ((int)fd_contexts_.size() <= fd) {
     return false;
   }
-  FdContext* fdCtx = _fdContexts[fd];
+  FdContext* fdCtx = fd_contexts_[fd];
   lock.Unlock();
 
   FdContext::MutexType::Locker lock2(fdCtx->mutex);
@@ -251,21 +251,21 @@ bool IOManager::cancelAll(int fd) {
   epevent.events   = 0;
   epevent.data.ptr = fdCtx;
 
-  int rt = epoll_ctl(_epfd, op, fd, &epevent);
+  int rt = epoll_ctl(epfd_, op, fd, &epevent);
   if (rt) {
-    LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << "," << fd
+    LOG_ERROR(g_logger) << "epoll_ctl(" << epfd_ << ", " << op << "," << fd
                         << "," << epevent.events << "):" << rt << " (" << errno
                         << ") (" << strerror(errno) << ")";
     return false;
   }
 
-  if (fdCtx->events & READ) {
-    fdCtx->triggerEvent(READ);
-    --_pendingEventCount;
+  if (fdCtx->events & Read) {
+    fdCtx->triggerEvent(Read);
+    --pending_event_cnt_;
   }
-  if (fdCtx->events & WRITE) {
-    fdCtx->triggerEvent(WRITE);
-    --_pendingEventCount;
+  if (fdCtx->events & Write) {
+    fdCtx->triggerEvent(Write);
+    --pending_event_cnt_;
   }
 
   GUDOV_ASSERT(fdCtx->events == 0);
@@ -280,14 +280,14 @@ void IOManager::Tickle() {
   if (HasIdleThreads()) {
     return;
   }
-  int rt = write(_tickleFds[1], "T", 1);
+  int rt = write(tickle_fds_[1], "T", 1);
   LOG_DEBUG(g_logger) << "write data to tickleFds[1]";
   GUDOV_ASSERT(rt == 1);
 }
 
 bool IOManager::Stopping(uint64_t& timeout) {
-  timeout = getNextTimer();
-  return timeout == ~0ull && _pendingEventCount == 0 && Scheduler::Stopping();
+  timeout = GetNextTimer();
+  return timeout == ~0ull && pending_event_cnt_ == 0 && Scheduler::Stopping();
 }
 
 bool IOManager::Stopping() {
@@ -322,7 +322,7 @@ void IOManager::Idle() {
         nextTimeout = MAX_TIMEOUT;
       }
       // 等待事件发生，即 tickle() 函数往管道写端写入数据或者
-      rt = epoll_wait(_epfd, events, maxEvents, (int)nextTimeout);
+      rt = epoll_wait(epfd_, events, maxEvents, (int)nextTimeout);
       LOG_DEBUG(g_logger) << "epoll_wait...";
       if (rt < 0 && errno == EINTR) {
       } else {
@@ -334,7 +334,7 @@ void IOManager::Idle() {
 
     // 获取超时事件
     std::vector<std::function<void()>> cbs;
-    listExpiredCb(cbs);
+    ListExpiredCallbacks(cbs);
     LOG_DEBUG(g_logger) << "callback.size(): " << cbs.size() << ", rt: " << rt;
     if (!cbs.empty()) {
       // 将超时事件加入调度队列
@@ -344,11 +344,11 @@ void IOManager::Idle() {
 
     for (int i = 0; i < rt; ++i) {
       epoll_event& event = events[i];
-      if (event.data.fd == _tickleFds[0]) {
+      if (event.data.fd == tickle_fds_[0]) {
         // _ticklefd[0] 用于通知事件产生这里只需读完剩余数据
         LOG_DEBUG(g_logger) << "tickleFds[0] have data";
         uint8_t dummy;
-        while (read(_tickleFds[0], &dummy, 1) == 1)
+        while (read(tickle_fds_[0], &dummy, 1) == 1)
           ;
         continue;
       }
@@ -362,15 +362,15 @@ void IOManager::Idle() {
       if (event.events & (EPOLLERR | EPOLLHUP)) {
         event.events |= EPOLLIN | EPOLLOUT;
       }
-      int realEvents = NONE;
+      int realEvents = None;
       if (event.events & EPOLLIN) {
-        realEvents |= READ;
+        realEvents |= Read;
       }
       if (event.events & EPOLLOUT) {
-        realEvents |= WRITE;
+        realEvents |= Write;
       }
 
-      if ((fdCtx->events & realEvents) == NONE) {
+      if ((fdCtx->events & realEvents) == None) {
         continue;
       }
 
@@ -379,23 +379,23 @@ void IOManager::Idle() {
       int op         = leftEvents ? EPOLL_CTL_MOD : EPOLL_CTL_DEL;
       event.events   = EPOLLET | leftEvents;
 
-      int rt2 = epoll_ctl(_epfd, op, fdCtx->fd, &event);
+      int rt2 = epoll_ctl(epfd_, op, fdCtx->fd, &event);
       if (rt2) {
-        LOG_ERROR(g_logger) << "epoll_ctl(" << _epfd << ", " << op << ","
+        LOG_ERROR(g_logger) << "epoll_ctl(" << epfd_ << ", " << op << ","
                             << fdCtx->fd << "," << event.events << "):" << rt2
                             << " (" << errno << ") (" << strerror(errno) << ")";
         continue;
       }
 
-      if (realEvents & READ) {
+      if (realEvents & Read) {
         // 触发读事件
-        fdCtx->triggerEvent(READ);
-        --_pendingEventCount;
+        fdCtx->triggerEvent(Read);
+        --pending_event_cnt_;
       }
-      if (realEvents & WRITE) {
+      if (realEvents & Write) {
         // 触发写事件
-        fdCtx->triggerEvent(WRITE);
-        --_pendingEventCount;
+        fdCtx->triggerEvent(Write);
+        --pending_event_cnt_;
       }
     }
 
@@ -408,6 +408,6 @@ void IOManager::Idle() {
   }
 }
 
-void IOManager::onTimerInsertedAtFront() { Tickle(); }
+void IOManager::OnTimerInsertedAtFront() { Tickle(); }
 
 }  // namespace gudov

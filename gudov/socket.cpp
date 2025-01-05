@@ -373,13 +373,13 @@ std::ostream& Socket::dump(std::ostream& os) const {
   return os;
 }
 
-bool Socket::cancelRead() { return IOManager::GetThis()->cancelEvent(m_sock, gudov::IOManager::Event::READ); }
+bool Socket::cancelRead() { return IOManager::GetThis()->CancelEvent(m_sock, gudov::IOManager::Event::Read); }
 
-bool Socket::cancelWrite() { return IOManager::GetThis()->cancelEvent(m_sock, gudov::IOManager::Event::WRITE); }
+bool Socket::cancelWrite() { return IOManager::GetThis()->CancelEvent(m_sock, gudov::IOManager::Event::Write); }
 
-bool Socket::cancelAccept() { return IOManager::GetThis()->cancelEvent(m_sock, gudov::IOManager::Event::READ); }
+bool Socket::cancelAccept() { return IOManager::GetThis()->CancelEvent(m_sock, gudov::IOManager::Event::Read); }
 
-bool Socket::cancelAll() { return IOManager::GetThis()->cancelAll(m_sock); }
+bool Socket::cancelAll() { return IOManager::GetThis()->CancelAll(m_sock); }
 
 void Socket::initSock() {
   int val = 1;

@@ -16,21 +16,21 @@ class Timer : public std::enable_shared_from_this<Timer> {
  public:
   using ptr = std::shared_ptr<Timer>;
 
-  bool cancel();
-  bool refresh();
-  bool reset(uint64_t ms, bool fromNow);
+  bool Cancel();
+  bool Refresh();
+  bool Reset(uint64_t ms, bool fromNow);
 
  private:
   Timer(uint64_t ms, std::function<void()> callback, bool recurring, TimerManager *manager);
   Timer(uint64_t next);
 
  private:
-  bool     m_recurring = false;  // 是否是循环定时器
-  uint64_t m_ms        = 0;      // 执行周期
-  uint64_t m_next      = 0;      // 精确的执行函数
+  bool     recurring_ = false;  // 是否是循环定时器
+  uint64_t ms_        = 0;      // 执行周期
+  uint64_t next_      = 0;      // 精确的执行时间
 
-  std::function<void()> m_callback;  // 待执行的回调函数
-  TimerManager         *m_manager = nullptr;
+  std::function<void()> callback_;  // 待执行的回调函数
+  TimerManager         *manager_ = nullptr;
 
  private:
   struct Comparator {
@@ -51,17 +51,17 @@ class TimerManager {
   TimerManager();
   virtual ~TimerManager();
 
-  Timer::ptr addTimer(uint64_t ms, std::function<void()> callback, bool recurring = false);
-  Timer::ptr addConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weakCond,
+  Timer::ptr AddTimer(uint64_t ms, std::function<void()> callback, bool recurring = false);
+  Timer::ptr AddConditionTimer(uint64_t ms, std::function<void()> callback, std::weak_ptr<void> weakCond,
                                bool recurring = false);
 
-  uint64_t getNextTimer();
-  void     listExpiredCb(std::vector<std::function<void()>> &cbs);
-  bool     hasTimer();
+  uint64_t GetNextTimer();
+  void     ListExpiredCallbacks(std::vector<std::function<void()>> &cbs);
+  bool     HasTimer();
 
  protected:
-  virtual void onTimerInsertedAtFront() = 0;
-  void         addTimer(Timer::ptr val, RWMutexType::WriteLock &lock);
+  virtual void OnTimerInsertedAtFront() = 0;
+  void         AddTimer(Timer::ptr val, RWMutexType::WriteLock &lock);
 
  private:
   /**
@@ -71,15 +71,17 @@ class TimerManager {
    * @return true
    * @return false
    */
-  bool detectClockRollover(uint64_t now_ms);
+  bool DetectClockRollover(uint64_t now_ms);
+
+ protected:
+  bool tickled_ = false;
 
  private:
   RWMutexType mutex_;
 
-  std::set<Timer::ptr, Timer::Comparator> m_timers;
+  std::set<Timer::ptr, Timer::Comparator> timers_;
 
-  bool     m_tickled       = false;
-  uint64_t m_previous_time = 0;
+  uint64_t previous_time_ = 0;
 };
 
 }  // namespace gudov

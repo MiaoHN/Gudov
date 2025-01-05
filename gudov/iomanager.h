@@ -16,9 +16,9 @@ class IOManager : public Scheduler, public TimerManager {
   using RWMutexType = RWMutex;
 
   enum Event {
-    NONE  = 0x0,
-    READ  = 0x1,  // EPOLLIN
-    WRITE = 0x4,  // EPOLLOUT
+    None  = 0x0,
+    Read  = 0x1,  // EPOLLIN
+    Write = 0x4,  // EPOLLOUT
   };
 
  private:
@@ -48,7 +48,7 @@ class IOManager : public Scheduler, public TimerManager {
     EventContext read;
     EventContext write;
     int          fd;
-    Event        events = NONE;
+    Event        events = None;
     MutexType    mutex;
   };
 
@@ -64,7 +64,7 @@ class IOManager : public Scheduler, public TimerManager {
    * @param callback
    * @return int 0 success, -1 error
    */
-  int addEvent(int fd, Event event, std::function<void()> callback = nullptr);
+  int AddEvent(int fd, Event event, std::function<void()> callback = nullptr);
 
   /**
    * @brief 删除 fd 对应事件
@@ -75,7 +75,7 @@ class IOManager : public Scheduler, public TimerManager {
    * @return true
    * @return false
    */
-  bool delEvent(int fd, Event event);
+  bool DelEvent(int fd, Event event);
 
   /**
    * @brief 取消 fd 对应的所有事件
@@ -85,7 +85,7 @@ class IOManager : public Scheduler, public TimerManager {
    * @return true
    * @return false
    */
-  bool cancelEvent(int fd, Event event);
+  bool CancelEvent(int fd, Event event);
 
   /**
    * @brief 取消 fd 对应的所有事件
@@ -95,7 +95,7 @@ class IOManager : public Scheduler, public TimerManager {
    * @return true
    * @return false
    */
-  bool cancelAll(int fd);
+  bool CancelAll(int fd);
 
   static IOManager* GetThis();
 
@@ -114,22 +114,22 @@ class IOManager : public Scheduler, public TimerManager {
    * @details 执行 tickle 后继而触发 epoll_wait
    *
    */
-  void onTimerInsertedAtFront() override;
+  void OnTimerInsertedAtFront() override;
 
-  void contextResize(size_t size);
+  void ContextResize(size_t size);
   bool Stopping(uint64_t& timeout);
 
  private:
-  int _epfd = 0;
+  int epfd_ = 0;
 
   // 0 为读端  1 为写端
-  int _tickleFds[2];
+  int tickle_fds_[2];
 
   // 当前未执行的 IO 事件数量
-  std::atomic<size_t> _pendingEventCount{0};
+  std::atomic<size_t> pending_event_cnt_{0};
   RWMutexType         mutex_;
 
-  std::vector<FdContext*> _fdContexts;
+  std::vector<FdContext*> fd_contexts_;
 };
 
 }  // namespace gudov

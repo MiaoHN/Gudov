@@ -24,10 +24,10 @@ int SocketStream::read(ByteArray::ptr ba, size_t length) {
     return -1;
   }
   std::vector<iovec> iovs;
-  ba->getWriteBuffers(iovs, length);
+  ba->GetWriteBuffers(iovs, length);
   int rt = m_socket->Recv(&iovs[0], iovs.size());
   if (rt > 0) {
-    ba->setPosition(ba->getPosition() + rt);
+    ba->SetPosition(ba->GetPosition() + rt);
   }
   return rt;
 }
@@ -44,10 +44,10 @@ int SocketStream::write(ByteArray::ptr ba, size_t length) {
     return -1;
   }
   std::vector<iovec> iovs;
-  ba->getReadBuffers(iovs, length);
+  ba->GetReadBuffers(iovs, length);
   int rt = m_socket->Send(&iovs[0], iovs.size());
   if (rt > 0) {
-    ba->setPosition(ba->getPosition() + rt);
+    ba->SetPosition(ba->GetPosition() + rt);
   }
   return rt;
 }

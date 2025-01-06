@@ -192,7 +192,7 @@ class HttpRequest {
   void setFragment(const std::string& v) { m_fragment = v; }
   void setBody(const std::string& v) { m_body = v; }
 
-  bool isClose() const { return m_close; }
+  bool IsClose() const { return m_close; }
   void setClose(bool v) { m_close = v; }
 
   void setHeaders(const MapType& v) { m_headers = v; }
@@ -282,7 +282,7 @@ class HttpResponse {
   void setReason(const std::string& v) { m_reason = v; }
   void setHeaders(const MapType& v) { m_headers = v; }
 
-  bool isClose() const { return m_close; }
+  bool IsClose() const { return m_close; }
   void setClose(bool v) { m_close = v; }
 
   std::string getHeader(const std::string& key, const std::string& def = "") const;

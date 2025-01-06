@@ -31,31 +31,31 @@ class FdContext : public std::enable_shared_from_this<FdContext> {
   ~FdContext();
 
   bool Init();
-  bool isInit() const { return m_is_init; }
-  bool isSocket() const { return m_is_socket; }
-  bool isClose() const { return m_is_close; }
-  bool close();
+  bool IsInit() const { return is_init_; }
+  bool IsSocket() const { return is_socket_; }
+  bool IsClose() const { return is_close_; }
+  bool Close();
 
-  void setUserNonblock(bool v) { m_user_nonblock = v; }
-  bool getUserNonblock() const { return m_user_nonblock; }
+  void SetUserNonblock(bool v) { user_nonblock_ = v; }
+  bool GetUserNonblock() const { return user_nonblock_; }
 
-  void setSysNonblock(bool v) { m_sys_nonblock = v; }
-  bool getSysNonblock() const { return m_sys_nonblock; }
+  void SetSysNonblock(bool v) { sys_nonblock_ = v; }
+  bool GetSysNonblock() const { return sys_nonblock_; }
 
-  void     setTimeout(int type, uint64_t v);
-  uint64_t getTimeout(int type);
+  void     SetTimeout(int type, uint64_t v);
+  uint64_t GetTimeout(int type);
 
  private:
-  bool m_is_init : 1;
-  bool m_is_socket : 1;
-  bool m_sys_nonblock : 1;
-  bool m_user_nonblock : 1;
-  bool m_is_close : 1;
+  bool is_init_ : 1;
+  bool is_socket_ : 1;
+  bool sys_nonblock_ : 1;
+  bool user_nonblock_ : 1;
+  bool is_close_ : 1;
 
-  int m_fd;
+  int fd_;
 
-  uint64_t m_recv_timeout;
-  uint64_t m_send_timeout;
+  uint64_t recv_timeout_;
+  uint64_t send_timeout_;
 };
 
 class FdManager {
@@ -65,13 +65,13 @@ class FdManager {
   FdManager();
   ~FdManager();
 
-  FdContext::ptr get(int fd, bool autoCreate = false);
-  void           del(int fd);
+  FdContext::ptr Get(int fd, bool autoCreate = false);
+  void           Del(int fd);
 
  private:
   RWMutexType mutex_;
 
-  std::vector<FdContext::ptr> _datas;
+  std::vector<FdContext::ptr> data_;
 };
 
 using FdMgr = Singleton<FdManager>;

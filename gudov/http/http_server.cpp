@@ -24,12 +24,12 @@ void HttpServer::handleClient(Socket::ptr client) {
       break;
     }
 
-    HttpResponse::ptr rsp(new HttpResponse(req->getVersion(), req->isClose() || !m_is_keep_alive));
+    HttpResponse::ptr rsp(new HttpResponse(req->getVersion(), req->IsClose() || !m_is_keep_alive));
     rsp->setHeader("Server", GetName());
     m_dispatch->handle(req, rsp, session);
     session->sendResponse(rsp);
 
-    if (!m_is_keep_alive || req->isClose()) {
+    if (!m_is_keep_alive || req->IsClose()) {
       break;
     }
   } while (true);

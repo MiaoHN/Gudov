@@ -6,80 +6,80 @@
 namespace gudov {
 
 FdContext::FdContext(int fd)
-    : m_is_init(false),
-      m_is_socket(false),
-      m_sys_nonblock(false),
-      m_user_nonblock(false),
-      m_is_close(false),
-      m_fd(fd),
-      m_recv_timeout(-1),
-      m_send_timeout(-1) {
+    : is_init_(false),
+      is_socket_(false),
+      sys_nonblock_(false),
+      user_nonblock_(false),
+      is_close_(false),
+      fd_(fd),
+      recv_timeout_(-1),
+      send_timeout_(-1) {
   Init();
 }
 
 FdContext::~FdContext() {}
 
 bool FdContext::Init() {
-  if (m_is_init) {
+  if (is_init_) {
     return true;
   }
 
-  m_recv_timeout = -1;
-  m_send_timeout = -1;
+  recv_timeout_ = -1;
+  send_timeout_ = -1;
 
   struct stat fdStat;
-  if (-1 == fstat(m_fd, &fdStat)) {
-    m_is_init   = false;
-    m_is_socket = false;
+  if (-1 == fstat(fd_, &fdStat)) {
+    is_init_   = false;
+    is_socket_ = false;
   } else {
-    m_is_init   = true;
-    m_is_socket = S_ISSOCK(fdStat.st_mode);
+    is_init_   = true;
+    is_socket_ = S_ISSOCK(fdStat.st_mode);
   }
 
-  if (m_is_socket) {
-    int flags = fcntlF(m_fd, F_GETFL, 0);
+  if (is_socket_) {
+    int flags = fcntlF(fd_, F_GETFL, 0);
     if (!(flags & O_NONBLOCK)) {
-      fcntlF(m_fd, F_SETFL, flags | O_NONBLOCK);
+      fcntlF(fd_, F_SETFL, flags | O_NONBLOCK);
     }
-    m_sys_nonblock = true;
+    sys_nonblock_ = true;
   } else {
-    m_sys_nonblock = false;
+    sys_nonblock_ = false;
   }
 
-  m_user_nonblock = false;
-  m_is_close      = false;
-  return m_is_init;
+  user_nonblock_ = false;
+  is_close_      = false;
+  return is_init_;
 }
 
-void FdContext::setTimeout(int type, uint64_t v) {
+void FdContext::SetTimeout(int type, uint64_t v) {
   if (type == SO_RCVTIMEO) {
-    m_recv_timeout = v;
+    recv_timeout_ = v;
   } else {
-    m_send_timeout = v;
+    send_timeout_ = v;
   }
 }
 
-uint64_t FdContext::getTimeout(int type) {
+uint64_t FdContext::GetTimeout(int type) {
   if (type == SO_RCVTIMEO) {
-    return m_recv_timeout;
+    return recv_timeout_;
   } else {
-    return m_send_timeout;
+    return send_timeout_;
   }
 }
 
-FdManager::FdManager() { _datas.resize(64); }
+FdManager::FdManager() { data_.resize(64); }
 
 FdManager::~FdManager() {}
 
-FdContext::ptr FdManager::get(int fd, bool autoCreate) {
+FdContext::ptr FdManager::Get(int fd, bool autoCreate) {
   RWMutexType::ReadLock lock(mutex_);
-  if (_datas.size() <= static_cast<size_t>(fd)) {
+  if (data_.size() <= static_cast<size_t>(fd)) {
     if (autoCreate == false) {
       return nullptr;
     }
   } else {
-    if (_datas[fd] || autoCreate) {
-      return _datas[fd];
+    if (data_[fd] || autoCreate) {
+      return data_[fd];
     }
   }
   lock.Unlock();
@@ -87,18 +87,18 @@ FdContext::ptr FdManager::get(int fd, bool autoCreate) {
   RWMutexType::WriteLock lock2(mutex_);
 
   FdContext::ptr ctx(new FdContext(fd));
-  _datas[fd] = ctx;
+  data_[fd] = ctx;
 
   return ctx;
 }
 
-void FdManager::del(int fd) {
+void FdManager::Del(int fd) {
   RWMutexType::WriteLock lock(mutex_);
-  if (_datas.size() <= static_cast<size_t>(fd)) {
+  if (data_.size() <= static_cast<size_t>(fd)) {
     return;
   }
 
-  _datas[fd].reset();
+  data_[fd].reset();
 }
 
 }  // namespace gudov

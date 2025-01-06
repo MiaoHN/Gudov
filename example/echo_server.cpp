@@ -21,9 +21,9 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
   LOG_INFO(g_logger) << "handleClient " << *client;
   gudov::ByteArray::ptr ba(new gudov::ByteArray);
   while (true) {
-    ba->clear();
+    ba->Clear();
     std::vector<iovec> iovs;
-    ba->getWriteBuffers(iovs, 1024);
+    ba->GetWriteBuffers(iovs, 1024);
 
     int rt = client->Recv(&iovs[0], iovs.size());
     if (rt == 0) {
@@ -33,13 +33,13 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
       LOG_INFO(g_logger) << "client error rt=" << rt << " errno=" << errno << " errstr=" << strerror(errno);
       break;
     }
-    ba->setPosition(ba->getPosition() + rt);
-    ba->setPosition(0);
+    ba->SetPosition(ba->GetPosition() + rt);
+    ba->SetPosition(0);
     if (type_ == 1) {
       // text
       std::cout << ba->ToString();
     } else {
-      std::cout << ba->toHexString();
+      std::cout << ba->ToHexString();
     }
     std::cout.flush();
   }

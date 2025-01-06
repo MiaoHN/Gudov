@@ -64,9 +64,9 @@ Socket::Socket(int family, int type, int protocol)
 Socket::~Socket() { Close(); }
 
 int64_t Socket::GetSendTimeout() {
-  FdContext::ptr ctx = FdMgr::getInstance()->get(sock_);
+  FdContext::ptr ctx = FdMgr::getInstance()->Get(sock_);
   if (ctx) {
-    return ctx->getTimeout(SO_SNDTIMEO);
+    return ctx->GetTimeout(SO_SNDTIMEO);
   }
   return -1;
 }
@@ -79,9 +79,9 @@ void Socket::SetSendTimeout(int64_t v) {
 }
 
 int64_t Socket::GetRecvTimeout() {
-  FdContext::ptr ctx = FdMgr::getInstance()->get(sock_);
+  FdContext::ptr ctx = FdMgr::getInstance()->Get(sock_);
   if (ctx) {
-    return ctx->getTimeout(SO_RCVTIMEO);
+    return ctx->GetTimeout(SO_RCVTIMEO);
   }
   return -1;
 }
@@ -400,8 +400,8 @@ void Socket::NewSock() {
 }
 
 bool Socket::Init(int sock) {
-  FdContext::ptr ctx = FdMgr::getInstance()->get(sock);
-  if (ctx && ctx->isSocket() && !ctx->isClose()) {
+  FdContext::ptr ctx = FdMgr::getInstance()->Get(sock);
+  if (ctx && ctx->IsSocket() && !ctx->IsClose()) {
     sock_         = sock;
     is_connected_ = true;
     InitSock();

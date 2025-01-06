@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -24,67 +25,67 @@ ByteArray::Node::~Node() {
 }
 
 ByteArray::ByteArray(size_t baseSize)
-    : _baseSize(baseSize),
-      _position(0),
-      _capacity(baseSize),
-      _size(0),
-      _endian(GUDOV_BIG_ENDIAN),
-      m_root(new Node(baseSize)),
-      _cur(m_root) {}
+    : base_size_(baseSize),
+      position_(0),
+      capacity_(baseSize),
+      size_(0),
+      endian_(GUDOV_LITTLE_ENDIAN),
+      root_(new Node(baseSize)),
+      cur_(root_) {}
 
 ByteArray::~ByteArray() {
-  Node* tmp = m_root;
+  Node* tmp = root_;
   while (tmp) {
-    _cur = tmp;
+    cur_ = tmp;
     tmp  = tmp->next;
-    delete _cur;
+    delete cur_;
   }
 }
 
-void ByteArray::writeFint8(int8_t value) { write(&value, sizeof(value)); }
+void ByteArray::WriteFint8(int8_t value) { Write(&value, sizeof(value)); }
 
-void ByteArray::writeFuint8(uint8_t value) { write(&value, sizeof(value)); }
+void ByteArray::WriteFuint8(uint8_t value) { Write(&value, sizeof(value)); }
 
-void ByteArray::writeFint16(int16_t value) {
-  if (_endian != GUDOV_BYTE_ORDER) {
+void ByteArray::WriteFint16(int16_t value) {
+  if (endian_ != GUDOV_BYTE_ORDER) {
     value = ByteSwap(value);
   }
-  write(&value, sizeof(value));
+  Write(&value, sizeof(value));
 }
 
-void ByteArray::writeFuint16(uint16_t value) {
-  if (_endian != GUDOV_BYTE_ORDER) {
+void ByteArray::WriteFuint16(uint16_t value) {
+  if (endian_ != GUDOV_BYTE_ORDER) {
     value = ByteSwap(value);
   }
-  write(&value, sizeof(value));
+  Write(&value, sizeof(value));
 }
 
-void ByteArray::writeFint32(int32_t value) {
-  if (_endian != GUDOV_BYTE_ORDER) {
+void ByteArray::WriteFint32(int32_t value) {
+  if (endian_ != GUDOV_BYTE_ORDER) {
     value = ByteSwap(value);
   }
-  write(&value, sizeof(value));
+  Write(&value, sizeof(value));
 }
 
-void ByteArray::writeFuint32(uint32_t value) {
-  if (_endian != GUDOV_BYTE_ORDER) {
+void ByteArray::WriteFuint32(uint32_t value) {
+  if (endian_ != GUDOV_BYTE_ORDER) {
     value = ByteSwap(value);
   }
-  write(&value, sizeof(value));
+  Write(&value, sizeof(value));
 }
 
-void ByteArray::writeFint64(int64_t value) {
-  if (_endian != GUDOV_BYTE_ORDER) {
+void ByteArray::WriteFint64(int64_t value) {
+  if (endian_ != GUDOV_BYTE_ORDER) {
     value = ByteSwap(value);
   }
-  write(&value, sizeof(value));
+  Write(&value, sizeof(value));
 }
 
-void ByteArray::writeFuint64(uint64_t value) {
-  if (_endian != GUDOV_BYTE_ORDER) {
+void ByteArray::WriteFuint64(uint64_t value) {
+  if (endian_ != GUDOV_BYTE_ORDER) {
     value = ByteSwap(value);
   }
-  write(&value, sizeof(value));
+  Write(&value, sizeof(value));
 }
 
 static uint32_t EncodeZigzag32(const int32_t& v) {
@@ -107,9 +108,9 @@ static int32_t DecodeZigzag32(const uint32_t& v) { return (v >> 1) ^ -(v & 1); }
 
 static int64_t DecodeZigzag64(const uint64_t& v) { return (v >> 1) ^ -(v & 1); }
 
-void ByteArray::writeInt32(int32_t value) { writeUint32(EncodeZigzag32(value)); }
+void ByteArray::WriteInt32(int32_t value) { WriteUint32(EncodeZigzag32(value)); }
 
-void ByteArray::writeUint32(uint32_t value) {
+void ByteArray::WriteUint32(uint32_t value) {
   uint8_t tmp[5];
   uint8_t i = 0;
   while (value >= 0x80) {
@@ -117,12 +118,12 @@ void ByteArray::writeUint32(uint32_t value) {
     value >>= 7;
   }
   tmp[i++] = value;
-  write(tmp, i);
+  Write(tmp, i);
 }
 
-void ByteArray::writeInt64(int64_t value) { writeUint64(EncodeZigzag64(value)); }
+void ByteArray::WriteInt64(int64_t value) { WriteUint64(EncodeZigzag64(value)); }
 
-void ByteArray::writeUint64(uint64_t value) {
+void ByteArray::WriteUint64(uint64_t value) {
   uint8_t tmp[10];
   uint8_t i = 0;
   while (value >= 0x80) {
@@ -130,85 +131,85 @@ void ByteArray::writeUint64(uint64_t value) {
     value >>= 7;
   }
   tmp[i++] = value;
-  write(tmp, i);
+  Write(tmp, i);
 }
 
-void ByteArray::writeFloat(float value) {
+void ByteArray::WriteFloat(float value) {
   uint32_t v;
   memcpy(&v, &value, sizeof(value));
-  writeFuint32(v);
+  WriteFuint32(v);
 }
 
-void ByteArray::writeDouble(double value) {
+void ByteArray::WriteDouble(double value) {
   uint64_t v;
   memcpy(&v, &value, sizeof(value));
-  writeFuint64(v);
+  WriteFuint64(v);
 }
 
-void ByteArray::writeStringF16(const std::string& value) {
-  writeFuint16(value.size());
-  write(value.c_str(), value.size());
+void ByteArray::WriteStringF16(const std::string& value) {
+  WriteFuint16(value.size());
+  Write(value.c_str(), value.size());
 }
 
-void ByteArray::writeStringF32(const std::string& value) {
-  writeFuint32(value.size());
-  write(value.c_str(), value.size());
+void ByteArray::WriteStringF32(const std::string& value) {
+  WriteFuint32(value.size());
+  Write(value.c_str(), value.size());
 }
 
-void ByteArray::writeStringF64(const std::string& value) {
-  writeFuint64(value.size());
-  write(value.c_str(), value.size());
+void ByteArray::WriteStringF64(const std::string& value) {
+  WriteFuint64(value.size());
+  Write(value.c_str(), value.size());
 }
 
-void ByteArray::writeStringVint(const std::string& value) {
-  writeUint64(value.size());
-  write(value.c_str(), value.size());
+void ByteArray::WriteStringVint(const std::string& value) {
+  WriteUint64(value.size());
+  Write(value.c_str(), value.size());
 }
 
-void ByteArray::writeStringWithoutLength(const std::string& value) { write(value.c_str(), value.size()); }
+void ByteArray::WriteStringWithoutLength(const std::string& value) { Write(value.c_str(), value.size()); }
 
-int8_t ByteArray::readFint8() {
+int8_t ByteArray::ReadFint8() {
   int8_t v;
-  read(&v, sizeof(v));
+  Read(&v, sizeof(v));
   return v;
 }
 
-uint8_t ByteArray::readFuint8() {
+uint8_t ByteArray::ReadFuint8() {
   uint8_t v;
-  read(&v, sizeof(v));
+  Read(&v, sizeof(v));
   return v;
 }
 
 #define XX(type)                     \
   type v;                            \
-  read(&v, sizeof(v));               \
-  if (_endian == GUDOV_BYTE_ORDER) { \
+  Read(&v, sizeof(v));               \
+  if (endian_ == GUDOV_BYTE_ORDER) { \
     return v;                        \
   } else {                           \
     return ByteSwap(v);              \
   }
 
-int16_t ByteArray::readFint16(){XX(int16_t)}
+int16_t ByteArray::ReadFint16(){XX(int16_t)}
 
-uint16_t ByteArray::readFuint16(){XX(uint16_t)}
+uint16_t ByteArray::ReadFuint16(){XX(uint16_t)}
 
-int32_t ByteArray::readFint32(){XX(int32_t)}
+int32_t ByteArray::ReadFint32(){XX(int32_t)}
 
-uint32_t ByteArray::readFuint32(){XX(uint32_t)}
+uint32_t ByteArray::ReadFuint32(){XX(uint32_t)}
 
-int64_t ByteArray::readFint64(){XX(int64_t)}
+int64_t ByteArray::ReadFint64(){XX(int64_t)}
 
-uint64_t ByteArray::readFuint64(){XX(uint64_t)}
+uint64_t ByteArray::ReadFuint64(){XX(uint64_t)}
 #undef XX
 
-int32_t ByteArray::readInt32() {
-  return DecodeZigzag32(readUint32());
+int32_t ByteArray::ReadInt32() {
+  return DecodeZigzag32(ReadUint32());
 }
 
-uint32_t ByteArray::readUint32() {
+uint32_t ByteArray::ReadUint32() {
   uint32_t result = 0;
   for (int i = 0; i < 32; i += 7) {
-    uint8_t b = readFuint8();
+    uint8_t b = ReadFuint8();
     if (b < 0x80) {
       result |= ((uint32_t)b) << i;
       break;
@@ -219,12 +220,12 @@ uint32_t ByteArray::readUint32() {
   return result;
 }
 
-int64_t ByteArray::readInt64() { return DecodeZigzag64(readUint64()); }
+int64_t ByteArray::ReadInt64() { return DecodeZigzag64(ReadUint64()); }
 
-uint64_t ByteArray::readUint64() {
+uint64_t ByteArray::ReadUint64() {
   uint64_t result = 0;
   for (int i = 0; i < 64; i += 7) {
-    uint8_t b = readFuint8();
+    uint8_t b = ReadFuint8();
     if (b < 0x80) {
       result |= ((uint32_t)b) << i;
       break;
@@ -235,139 +236,140 @@ uint64_t ByteArray::readUint64() {
   return result;
 }
 
-float ByteArray::readFloat() {
-  uint32_t v = readFuint32();
+float ByteArray::ReadFloat() {
+  uint32_t v = ReadFuint32();
   float    value;
   memcpy(&value, &v, sizeof(v));
   return value;
 }
 
-double ByteArray::readDouble() {
-  uint64_t v = readFuint64();
+double ByteArray::ReadDouble() {
+  uint64_t v = ReadFuint64();
   double   value;
   memcpy(&value, &v, sizeof(v));
   return value;
 }
 
-std::string ByteArray::readStringF16() {
-  uint16_t    len = readFuint16();
+std::string ByteArray::ReadStringF16() {
+  uint16_t    len = ReadFuint16();
   std::string buff;
   buff.resize(len);
-  read(&buff[0], len);
+  Read(&buff[0], len);
   return buff;
 }
 
-std::string ByteArray::readStringF32() {
-  uint32_t    len = readFuint32();
+std::string ByteArray::ReadStringF32() {
+  uint32_t    len = ReadFuint32();
   std::string buff;
   buff.resize(len);
-  read(&buff[0], len);
+  Read(&buff[0], len);
   return buff;
 }
 
-std::string ByteArray::readStringF64() {
-  uint64_t    len = readFuint64();
+std::string ByteArray::ReadStringF64() {
+  uint64_t    len = ReadFuint64();
   std::string buff;
   buff.resize(len);
-  read(&buff[0], len);
+  Read(&buff[0], len);
   return buff;
 }
 
-std::string ByteArray::readStringVint() {
-  uint64_t    len = readUint64();
+std::string ByteArray::ReadStringVint() {
+  uint64_t    len = ReadUint64();
   std::string buff;
   buff.resize(len);
-  read(&buff[0], len);
+  Read(&buff[0], len);
   return buff;
 }
 
-void ByteArray::clear() {
-  _position = 0;
-  _size     = 0;
-  _capacity = _baseSize;
-  Node* tmp = m_root->next;
+void ByteArray::Clear() {
+  position_ = 0;
+  size_     = 0;
+  capacity_ = base_size_;
+  Node* tmp = root_->next;
   while (tmp) {
-    _cur = tmp;
+    cur_ = tmp;
     tmp  = tmp->next;
-    delete _cur;
+    delete cur_;
   }
-  _cur         = m_root;
-  m_root->next = nullptr;
+  cur_        = root_;
+  root_->next = nullptr;
 }
 
-void ByteArray::write(const void* buf, size_t size) {
+void ByteArray::Write(const void* buf, size_t size) {
   if (size == 0) {
     return;
   }
-  addCapacity(size);
+  AddCapacity(size);
 
-  size_t npos = _position % _baseSize;
-  size_t ncap = _cur->size - npos;
+  size_t npos = position_ % base_size_;
+  size_t ncap = cur_->size - npos;
   size_t bpos = 0;
 
   while (size > 0) {
     if (ncap >= size) {
-      memcpy(_cur->ptr + npos, (const char*)buf + bpos, size);
-      if (_cur->size == (npos + size)) {
-        _cur = _cur->next;
+      memcpy(cur_->ptr + npos, (const char*)buf + bpos, size);
+      if (cur_->size == (npos + size)) {
+        cur_ = cur_->next;
       }
-      _position += size;
+      position_ += size;
       bpos += size;
       size = 0;
     } else {
-      memcpy(_cur->ptr + npos, (const char*)buf + bpos, ncap);
-      _position += ncap;
+      memcpy(cur_->ptr + npos, (const char*)buf + bpos, ncap);
+      position_ += ncap;
       bpos += ncap;
       size -= ncap;
-      _cur = _cur->next;
-      ncap = _cur->size;
+      cur_ = cur_->next;
+      ncap = cur_->size;
       npos = 0;
     }
   }
 
-  if (_position > _size) {
-    _size = _position;
+  if (position_ > size_) {
+    // FIXIT: ReadFromFile will change size_, I don't know why
+    size_ = position_;
   }
 }
 
-void ByteArray::read(void* buf, size_t size) {
-  if (size > getReadSize()) {
+void ByteArray::Read(void* buf, size_t size) {
+  if (size > GetReadSize()) {
     throw std::out_of_range("not enough len");
   }
 
-  size_t npos = _position % _baseSize;
-  size_t ncap = _cur->size - npos;
+  size_t npos = position_ % base_size_;
+  size_t ncap = cur_->size - npos;
   size_t bpos = 0;
   while (size > 0) {
     if (ncap >= size) {
-      memcpy((char*)buf + bpos, _cur->ptr + npos, size);
-      if (_cur->size == (npos + size)) {
-        _cur = _cur->next;
+      memcpy((char*)buf + bpos, cur_->ptr + npos, size);
+      if (cur_->size == (npos + size)) {
+        cur_ = cur_->next;
       }
-      _position += size;
+      position_ += size;
       bpos += size;
       size = 0;
     } else {
-      memcpy((char*)buf + bpos, _cur->ptr + npos, ncap);
-      _position += ncap;
+      memcpy((char*)buf + bpos, cur_->ptr + npos, ncap);
+      position_ += ncap;
       bpos += ncap;
       size -= ncap;
-      _cur = _cur->next;
-      ncap = _cur->size;
+      cur_ = cur_->next;
+      ncap = cur_->size;
       npos = 0;
     }
   }
 }
 
-void ByteArray::read(void* buf, size_t size, size_t position) const {
-  if (size > (_size - position)) {
+void ByteArray::Read(void* buf, size_t size, size_t position) const {
+  if (size > (size_ - position)) {
     throw std::out_of_range("not enough len");
   }
 
-  size_t npos = position % _baseSize;
-  size_t ncap = _cur->size - npos;
+  size_t npos = position % base_size_;
+  size_t ncap = cur_->size - npos;
   size_t bpos = 0;
-  Node*  cur  = _cur;
+  Node*  cur  = cur_;
   while (size > 0) {
     if (ncap >= size) {
       memcpy((char*)buf + bpos, cur->ptr + npos, size);
@@ -389,25 +391,25 @@ void ByteArray::read(void* buf, size_t size, size_t position) const {
   }
 }
 
-void ByteArray::setPosition(size_t v) {
-  if (v > _capacity) {
+void ByteArray::SetPosition(size_t v) {
+  if (v > capacity_) {
     throw std::out_of_range("set_position out of range");
   }
-  _position = v;
-  if (_position > _size) {
-    _size = _position;
+  position_ = v;
+  if (position_ > size_) {
+    size_ = position_;
   }
-  _cur = m_root;
-  while (v > _cur->size) {
-    v -= _cur->size;
-    _cur = _cur->next;
+  cur_ = root_;
+  while (v > cur_->size) {
+    v -= cur_->size;
+    cur_ = cur_->next;
   }
-  if (v == _cur->size) {
-    _cur = _cur->next;
+  if (v == cur_->size) {
+    cur_ = cur_->next;
   }
 }
 
-bool ByteArray::writeToFile(const std::string& name) const {
+bool ByteArray::WriteToFile(const std::string& name) const {
   std::ofstream ofs;
   ofs.open(name, std::ios::trunc | std::ios::binary);
   if (!ofs) {
@@ -415,13 +417,13 @@ bool ByteArray::writeToFile(const std::string& name) const {
     return false;
   }
 
-  int64_t readSize = getReadSize();
-  int64_t pos      = _position;
-  Node*   cur      = _cur;
+  int64_t readSize = GetReadSize();
+  int64_t pos      = position_;
+  Node*   cur      = cur_;
 
   while (readSize > 0) {
-    int     diff = pos % _baseSize;
-    int64_t len  = (readSize > (int64_t)_baseSize ? _baseSize : readSize) - diff;
+    int     diff = pos % base_size_;
+    int64_t len  = (readSize > (int64_t)base_size_ ? base_size_ : readSize) - diff;
     ofs.write(cur->ptr + diff, len);
     cur = cur->next;
     pos += len;
@@ -431,7 +433,7 @@ bool ByteArray::writeToFile(const std::string& name) const {
   return true;
 }
 
-bool ByteArray::readFromFile(const std::string& name) {
+bool ByteArray::ReadFromFile(const std::string& name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::binary);
   if (!ifs) {
@@ -439,35 +441,36 @@ bool ByteArray::readFromFile(const std::string& name) {
     return false;
   }
 
-  std::shared_ptr<char> buff(new char[_baseSize], [](char* ptr) { delete[] ptr; });
+  std::shared_ptr<char> buff(new char[base_size_], [](char* ptr) { delete[] ptr; });
   while (!ifs.eof()) {
-    ifs.read(buff.get(), _baseSize);
-    write(buff.get(), ifs.gcount());
+    ifs.read(buff.get(), base_size_);
+    Write(buff.get(), ifs.gcount());
   }
+
   return true;
 }
 
-bool ByteArray::isLittleEndian() const { return _endian == GUDOV_LITTLE_ENDIAN; }
+bool ByteArray::IsLittleEndian() const { return endian_ == GUDOV_LITTLE_ENDIAN; }
 
-void ByteArray::setIsLittleEndian(bool val) {
+void ByteArray::SetIsLittleEndian(bool val) {
   if (val) {
-    _endian = GUDOV_LITTLE_ENDIAN;
+    endian_ = GUDOV_LITTLE_ENDIAN;
   } else {
-    _endian = GUDOV_BIG_ENDIAN;
+    endian_ = GUDOV_BIG_ENDIAN;
   }
 }
 
 std::string ByteArray::ToString() const {
   std::string str;
-  str.resize(getReadSize());
+  str.resize(GetReadSize());
   if (str.empty()) {
     return str;
   }
-  read(&str[0], str.size(), _position);
+  Read(&str[0], str.size(), position_);
   return str;
 }
 
-std::string ByteArray::toHexString() const {
+std::string ByteArray::ToHexString() const {
   std::string       str = ToString();
   std::stringstream ss;
 
@@ -481,18 +484,18 @@ std::string ByteArray::toHexString() const {
   return ss.str();
 }
 
-uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len) const {
-  len = len > getReadSize() ? getReadSize() : len;
+uint64_t ByteArray::GetReadBuffers(std::vector<iovec>& buffers, uint64_t len) const {
+  len = len > GetReadSize() ? GetReadSize() : len;
   if (len == 0) {
     return 0;
   }
 
   uint64_t size = len;
 
-  size_t       npos = _position % _baseSize;
-  size_t       ncap = _cur->size - npos;
+  size_t       npos = position_ % base_size_;
+  size_t       ncap = cur_->size - npos;
   struct iovec iov;
-  Node*        cur = _cur;
+  Node*        cur = cur_;
 
   while (len > 0) {
     if (ncap >= len) {
@@ -512,17 +515,17 @@ uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len) co
   return size;
 }
 
-uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len, uint64_t position) const {
-  len = len > getReadSize() ? getReadSize() : len;
+uint64_t ByteArray::GetReadBuffers(std::vector<iovec>& buffers, uint64_t len, uint64_t position) const {
+  len = len > GetReadSize() ? GetReadSize() : len;
   if (len == 0) {
     return 0;
   }
 
   uint64_t size = len;
 
-  size_t npos  = position % _baseSize;
-  size_t count = position / _baseSize;
-  Node*  cur   = m_root;
+  size_t npos  = position % base_size_;
+  size_t count = position / base_size_;
+  Node*  cur   = root_;
   while (count > 0) {
     cur = cur->next;
     --count;
@@ -548,17 +551,17 @@ uint64_t ByteArray::getReadBuffers(std::vector<iovec>& buffers, uint64_t len, ui
   return size;
 }
 
-uint64_t ByteArray::getWriteBuffers(std::vector<iovec>& buffers, uint64_t len) {
+uint64_t ByteArray::GetWriteBuffers(std::vector<iovec>& buffers, uint64_t len) {
   if (len == 0) {
     return 0;
   }
-  addCapacity(len);
+  AddCapacity(len);
   uint64_t size = len;
 
-  size_t       npos = _position % _baseSize;
-  size_t       ncap = _cur->size - npos;
+  size_t       npos = position_ % base_size_;
+  size_t       ncap = cur_->size - npos;
   struct iovec iov;
-  Node*        cur = _cur;
+  Node*        cur = cur_;
   while (len > 0) {
     if (ncap >= len) {
       iov.iov_base = cur->ptr + npos;
@@ -578,34 +581,34 @@ uint64_t ByteArray::getWriteBuffers(std::vector<iovec>& buffers, uint64_t len) {
   return size;
 }
 
-void ByteArray::addCapacity(size_t size) {
+void ByteArray::AddCapacity(size_t size) {
   if (size == 0) {
     return;
   }
-  size_t oldCap = getCapacity();
-  if (oldCap >= size) {
+  size_t old_capacity = GetCapacity();
+  if (old_capacity >= size) {
     return;
   }
 
-  size         = size - oldCap;
-  size_t count = (size / _baseSize) + (((size % _baseSize) > oldCap) ? 1 : 0);
-  Node*  tmp   = m_root;
-  while (tmp->next) {
-    tmp = tmp->next;
+  size         = size - old_capacity;
+  size_t count = ceil(1.0 * size / base_size_);
+  Node*  tail  = root_;
+  while (tail->next) {
+    tail = tail->next;
   }
 
   Node* first = NULL;
   for (size_t i = 0; i < count; ++i) {
-    tmp->next = new Node(_baseSize);
+    tail->next = new Node(base_size_);
     if (first == NULL) {
-      first = tmp->next;
+      first = tail->next;
     }
-    tmp = tmp->next;
-    _capacity += _baseSize;
+    tail = tail->next;
+    capacity_ += base_size_;
   }
 
-  if (oldCap == 0) {
-    _cur = first;
+  if (old_capacity == 0) {
+    cur_ = first;
   }
 }
 

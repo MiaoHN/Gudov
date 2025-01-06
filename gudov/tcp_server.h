@@ -21,9 +21,9 @@ class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
   virtual bool start();
   virtual void stop();
 
-  uint64_t    getRecvTimeout() const { return m_recv_timeout; }
+  uint64_t    GetRecvTimeout() const { return m_recv_timeout; }
   std::string GetName() const { return name_; }
-  void        setRecvTimeout(uint64_t v) { m_recv_timeout = v; }
+  void        SetRecvTimeout(uint64_t v) { m_recv_timeout = v; }
   void        setName(const std::string& v) { name_ = v; }
 
   bool isStop() const { return m_is_stop; }

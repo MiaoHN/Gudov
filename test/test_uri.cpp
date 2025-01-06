@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv) {
   gudov::Uri::ptr uri = gudov::Uri::Create("http://admin@www.baidu.top");
-  std::cout << uri->toString() << std::endl;
+  std::cout << uri->ToString() << std::endl;
   auto addr = uri->createAddress();
   std::cout << *addr << std::endl;
   return 0;

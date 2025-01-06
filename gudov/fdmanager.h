@@ -30,7 +30,7 @@ class FdContext : public std::enable_shared_from_this<FdContext> {
   FdContext(int fd);
   ~FdContext();
 
-  bool init();
+  bool Init();
   bool isInit() const { return m_is_init; }
   bool isSocket() const { return m_is_socket; }
   bool isClose() const { return m_is_close; }

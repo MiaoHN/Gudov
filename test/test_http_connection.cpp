@@ -15,7 +15,7 @@ void test_pool() {
       1000,
       [pool]() {
         auto r = pool->doGet("/", 300);
-        LOG_INFO(g_logger) << r->toString();
+        LOG_INFO(g_logger) << r->ToString();
       },
       true);
 }
@@ -28,7 +28,7 @@ void run() {
   }
 
   gudov::Socket::ptr sock = gudov::Socket::CreateTCP(addr);
-  bool               rt   = sock->connect(addr);
+  bool               rt   = sock->Connect(addr);
   if (!rt) {
     LOG_INFO(g_logger) << "connect " << *addr << " failed";
     return;
@@ -56,7 +56,7 @@ void run() {
 
   auto r = gudov::http::HttpConnection::DoGet("http://www.baidu.com", 300);
   LOG_INFO(g_logger) << "result=" << r->result << " error=" << r->error
-                     << " rsp=" << (r->response ? r->response->toString() : "");
+                     << " rsp=" << (r->response ? r->response->ToString() : "");
 
   LOG_INFO(g_logger) << "=========================";
   test_pool();

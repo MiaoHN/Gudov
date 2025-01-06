@@ -1,104 +1,123 @@
+#include <gtest/gtest.h>
+
 #include "gudov/gudov.h"
 #include "gudov/iomanager.h"
 #include "gudov/socket.h"
 
-static gudov::Logger::ptr g_looger = LOG_ROOT();
+using namespace gudov;
 
-void testSocket() {
-  // std::vector<gudov::Address::ptr> addrs;
-  // gudov::Address::Lookup(addrs, "www.baidu.com", AF_INET);
-  // gudov::IPAddress::ptr addr;
-  // for(auto& i : addrs) {
-  //    LOG_INFO(g_looger) << i->toString();
-  //    addr = std::dynamic_pointer_cast<gudov::IPAddress>(i);
-  //    if(addr) {
-  //        break;
-  //    }
-  //}
-  gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress("www.baidu.com");
-  if (addr) {
-    LOG_INFO(g_looger) << "get address: " << addr->toString();
-  } else {
-    LOG_ERROR(g_looger) << "get address fail";
-    return;
+class SocketTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // 可选的测试环境初始化
   }
 
-  gudov::Socket::ptr sock = gudov::Socket::CreateTCP(addr);
-  addr->setPort(80);
-  LOG_INFO(g_looger) << "addr=" << addr->toString();
-  if (!sock->connect(addr)) {
-    LOG_ERROR(g_looger) << "connect " << addr->toString() << " fail";
-    return;
-  } else {
-    LOG_INFO(g_looger) << "connect " << addr->toString() << " connected";
+  void TearDown() override {
+    // 可选的测试环境清理
   }
+};
 
-  const char buff[] = "GET / HTTP/1.0\r\n\r\n";
-  int        rt     = sock->send(buff, sizeof(buff));
-  if (rt <= 0) {
-    LOG_INFO(g_looger) << "send fail rt=" << rt;
-    return;
-  }
+// 测试创建 TCP 和 UDP Socket
+TEST_F(SocketTest, CreateSocket) {
+  // 创建 IPv4 TCP Socket
+  auto tcp_socket = Socket::CreateTCPSocket();
+  ASSERT_NE(tcp_socket, nullptr);
+  EXPECT_EQ(tcp_socket->GetFamily(), Socket::IPv4);
+  EXPECT_EQ(tcp_socket->GetType(), Socket::TCP);
 
-  std::string buffs;
-  buffs.resize(4096 * 3);
-  rt = sock->recv(&buffs[0], buffs.size());
-
-  if (rt <= 0) {
-    LOG_INFO(g_looger) << "recv fail rt=" << rt;
-    return;
-  }
-
-  buffs.resize(rt);
-  LOG_INFO(g_looger) << buffs;
+  // 创建 IPv4 UDP Socket
+  auto udp_socket = Socket::CreateUDPSocket();
+  ASSERT_NE(udp_socket, nullptr);
+  EXPECT_EQ(udp_socket->GetFamily(), Socket::IPv4);
+  EXPECT_EQ(udp_socket->GetType(), Socket::UDP);
 }
 
-void test2() {
-  gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress("www.baidu.com:80");
-  if (addr) {
-    LOG_INFO(g_looger) << "get address: " << addr->toString();
-  } else {
-    LOG_ERROR(g_looger) << "get address fail";
-    return;
-  }
+// 测试 Socket 绑定地址
+TEST_F(SocketTest, BindSocket) {
+  auto socket = Socket::CreateTCPSocket();
+  ASSERT_NE(socket, nullptr);
 
-  gudov::Socket::ptr sock = gudov::Socket::CreateTCP(addr);
-  if (!sock->connect(addr)) {
-    LOG_ERROR(g_looger) << "connect " << addr->toString() << " fail";
-    return;
-  } else {
-    LOG_INFO(g_looger) << "connect " << addr->toString() << " connected";
-  }
+  // 绑定到本地地址 (127.0.0.1:12345)
+  Address::ptr addr        = IPv4Address::Create("127.0.0.1", 12345);
+  bool         bind_result = socket->Bind(addr);
+  EXPECT_TRUE(bind_result);
 
-  uint64_t ts = gudov::GetCurrentUS();
-  for (size_t i = 0; i < 10000000000ul; ++i) {
-    if (int err = sock->getError()) {
-      LOG_INFO(g_looger) << "err=" << err << " errstr=" << strerror(err);
-      break;
-    }
-
-    // struct tcp_info tcp_info;
-    // if(!sock->getOption(IPPROTO_TCP, TCP_INFO, tcp_info)) {
-    //     LOG_INFO(g_looger) << "err";
-    //     break;
-    // }
-    // if(tcp_info.tcpi_state != TCP_ESTABLISHED) {
-    //     LOG_INFO(g_looger)
-    //             << " state=" << (int)tcp_info.tcpi_state;
-    //     break;
-    // }
-    static int batch = 10000000;
-    if (i && (i % batch) == 0) {
-      uint64_t ts2 = gudov::GetCurrentUS();
-      LOG_INFO(g_looger) << "i=" << i << " used: " << ((ts2 - ts) * 1.0 / batch) << " us";
-      ts = ts2;
-    }
-  }
+  // 检查绑定后的本地地址
+  auto local_addr = socket->GetLocalAddress();
+  ASSERT_NE(local_addr, nullptr);
+  EXPECT_EQ(local_addr->ToString(), addr->ToString());
 }
 
-int main(int argc, char** argv) {
-  gudov::IOManager iom;
-  // iom.schedule(&testSocket);
-  iom.Schedule(&test2);
-  return 0;
+// 测试 Socket 的 Listen 和 Accept
+TEST_F(SocketTest, ListenAndAccept) {
+  auto server_socket = Socket::CreateTCPSocket();
+  ASSERT_NE(server_socket, nullptr);
+
+  Address::ptr addr = IPv4Address::Create("127.0.0.1", 12345);
+  ASSERT_TRUE(server_socket->Bind(addr));
+  ASSERT_TRUE(server_socket->Listen());
+
+  // 在新线程中模拟客户端连接
+  std::thread client_thread([]() {
+    auto client_socket = Socket::CreateTCPSocket();
+    ASSERT_NE(client_socket, nullptr);
+
+    Address::ptr server_addr = IPv4Address::Create("127.0.0.1", 12345);
+    ASSERT_TRUE(client_socket->Connect(server_addr));
+  });
+
+  // 服务端接受客户端连接
+  auto client_socket = server_socket->Accept();
+  ASSERT_NE(client_socket, nullptr);
+  EXPECT_TRUE(client_socket->IsConnected());
+
+  client_thread.join();
+}
+
+// 测试数据发送与接收
+TEST_F(SocketTest, SendAndReceive) {
+  auto server_socket = Socket::CreateTCPSocket();
+  ASSERT_NE(server_socket, nullptr);
+
+  Address::ptr addr = IPv4Address::Create("127.0.0.1", 12345);
+  ASSERT_TRUE(server_socket->Bind(addr));
+  ASSERT_TRUE(server_socket->Listen());
+
+  // 在新线程中模拟客户端发送数据
+  std::thread client_thread([]() {
+    auto client_socket = Socket::CreateTCPSocket();
+    ASSERT_NE(client_socket, nullptr);
+
+    Address::ptr server_addr = IPv4Address::Create("127.0.0.1", 12345);
+    ASSERT_TRUE(client_socket->Connect(server_addr));
+
+    const char* msg        = "Hello, Server!";
+    int         bytes_sent = client_socket->Send(msg, strlen(msg), 0);
+    EXPECT_EQ(bytes_sent, strlen(msg));
+  });
+
+  // 服务端接收数据
+  auto client_socket = server_socket->Accept();
+  ASSERT_NE(client_socket, nullptr);
+
+  char buffer[1024]   = {0};
+  int  bytes_received = client_socket->Recv(buffer, sizeof(buffer), 0);
+  EXPECT_GT(bytes_received, 0);
+  EXPECT_STREQ(buffer, "Hello, Server!");
+
+  client_thread.join();
+}
+
+// 测试超时设置
+TEST_F(SocketTest, DISABLED_TimeoutSettings) {
+  auto socket = Socket::CreateTCPSocket();
+  ASSERT_NE(socket, nullptr);
+
+  // 设置发送超时
+  socket->SetSendTimeout(2000);  // 2 秒
+  EXPECT_EQ(socket->GetSendTimeout(), 2000);
+
+  // 设置接收超时
+  socket->SetRecvTimeout(3000);  // 3 秒
+  EXPECT_EQ(socket->GetRecvTimeout(), 3000);
 }

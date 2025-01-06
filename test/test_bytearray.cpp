@@ -62,7 +62,7 @@ void test() {
     gudov::ByteArray::ptr ba2(new gudov::ByteArray(baseLen * 2));                                      \
     GUDOV_ASSERT(ba2->readFromFile("/tmp/" #type "_" #len "-" #readFun ".dat"));                       \
     ba2->setPosition(0);                                                                               \
-    GUDOV_ASSERT(ba->toString() == ba2->toString());                                                   \
+    GUDOV_ASSERT(ba->ToString() == ba2->ToString());                                                   \
     GUDOV_ASSERT(ba->getPosition() == 0);                                                              \
     GUDOV_ASSERT(ba2->getPosition() == 0);                                                             \
   }

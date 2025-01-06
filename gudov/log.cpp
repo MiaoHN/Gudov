@@ -338,7 +338,7 @@ std::string StdoutLogAppender::toYamlString() {
   return ss.str();
 }
 
-LogFormatter::LogFormatter(const std::string& pattern) : m_pattern(pattern) { init(); }
+LogFormatter::LogFormatter(const std::string& pattern) : m_pattern(pattern) { Init(); }
 
 std::string LogFormatter::format(LogEvent::ptr event) {
   std::stringstream ss;
@@ -348,7 +348,7 @@ std::string LogFormatter::format(LogEvent::ptr event) {
   return ss.str();
 }
 
-void LogFormatter::init() {
+void LogFormatter::Init() {
   // str, format, type
   std::vector<std::tuple<std::string, std::string, int> > vec;
   std::string                                             nstr;
@@ -452,7 +452,7 @@ LoggerManager::LoggerManager() {
 
   m_loggers[m_root->name_] = m_root;
 
-  init();
+  Init();
 }
 
 Logger::ptr LoggerManager::getLogger(const std::string& name) {
@@ -659,6 +659,6 @@ std::string LoggerManager::toYamlString() {
   return ss.str();
 }
 
-void LoggerManager::init() {}
+void LoggerManager::Init() {}
 
 }  // namespace gudov

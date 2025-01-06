@@ -12,10 +12,10 @@ class EchoServer : public gudov::TcpServer {
   void handleClient(gudov::Socket::ptr client) override;
 
  private:
-  int m_type = 0;
+  int type_ = 0;
 };
 
-EchoServer::EchoServer(int type) : m_type(type) {}
+EchoServer::EchoServer(int type) : type_(type) {}
 
 void EchoServer::handleClient(gudov::Socket::ptr client) {
   LOG_INFO(g_logger) << "handleClient " << *client;
@@ -25,7 +25,7 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
     std::vector<iovec> iovs;
     ba->getWriteBuffers(iovs, 1024);
 
-    int rt = client->recv(&iovs[0], iovs.size());
+    int rt = client->Recv(&iovs[0], iovs.size());
     if (rt == 0) {
       LOG_INFO(g_logger) << "client close: " << *client;
       break;
@@ -35,9 +35,9 @@ void EchoServer::handleClient(gudov::Socket::ptr client) {
     }
     ba->setPosition(ba->getPosition() + rt);
     ba->setPosition(0);
-    if (m_type == 1) {
+    if (type_ == 1) {
       // text
-      std::cout << ba->toString();
+      std::cout << ba->ToString();
     } else {
       std::cout << ba->toHexString();
     }

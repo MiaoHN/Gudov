@@ -19,7 +19,7 @@ TcpServer::TcpServer(IOManager* woker, IOManager* accept_woker)
 
 TcpServer::~TcpServer() {
   for (auto& i : m_socks) {
-    i->close();
+    i->Close();
   }
   m_socks.clear();
 }
@@ -34,15 +34,15 @@ bool TcpServer::bind(Address::ptr addr) {
 bool TcpServer::bind(const std::vector<Address::ptr>& addrs, std::vector<Address::ptr>& fails) {
   for (auto& addr : addrs) {
     Socket::ptr sock = Socket::CreateTCP(addr);
-    if (!sock->bind(addr)) {
+    if (!sock->Bind(addr)) {
       LOG_ERROR(g_logger) << "bind fail errno=" << errno << " errstr=" << strerror(errno) << " addr=["
-                          << addr->toString() << "]";
+                          << addr->ToString() << "]";
       fails.push_back(addr);
       continue;
     }
-    if (!sock->listen()) {
+    if (!sock->Listen()) {
       LOG_ERROR(g_logger) << "listen fail errno=" << errno << " errstr=" << strerror(errno) << " addr=["
-                          << addr->toString() << "]";
+                          << addr->ToString() << "]";
       fails.push_back(addr);
       continue;
     }
@@ -62,9 +62,9 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs, std::vector<Address
 
 void TcpServer::startAccept(Socket::ptr sock) {
   while (!m_is_stop) {
-    Socket::ptr client = sock->accept();
+    Socket::ptr client = sock->Accept();
     if (client) {
-      client->setRecvTimeout(m_recv_timeout);
+      client->SetRecvTimeout(m_recv_timeout);
       m_worker->Schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
     } else {
       LOG_ERROR(g_logger) << "accept errno=" << errno << " errstr=" << strerror(errno);
@@ -88,8 +88,8 @@ void TcpServer::stop() {
   auto self = shared_from_this();
   m_accept_worker->Schedule([this, self]() {
     for (auto& sock : m_socks) {
-      sock->cancelAll();
-      sock->close();
+      sock->CancelAll();
+      sock->Close();
     }
     m_socks.clear();
   });

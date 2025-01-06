@@ -18,8 +18,8 @@ class SocketStream : public Stream {
   int  write(ByteArray::ptr ba, size_t length) override;
   void close() override;
 
-  Socket::ptr getSocket() const { return m_socket; }
-  bool        isConnected() const;
+  Socket::ptr GetSocket() const { return m_socket; }
+  bool        IsConnected() const;
 
  protected:
   Socket::ptr m_socket;

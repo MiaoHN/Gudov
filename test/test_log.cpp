@@ -74,12 +74,13 @@ TEST(StdoutLogAppenderTest, OutputLog) {
 // Test FileLogAppender
 TEST(FileLogAppenderTest, OutputLogToFile) {
   std::string filename = "test_log_file.log";
-  auto        appender = std::make_shared<gudov::FileLogAppender>(filename);
-  auto        logger   = std::make_shared<gudov::Logger>("test_logger");
-  logger->addAppender(appender);
+  {
+    auto appender = std::make_shared<gudov::FileLogAppender>(filename);
+    auto logger   = std::make_shared<gudov::Logger>("test_logger");
+    logger->addAppender(appender);
 
-  LOG_INFO(logger) << "Test file message";
-
+    LOG_INFO(logger) << "Test file message";
+  }
   std::ifstream file(filename);
   ASSERT_TRUE(file.is_open());
 

@@ -38,7 +38,7 @@ class Uri {
 
   const std::string& getFragment() const { return m_fragment; }
 
-  int32_t getPort() const;
+  int32_t GetPort() const;
 
   void setScheme(const std::string& v) { m_scheme = v; }
 
@@ -52,11 +52,11 @@ class Uri {
 
   void setFragment(const std::string& v) { m_fragment = v; }
 
-  void setPort(int32_t v) { m_port = v; }
+  void SetPort(int32_t v) { m_port = v; }
 
-  std::ostream& dump(std::ostream& os) const;
+  std::ostream& Dump(std::ostream& os) const;
 
-  std::string toString() const;
+  std::string ToString() const;
 
   Address::ptr createAddress() const;
 

@@ -40,7 +40,7 @@ struct HttpResult {
   HttpResult(int _result, HttpResponse::ptr _response, const std::string& m_error)
       : result(_result), response(_response), error(m_error) {}
 
-  std::string toString() const;
+  std::string ToString() const;
 
   int               result;
   HttpResponse::ptr response;

@@ -14,12 +14,12 @@ FdContext::FdContext(int fd)
       m_fd(fd),
       m_recv_timeout(-1),
       m_send_timeout(-1) {
-  init();
+  Init();
 }
 
 FdContext::~FdContext() {}
 
-bool FdContext::init() {
+bool FdContext::Init() {
   if (m_is_init) {
     return true;
   }

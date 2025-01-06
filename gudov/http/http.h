@@ -245,8 +245,8 @@ class HttpRequest {
     return getAs(m_cookies, key, def);
   }
 
-  std::ostream& dump(std::ostream& os) const;
-  std::string   toString() const;
+  std::ostream& Dump(std::ostream& os) const;
+  std::string   ToString() const;
 
  private:
   HttpMethod m_method;
@@ -299,8 +299,8 @@ class HttpResponse {
     return getAs(m_headers, key, def);
   }
 
-  std::ostream& dump(std::ostream& os) const;
-  std::string   toString() const;
+  std::ostream& Dump(std::ostream& os) const;
+  std::string   ToString() const;
 
  private:
   HttpStatus  m_status;

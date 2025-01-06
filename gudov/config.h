@@ -36,7 +36,7 @@ class ConfigVarBase {
   const std::string& GetName() const { return name_; }
   const std::string& getDescription() const { return m_description; }
 
-  virtual std::string toString()                         = 0;
+  virtual std::string ToString()                         = 0;
   virtual bool        fromString(const std::string& val) = 0;
   virtual std::string getTypeName() const                = 0;
 
@@ -256,12 +256,12 @@ class ConfigVar : public ConfigVarBase {
   ConfigVar(const std::string& name, const T& default_value, const std::string& description = "")
       : ConfigVarBase(name, description), m_value(default_value) {}
 
-  std::string toString() override {
+  std::string ToString() override {
     try {
       RWMutexType::ReadLock lock(mutex_);
       return ToStr()(m_value);
     } catch (std::exception& e) {
-      LOG_ERROR(LOG_ROOT()) << "ConfigVar::toString exception" << e.what() << " convert: " << typeid(m_value).name()
+      LOG_ERROR(LOG_ROOT()) << "ConfigVar::ToString exception" << e.what() << " convert: " << typeid(m_value).name()
                             << " to string";
     }
     return "";
@@ -271,7 +271,7 @@ class ConfigVar : public ConfigVarBase {
     try {
       setValue(FromStr()(val));
     } catch (std::exception& e) {
-      LOG_ERROR(LOG_ROOT()) << "ConfigVar::toString exception" << e.what() << " convert: string to "
+      LOG_ERROR(LOG_ROOT()) << "ConfigVar::ToString exception" << e.what() << " convert: string to "
                             << typeid(m_value).name() << " - " << val;
     }
     return false;
@@ -344,7 +344,7 @@ class Config {
         return tmp;
       } else {
         LOG_DEBUG(LOG_ROOT()) << "Lookup name=" << name << " exists but type not " << typeid(T).name()
-                              << " real_type=" << it->second->getTypeName() << " " << it->second->toString();
+                              << " real_type=" << it->second->getTypeName() << " " << it->second->ToString();
         return nullptr;
       }
     }

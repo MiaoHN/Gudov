@@ -17,7 +17,7 @@ void test_request() {
                       << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
                       << " content_length=" << parser.getContentLength();
   tmp.resize(tmp.size() - s);
-  LOG_INFO(g_logger) << parser.getData()->toString();
+  LOG_INFO(g_logger) << parser.getData()->ToString();
   LOG_INFO(g_logger) << tmp;
 }
 
@@ -47,7 +47,7 @@ void test_response() {
 
   tmp.resize(tmp.size() - s);
 
-  LOG_INFO(g_logger) << parser.getData()->toString();
+  LOG_INFO(g_logger) << parser.getData()->ToString();
   LOG_INFO(g_logger) << tmp;
 }
 

@@ -15,13 +15,13 @@ void run() {
   auto sd = server->getServletDispatch();
   sd->addServlet("/gudov/xx", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                  gudov::http::HttpSession::ptr session) {
-    rsp->setBody(req->toString());
+    rsp->setBody(req->ToString());
     return 0;
   });
 
   sd->addGlobServlet("/gudov/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                     gudov::http::HttpSession::ptr session) {
-    rsp->setBody("Glob:\r\n" + req->toString());
+    rsp->setBody("Glob:\r\n" + req->ToString());
     return 0;
   });
 

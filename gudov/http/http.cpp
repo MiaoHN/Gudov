@@ -117,7 +117,7 @@ bool HttpRequest::hasCookie(const std::string& key, std::string* val) {
   return true;
 }
 
-std::ostream& HttpRequest::dump(std::ostream& os) const {
+std::ostream& HttpRequest::Dump(std::ostream& os) const {
   // GET /uri HTTP/1.1
   // Host: wwww.baidu.com
   //
@@ -140,9 +140,9 @@ std::ostream& HttpRequest::dump(std::ostream& os) const {
   return os;
 }
 
-std::string HttpRequest::toString() const {
+std::string HttpRequest::ToString() const {
   std::stringstream ss;
-  dump(ss);
+  Dump(ss);
   return ss.str();
 }
 
@@ -158,13 +158,13 @@ void HttpResponse::setHeader(const std::string& key, const std::string& val) { m
 
 void HttpResponse::delHeader(const std::string& key) { m_headers.erase(key); }
 
-std::string HttpResponse::toString() const {
+std::string HttpResponse::ToString() const {
   std::stringstream ss;
-  dump(ss);
+  Dump(ss);
   return ss.str();
 }
 
-std::ostream& HttpResponse::dump(std::ostream& os) const {
+std::ostream& HttpResponse::Dump(std::ostream& os) const {
   os << "HTTP/" << ((uint32_t)(m_version >> 4)) << "." << ((uint32_t)(m_version & 0x0F)) << " " << (uint32_t)m_status
      << " " << (m_reason.empty() ? HttpStatusToString(m_status) : m_reason) << "\r\n";
 
@@ -184,9 +184,9 @@ std::ostream& HttpResponse::dump(std::ostream& os) const {
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const HttpRequest& req) { return req.dump(os); }
+std::ostream& operator<<(std::ostream& os, const HttpRequest& req) { return req.Dump(os); }
 
-std::ostream& operator<<(std::ostream& os, const HttpResponse& rsp) { return rsp.dump(os); }
+std::ostream& operator<<(std::ostream& os, const HttpResponse& rsp) { return rsp.Dump(os); }
 
 }  // namespace http
 

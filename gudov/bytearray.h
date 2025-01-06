@@ -89,7 +89,7 @@ class ByteArray {
   bool isLittleEndian() const;
   void setIsLittleEndian(bool val);
 
-  std::string toString() const;
+  std::string ToString() const;
   std::string toHexString() const;
 
   //只获取内容，不修改position

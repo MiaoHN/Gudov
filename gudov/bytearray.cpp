@@ -457,7 +457,7 @@ void ByteArray::setIsLittleEndian(bool val) {
   }
 }
 
-std::string ByteArray::toString() const {
+std::string ByteArray::ToString() const {
   std::string str;
   str.resize(getReadSize());
   if (str.empty()) {
@@ -468,7 +468,7 @@ std::string ByteArray::toString() const {
 }
 
 std::string ByteArray::toHexString() const {
-  std::string       str = toString();
+  std::string       str = ToString();
   std::stringstream ss;
 
   for (size_t i = 0; i < str.size(); ++i) {

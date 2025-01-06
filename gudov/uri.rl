@@ -27,7 +27,7 @@ namespace gudov {
     action save_port
     {
         if (fpc != mark) {
-            uri->setPort(atoi(mark));
+            uri->SetPort(atoi(mark));
         }
         mark = NULL;
     }
@@ -169,7 +169,7 @@ const std::string& Uri::getPath() const {
     return m_path.empty() ? s_default_path : m_path;
 }
 
-int32_t Uri::getPort() const {
+int32_t Uri::GetPort() const {
     if(m_port) {
         return m_port;
     }
@@ -181,7 +181,7 @@ int32_t Uri::getPort() const {
     return m_port;
 }
 
-std::ostream& Uri::dump(std::ostream& os) const {
+std::ostream& Uri::Dump(std::ostream& os) const {
     os << m_scheme << "://"
        << m_userinfo
        << (m_userinfo.empty() ? "" : "@")
@@ -195,16 +195,16 @@ std::ostream& Uri::dump(std::ostream& os) const {
     return os;
 }
 
-std::string Uri::toString() const {
+std::string Uri::ToString() const {
     std::stringstream ss;
-    dump(ss);
+    Dump(ss);
     return ss.str();
 }
 
 Address::ptr Uri::createAddress() const {
     auto addr = Address::LookupAnyIPAddress(m_host);
     if(addr) {
-        addr->setPort(getPort());
+        addr->SetPort(GetPort());
     }
     return addr;
 }

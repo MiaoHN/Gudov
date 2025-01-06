@@ -53,7 +53,7 @@ class Person {
   int         m_age = 0;
   bool        m_sex = 0;
 
-  std::string toString() const {
+  std::string ToString() const {
     std::stringstream ss;
     ss << "[Person name=" << name_ << " age=" << m_age << " sex=" << m_sex << "]";
     return ss.str();
@@ -102,7 +102,7 @@ TEST(ClassTest, BeforeAndAfter) {
   ConfigVar<std::map<std::string, std::vector<Person>>>::ptr g_person_vec_map =
       Config::Lookup("class.vec_map", std::map<std::string, std::vector<Person>>(), "system person");
 
-  EXPECT_EQ(g_person->GetValue().toString(), "[Person name= age=0 sex=0]");
+  EXPECT_EQ(g_person->GetValue().ToString(), "[Person name= age=0 sex=0]");
   EXPECT_EQ(g_person_map->GetValue().size(), 0);
   EXPECT_EQ(g_person_vec_map->GetValue().size(), 0);
 
@@ -110,7 +110,7 @@ TEST(ClassTest, BeforeAndAfter) {
   YAML::Node root = YAML::LoadFile("./conf/test.yml");
   Config::LoadFromYaml(root);
 
-  EXPECT_NE(g_person->GetValue().toString(), "[Person name=name1 age=10 sex=true]");
+  EXPECT_NE(g_person->GetValue().ToString(), "[Person name=name1 age=10 sex=true]");
   EXPECT_NE(g_person_map->GetValue().size(), 0);
   EXPECT_NE(g_person_vec_map->GetValue().size(), 0);
 }

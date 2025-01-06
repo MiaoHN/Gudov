@@ -82,15 +82,15 @@ class Address {
    *
    * @return int AF_INET/AF_INET6
    */
-  int getFamily() const;
+  int GetFamily() const;
 
-  virtual const sockaddr* getAddr() const    = 0;
-  virtual sockaddr*       getAddr()          = 0;
-  virtual socklen_t       getAddrLen() const = 0;
+  virtual const sockaddr* GetAddr() const    = 0;
+  virtual sockaddr*       GetAddr()          = 0;
+  virtual socklen_t       GetAddrLen() const = 0;
 
-  virtual std::ostream& insert(std::ostream& os) const = 0;
+  virtual std::ostream& Insert(std::ostream& os) const = 0;
 
-  std::string toString() const;
+  std::string ToString() const;
 
   bool operator<(const Address& rhs) const;
   bool operator==(const Address& rhs) const;
@@ -103,12 +103,12 @@ class IPAddress : public Address {
 
   static IPAddress::ptr Create(const char* address, uint16_t port = 0);
 
-  virtual IPAddress::ptr broadcastAddress(uint32_t prefixLen) = 0;
-  virtual IPAddress::ptr networkAddress(uint32_t prefixLen)   = 0;
-  virtual IPAddress::ptr subnetAddress(uint32_t prefixLen)    = 0;
+  virtual IPAddress::ptr BroadcastAddress(uint32_t prefixLen) = 0;
+  virtual IPAddress::ptr NetworkAddress(uint32_t prefixLen)   = 0;
+  virtual IPAddress::ptr SubnetAddress(uint32_t prefixLen)    = 0;
 
-  virtual uint32_t getPort() const     = 0;
-  virtual void     setPort(uint16_t v) = 0;
+  virtual uint32_t GetPort() const     = 0;
+  virtual void     SetPort(uint16_t v) = 0;
 };
 
 class IPv4Address : public IPAddress {
@@ -120,20 +120,20 @@ class IPv4Address : public IPAddress {
   IPv4Address(const sockaddr_in& address);
   IPv4Address(uint32_t address = INADDR_ANY, uint16_t port = 0);
 
-  const sockaddr* getAddr() const override;
-  sockaddr*       getAddr() override;
-  socklen_t       getAddrLen() const override;
-  std::ostream&   insert(std::ostream& os) const override;
+  const sockaddr* GetAddr() const override;
+  sockaddr*       GetAddr() override;
+  socklen_t       GetAddrLen() const override;
+  std::ostream&   Insert(std::ostream& os) const override;
 
-  IPAddress::ptr broadcastAddress(uint32_t prefixLen) override;
-  IPAddress::ptr networkAddress(uint32_t prefixLen) override;
-  IPAddress::ptr subnetAddress(uint32_t prefixLen) override;
+  IPAddress::ptr BroadcastAddress(uint32_t prefixLen) override;
+  IPAddress::ptr NetworkAddress(uint32_t prefixLen) override;
+  IPAddress::ptr SubnetAddress(uint32_t prefixLen) override;
 
-  uint32_t getPort() const override;
-  void     setPort(uint16_t v) override;
+  uint32_t GetPort() const override;
+  void     SetPort(uint16_t v) override;
 
  private:
-  sockaddr_in m_addr;
+  sockaddr_in addr_;
 };
 
 class IPv6Address : public IPAddress {
@@ -146,20 +146,20 @@ class IPv6Address : public IPAddress {
   IPv6Address(const sockaddr_in6& address);
   IPv6Address(const uint8_t address[16], uint16_t port = 0);
 
-  const sockaddr* getAddr() const override;
-  sockaddr*       getAddr() override;
-  socklen_t       getAddrLen() const override;
-  std::ostream&   insert(std::ostream& os) const override;
+  const sockaddr* GetAddr() const override;
+  sockaddr*       GetAddr() override;
+  socklen_t       GetAddrLen() const override;
+  std::ostream&   Insert(std::ostream& os) const override;
 
-  IPAddress::ptr broadcastAddress(uint32_t prefixLen) override;
-  IPAddress::ptr networkAddress(uint32_t prefixLen) override;
-  IPAddress::ptr subnetAddress(uint32_t prefixLen) override;
+  IPAddress::ptr BroadcastAddress(uint32_t prefixLen) override;
+  IPAddress::ptr NetworkAddress(uint32_t prefixLen) override;
+  IPAddress::ptr SubnetAddress(uint32_t prefixLen) override;
 
-  uint32_t getPort() const override;
-  void     setPort(uint16_t v) override;
+  uint32_t GetPort() const override;
+  void     SetPort(uint16_t v) override;
 
  private:
-  sockaddr_in6 m_addr;
+  sockaddr_in6 addr_;
 };
 
 class UnixAddress : public Address {
@@ -169,15 +169,15 @@ class UnixAddress : public Address {
   UnixAddress();
   UnixAddress(const std::string& path);
 
-  const sockaddr* getAddr() const override;
-  sockaddr*       getAddr() override;
-  socklen_t       getAddrLen() const override;
+  const sockaddr* GetAddr() const override;
+  sockaddr*       GetAddr() override;
+  socklen_t       GetAddrLen() const override;
   void            setAddrLen(uint32_t v);
-  std::ostream&   insert(std::ostream& os) const override;
+  std::ostream&   Insert(std::ostream& os) const override;
 
  private:
-  sockaddr_un m_addr;
-  socklen_t   m_length;
+  sockaddr_un addr_;
+  socklen_t   length_;
 };
 
 class UnknownAddress : public Address {
@@ -187,13 +187,13 @@ class UnknownAddress : public Address {
   UnknownAddress(int family);
   UnknownAddress(const sockaddr& addr);
 
-  const sockaddr* getAddr() const override;
-  sockaddr*       getAddr() override;
-  socklen_t       getAddrLen() const override;
-  std::ostream&   insert(std::ostream& os) const override;
+  const sockaddr* GetAddr() const override;
+  sockaddr*       GetAddr() override;
+  socklen_t       GetAddrLen() const override;
+  std::ostream&   Insert(std::ostream& os) const override;
 
  private:
-  sockaddr m_addr;
+  sockaddr addr_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Address& addr);

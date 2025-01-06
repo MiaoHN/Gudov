@@ -9,10 +9,10 @@ namespace http {
 
 static Logger::ptr g_logger = LOG_NAME("system");
 
-std::string HttpResult::toString() const {
+std::string HttpResult::ToString() const {
   std::stringstream ss;
   ss << "[HttpResult result=" << result << " error=" << error
-     << " response=" << (response ? response->toString() : "nullptr") << "]";
+     << " response=" << (response ? response->ToString() : "nullptr") << "]";
   return ss.str();
 }
 
@@ -205,19 +205,19 @@ HttpResult::ptr HttpConnection::DoRequest(HttpRequest::ptr req, Uri::ptr uri, ui
   Socket::ptr sock = Socket::CreateTCP(addr);
   if (!sock) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::CREATE_SOCKET_ERROR, nullptr,
-                                        "create socket fail: " + addr->toString() + " errno=" + std::to_string(errno) +
+                                        "create socket fail: " + addr->ToString() + " errno=" + std::to_string(errno) +
                                             " errstr=" + std::string(strerror(errno)));
   }
-  if (!sock->connect(addr)) {
+  if (!sock->Connect(addr)) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::CONNECT_FAIL, nullptr,
-                                        "connect fail: " + addr->toString());
+                                        "connect fail: " + addr->ToString());
   }
-  sock->setRecvTimeout(timeout_ms);
+  sock->SetRecvTimeout(timeout_ms);
   HttpConnection::ptr conn = std::make_shared<HttpConnection>(sock);
   int                 rt   = conn->sendRequest(req);
   if (rt == 0) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::SEND_CLOSE_BY_PEER, nullptr,
-                                        "send request closed by peer: " + addr->toString());
+                                        "send request closed by peer: " + addr->ToString());
   }
   if (rt < 0) {
     return std::make_shared<HttpResult>(
@@ -228,7 +228,7 @@ HttpResult::ptr HttpConnection::DoRequest(HttpRequest::ptr req, Uri::ptr uri, ui
   if (!rsp) {
     return std::make_shared<HttpResult>(
         (int)HttpResult::Error::TIMEOUT, nullptr,
-        "recv response timeout: " + addr->toString() + " timeout_ms:" + std::to_string(timeout_ms));
+        "recv response timeout: " + addr->ToString() + " timeout_ms:" + std::to_string(timeout_ms));
   }
   return std::make_shared<HttpResult>((int)HttpResult::Error::OK, rsp, "ok");
 }
@@ -250,7 +250,7 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
   while (!m_conns.empty()) {
     auto conn = *m_conns.begin();
     m_conns.pop_front();
-    if (!conn->isConnected()) {
+    if (!conn->IsConnected()) {
       invalid_conns.push_back(conn);
       continue;
     }
@@ -273,13 +273,13 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
       LOG_ERROR(g_logger) << "get addr fail: " << m_host;
       return nullptr;
     }
-    addr->setPort(m_port);
+    addr->SetPort(m_port);
     Socket::ptr sock = Socket::CreateTCP(addr);
     if (!sock) {
       LOG_ERROR(g_logger) << "create sock fail: " << *addr;
       return nullptr;
     }
-    if (!sock->connect(addr)) {
+    if (!sock->Connect(addr)) {
       LOG_ERROR(g_logger) << "sock connect fail: " << *addr;
       return nullptr;
     }
@@ -292,7 +292,7 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
 
 void HttpConnectionPool::ReleasePtr(HttpConnection* ptr, HttpConnectionPool* pool) {
   ++ptr->m_request;
-  if (!ptr->isConnected() || ((ptr->m_create_time + pool->m_max_alive_time) >= GetCurrentMS()) ||
+  if (!ptr->IsConnected() || ((ptr->m_create_time + pool->m_max_alive_time) >= GetCurrentMS()) ||
       (ptr->m_request >= pool->m_max_request)) {
     delete ptr;
     --pool->m_total;
@@ -376,16 +376,16 @@ HttpResult::ptr HttpConnectionPool::doRequest(HttpRequest::ptr req, uint64_t tim
     return std::make_shared<HttpResult>((int)HttpResult::Error::POOL_GET_CONNECTION, nullptr,
                                         "pool host:" + m_host + " port:" + std::to_string(m_port));
   }
-  auto sock = conn->getSocket();
+  auto sock = conn->GetSocket();
   if (!sock) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::POOL_INVALID_CONNECTION, nullptr,
                                         "pool host:" + m_host + " port:" + std::to_string(m_port));
   }
-  sock->setRecvTimeout(timeout_ms);
+  sock->SetRecvTimeout(timeout_ms);
   int rt = conn->sendRequest(req);
   if (rt == 0) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::SEND_CLOSE_BY_PEER, nullptr,
-                                        "send request closed by peer: " + sock->getRemoteAddress()->toString());
+                                        "send request closed by peer: " + sock->GetRemoteAddress()->ToString());
   }
   if (rt < 0) {
     return std::make_shared<HttpResult>(
@@ -396,7 +396,7 @@ HttpResult::ptr HttpConnectionPool::doRequest(HttpRequest::ptr req, uint64_t tim
   if (!rsp) {
     return std::make_shared<HttpResult>(
         (int)HttpResult::Error::TIMEOUT, nullptr,
-        "recv response timeout: " + sock->getRemoteAddress()->toString() + " timeout_ms:" + std::to_string(timeout_ms));
+        "recv response timeout: " + sock->GetRemoteAddress()->ToString() + " timeout_ms:" + std::to_string(timeout_ms));
   }
   return std::make_shared<HttpResult>((int)HttpResult::Error::OK, rsp, "ok");
 }

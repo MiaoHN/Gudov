@@ -146,7 +146,7 @@ class LogFormatter {
     virtual void format(std::ostream& os, LogEvent::ptr event) = 0;
   };
 
-  void init();
+  void Init();
 
   bool              isError() const { return m_error; }
   const std::string getPattern() const { return m_pattern; }
@@ -270,7 +270,7 @@ class LoggerManager {
   LoggerManager();
   Logger::ptr getLogger(const std::string& name);
 
-  void        init();
+  void        Init();
   Logger::ptr getRoot() const { return m_root; }
 
   std::string toYamlString();

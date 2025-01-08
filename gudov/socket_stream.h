@@ -18,12 +18,12 @@ class SocketStream : public Stream {
   int  write(ByteArray::ptr ba, size_t length) override;
   void close() override;
 
-  Socket::ptr GetSocket() const { return m_socket; }
+  Socket::ptr GetSocket() const { return sock_; }
   bool        IsConnected() const;
 
  protected:
-  Socket::ptr m_socket;
-  bool        m_owner;
+  Socket::ptr sock_;
+  bool        owner_;
 };
 
 }  // namespace gudov

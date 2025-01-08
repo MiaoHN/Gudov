@@ -2,21 +2,21 @@
 
 namespace gudov {
 
-SocketStream::SocketStream(Socket::ptr sock, bool owner) : m_socket(sock), m_owner(owner) {}
+SocketStream::SocketStream(Socket::ptr sock, bool owner) : sock_(sock), owner_(owner) {}
 
 SocketStream::~SocketStream() {
-  if (m_owner && m_socket) {
-    m_socket->Close();
+  if (owner_ && sock_) {
+    sock_->Close();
   }
 }
 
-bool SocketStream::IsConnected() const { return m_socket && m_socket->IsConnected(); }
+bool SocketStream::IsConnected() const { return sock_ && sock_->IsConnected(); }
 
 int SocketStream::read(void* buffer, size_t length) {
   if (!IsConnected()) {
     return -1;
   }
-  return m_socket->Recv(buffer, length);
+  return sock_->Recv(buffer, length);
 }
 
 int SocketStream::read(ByteArray::ptr ba, size_t length) {
@@ -25,7 +25,7 @@ int SocketStream::read(ByteArray::ptr ba, size_t length) {
   }
   std::vector<iovec> iovs;
   ba->GetWriteBuffers(iovs, length);
-  int rt = m_socket->Recv(&iovs[0], iovs.size());
+  int rt = sock_->Recv(&iovs[0], iovs.size());
   if (rt > 0) {
     ba->SetPosition(ba->GetPosition() + rt);
   }
@@ -36,7 +36,7 @@ int SocketStream::write(const void* buffer, size_t length) {
   if (!IsConnected()) {
     return -1;
   }
-  return m_socket->Send(buffer, length);
+  return sock_->Send(buffer, length);
 }
 
 int SocketStream::write(ByteArray::ptr ba, size_t length) {
@@ -45,7 +45,7 @@ int SocketStream::write(ByteArray::ptr ba, size_t length) {
   }
   std::vector<iovec> iovs;
   ba->GetReadBuffers(iovs, length);
-  int rt = m_socket->Send(&iovs[0], iovs.size());
+  int rt = sock_->Send(&iovs[0], iovs.size());
   if (rt > 0) {
     ba->SetPosition(ba->GetPosition() + rt);
   }
@@ -53,8 +53,8 @@ int SocketStream::write(ByteArray::ptr ba, size_t length) {
 }
 
 void SocketStream::close() {
-  if (m_socket) {
-    m_socket->Close();
+  if (sock_) {
+    sock_->Close();
   }
 }
 

@@ -28,21 +28,21 @@ class ConfigVarBase {
  public:
   using ptr = std::shared_ptr<ConfigVarBase>;
   ConfigVarBase(const std::string& name, const std::string& description = "")
-      : name_(name), m_description(description) {
+      : name_(name), description_(description) {
     std::transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
   }
   virtual ~ConfigVarBase() {}
 
   const std::string& GetName() const { return name_; }
-  const std::string& getDescription() const { return m_description; }
+  const std::string& GetDescription() const { return description_; }
 
   virtual std::string ToString()                         = 0;
   virtual bool        fromString(const std::string& val) = 0;
-  virtual std::string getTypeName() const                = 0;
+  virtual std::string GetTypeName() const                = 0;
 
  private:
   std::string name_;
-  std::string m_description;
+  std::string description_;
 };
 
 /**
@@ -254,14 +254,14 @@ class ConfigVar : public ConfigVarBase {
   using onChangeCallback = std::function<void(const T& oldValue, const T& newValue)>;
 
   ConfigVar(const std::string& name, const T& default_value, const std::string& description = "")
-      : ConfigVarBase(name, description), m_value(default_value) {}
+      : ConfigVarBase(name, description), value_(default_value) {}
 
   std::string ToString() override {
     try {
       RWMutexType::ReadLock lock(mutex_);
-      return ToStr()(m_value);
+      return ToStr()(value_);
     } catch (std::exception& e) {
-      LOG_ERROR(LOG_ROOT()) << "ConfigVar::ToString exception" << e.what() << " convert: " << typeid(m_value).name()
+      LOG_ERROR(LOG_ROOT()) << "ConfigVar::ToString exception" << e.what() << " convert: " << typeid(value_).name()
                             << " to string";
     }
     return "";
@@ -269,62 +269,62 @@ class ConfigVar : public ConfigVarBase {
 
   bool fromString(const std::string& val) override {
     try {
-      setValue(FromStr()(val));
+      SetValue(FromStr()(val));
     } catch (std::exception& e) {
       LOG_ERROR(LOG_ROOT()) << "ConfigVar::ToString exception" << e.what() << " convert: string to "
-                            << typeid(m_value).name() << " - " << val;
+                            << typeid(value_).name() << " - " << val;
     }
     return false;
   };
 
   const T GetValue() {
     RWMutexType::ReadLock lock(mutex_);
-    return m_value;
+    return value_;
   }
-  void setValue(const T& v) {
+  void SetValue(const T& v) {
     {
       RWMutexType::ReadLock lock(mutex_);
-      if (v == m_value) {
+      if (v == value_) {
         return;
       }
-      for (auto& i : m_callbacks) {
-        i.second(m_value, v);
+      for (auto& i : callbacks_) {
+        i.second(value_, v);
       }
     }
     RWMutexType::ReadLock lock(mutex_);
-    m_value = v;
+    value_ = v;
   }
 
-  std::string getTypeName() const override { return typeid(T).name(); }
+  std::string GetTypeName() const override { return typeid(T).name(); }
 
   uint64_t addListener(onChangeCallback callback) {
     static uint64_t        s_fun_id = 0;
     RWMutexType::WriteLock lock(mutex_);
     ++s_fun_id;
-    m_callbacks[s_fun_id] = callback;
+    callbacks_[s_fun_id] = callback;
     return s_fun_id;
   }
 
   void delListener(uint64_t key) {
     RWMutexType::WriteLock lock(mutex_);
-    m_callbacks.erase(key);
+    callbacks_.erase(key);
   }
 
-  onChangeCallback getListener(uint64_t key) {
+  onChangeCallback GetListener(uint64_t key) {
     RWMutexType::ReadLock lock(mutex_);
-    auto                  it = m_callbacks.find(key);
-    return it == m_callbacks.end() ? nullptr : it->second;
+    auto                  it = callbacks_.find(key);
+    return it == callbacks_.end() ? nullptr : it->second;
   }
 
   void clearListener() {
     RWMutexType::WriteLock lock(mutex_);
-    m_callbacks.clear();
+    callbacks_.clear();
   }
 
  private:
-  T                                    m_value;
+  T                                    value_;
   RWMutexType                          mutex_;
-  std::map<uint64_t, onChangeCallback> m_callbacks;
+  std::map<uint64_t, onChangeCallback> callbacks_;
 };
 
 class Config {
@@ -344,7 +344,7 @@ class Config {
         return tmp;
       } else {
         LOG_DEBUG(LOG_ROOT()) << "Lookup name=" << name << " exists but type not " << typeid(T).name()
-                              << " real_type=" << it->second->getTypeName() << " " << it->second->ToString();
+                              << " real_type=" << it->second->GetTypeName() << " " << it->second->ToString();
         return nullptr;
       }
     }

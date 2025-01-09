@@ -16,22 +16,22 @@
 #include "util.h"
 
 #define LOG_LEVEL(logger, level)                                                                                     \
-  if (logger->getLevel() <= level)                                                                                   \
+  if (logger->GetLevel() <= level)                                                                                   \
   gudov::LogEventWrap(gudov::LogEvent::ptr(new gudov::LogEvent(logger, level, __FILE__, __LINE__, 0,                 \
                                                                gudov::GetThreadId(), gudov::GetFiberId(), time(0)))) \
-      .getSS()
+      .GetSS()
 
 #define LOG_FMT_LEVEL(logger, level, fmt, ...)                                                                       \
-  if (logger->getLevel() <= level)                                                                                   \
+  if (logger->GetLevel() <= level)                                                                                   \
   gudov::LogEventWrap(gudov::LogEvent::ptr(new gudov::LogEvent(logger, level, __FILE__, __LINE__, 0,                 \
                                                                gudov::GetThreadId(), gudov::GetFiberId(), time(0)))) \
-      .getEvent()                                                                                                    \
+      .GetEvent()                                                                                                    \
       ->format(fmt, __VA_ARGS__)
 
 #ifdef GUDOV_DEBUG
 #define LOG_DEBUG(logger) LOG_LEVEL(logger, gudov::LogLevel::DEBUG)
 #else
-#define LOG_DEBUG(logger) gudov::LogEmpty().getSS()
+#define LOG_DEBUG(logger) gudov::LogEmpty().GetSS()
 #endif
 
 #define LOG_INFO(logger)  LOG_LEVEL(logger, gudov::LogLevel::INFO)
@@ -45,8 +45,8 @@
 #define LOG_FMT_ERROR(logger, fmt, ...) LOG_FMT_LEVEL(logger, gudov::LogLevel::ERROR, fmt, __VA_ARGS__)
 #define LOG_FMT_FATAL(logger, fmt, ...) LOG_FMT_LEVEL(logger, gudov::LogLevel::FATAL, fmt, __VA_ARGS__)
 
-#define LOG_ROOT()     gudov::LoggerMgr::getInstance()->getRoot()
-#define LOG_NAME(name) gudov::LoggerMgr::getInstance()->getLogger(name)
+#define LOG_ROOT()     gudov::LoggerMgr::GetInstance()->GetRoot()
+#define LOG_NAME(name) gudov::LoggerMgr::GetInstance()->GetLogger(name)
 
 namespace gudov {
 
@@ -70,10 +70,10 @@ class LogLevel {
 
 class LogEmpty {
  public:
-  std::stringstream& getSS() { return m_ss; }
+  std::stringstream& GetSS() { return ss_; }
 
  private:
-  std::stringstream m_ss;
+  std::stringstream ss_;
 };
 
 /**
@@ -88,31 +88,31 @@ class LogEvent {
   LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* filename, int32_t line, uint32_t elapse,
            uint32_t threadId, uint32_t fiberId, uint64_t time);
 
-  const char*             getFile() const { return m_file; }
-  int32_t                 getLine() const { return m_line; }
-  uint32_t                getElapse() const { return m_elapse; }
-  uint32_t                getThreadId() const { return m_thread_id; }
-  uint32_t                getFiberId() const { return m_fiber_id; }
-  uint64_t                getTime() const { return m_time; }
-  std::string             getContent() const { return m_ss.str(); }
-  std::shared_ptr<Logger> getLogger() const { return m_logger; }
-  LogLevel::Level         getLevel() const { return m_level; }
+  const char*             GetFile() const { return file_; }
+  int32_t                 GetLine() const { return line_; }
+  uint32_t                GetElapse() const { return elapse_; }
+  uint32_t                GetThreadId() const { return thread_id_; }
+  uint32_t                GetFiberId() const { return fiber_id_; }
+  uint64_t                GetTime() const { return time_; }
+  std::string             GetContent() const { return ss_.str(); }
+  std::shared_ptr<Logger> GetLogger() const { return logger_; }
+  LogLevel::Level         GetLevel() const { return level_; }
 
-  std::stringstream& getSS() { return m_ss; }
+  std::stringstream& GetSS() { return ss_; }
   void               format(const char* fmt, ...);
   void               format(const char* fmt, va_list al);
 
  private:
-  const char*       m_file      = nullptr;
-  int32_t           m_line      = 0;
-  uint32_t          m_elapse    = 0;
-  uint32_t          m_thread_id = 0;
-  uint32_t          m_fiber_id  = 0;
-  uint64_t          m_time      = 0;
-  std::stringstream m_ss;
+  const char*       file_      = nullptr;
+  int32_t           line_      = 0;
+  uint32_t          elapse_    = 0;
+  uint32_t          thread_id_ = 0;
+  uint32_t          fiber_id_  = 0;
+  uint64_t          time_      = 0;
+  std::stringstream ss_;
 
-  std::shared_ptr<Logger> m_logger;
-  LogLevel::Level         m_level;
+  std::shared_ptr<Logger> logger_;
+  LogLevel::Level         level_;
 };
 
 class LogEventWrap {
@@ -120,11 +120,11 @@ class LogEventWrap {
   LogEventWrap(LogEvent::ptr e);
   ~LogEventWrap();
 
-  LogEvent::ptr      getEvent() const { return m_event; }
-  std::stringstream& getSS();
+  LogEvent::ptr      GetEvent() const { return event_; }
+  std::stringstream& GetSS();
 
  private:
-  LogEvent::ptr m_event;
+  LogEvent::ptr event_;
 };
 
 /**
@@ -148,13 +148,13 @@ class LogFormatter {
 
   void Init();
 
-  bool              isError() const { return m_error; }
-  const std::string getPattern() const { return m_pattern; }
+  bool              IsError() const { return error_; }
+  const std::string GetPattern() const { return pattern_; }
 
  private:
-  std::string                  m_pattern;
-  std::vector<FormatItem::ptr> m_items;
-  bool                         m_error = false;
+  std::string                  pattern_;
+  std::vector<FormatItem::ptr> items_;
+  bool                         error_ = false;
 };
 
 /**
@@ -168,7 +168,7 @@ class LogAppender {
   using ptr       = std::shared_ptr<LogAppender>;
   using MutexType = Spinlock;
 
-  LogAppender(LogLevel::Level level = LogLevel::UNKNOWN) : m_level(level) {}
+  LogAppender(LogLevel::Level level = LogLevel::UNKNOWN) : level_(level) {}
   virtual ~LogAppender() {}
 
   /**
@@ -180,16 +180,16 @@ class LogAppender {
 
   virtual std::string toYamlString() = 0;
 
-  void              setFormatter(LogFormatter::ptr formatter);
-  LogFormatter::ptr getFormatter();
+  void              SetFormatter(LogFormatter::ptr formatter);
+  LogFormatter::ptr GetFormatter();
 
-  LogLevel::Level getLevel() const { return m_level; }
-  void            setLevel(LogLevel::Level level) { m_level = level; }
+  LogLevel::Level GetLevel() const { return level_; }
+  void            SetLevel(LogLevel::Level level) { level_ = level; }
 
  protected:
-  LogLevel::Level   m_level = LogLevel::UNKNOWN;
+  LogLevel::Level   level_ = LogLevel::UNKNOWN;
   MutexType         mutex_;
-  LogFormatter::ptr m_formatter;
+  LogFormatter::ptr formatter_;
 };
 
 class Logger : public std::enable_shared_from_this<Logger> {
@@ -205,24 +205,24 @@ class Logger : public std::enable_shared_from_this<Logger> {
   void            addAppender(LogAppender::ptr appender);
   void            delAppender(LogAppender::ptr appender);
   void            clearAppenders();
-  LogLevel::Level getLevel() const { return m_level; }
-  void            setLevel(LogLevel::Level level) { m_level = level; }
+  LogLevel::Level GetLevel() const { return level_; }
+  void            SetLevel(LogLevel::Level level) { level_ = level; }
 
   const std::string& GetName() const { return name_; }
 
-  void              setFormatter(LogFormatter::ptr val);
-  void              setFormatter(const std::string& val);
-  LogFormatter::ptr getFormatter();
+  void              SetFormatter(LogFormatter::ptr val);
+  void              SetFormatter(const std::string& val);
+  LogFormatter::ptr GetFormatter();
 
   std::string toYamlString();
 
  private:
   std::string                 name_;
-  LogLevel::Level             m_level;
+  LogLevel::Level             level_;
   MutexType                   mutex_;
-  std::list<LogAppender::ptr> m_appenders;
-  LogFormatter::ptr           m_formatter;
-  Logger::ptr                 m_root;
+  std::list<LogAppender::ptr> appenders_;
+  LogFormatter::ptr           formatter_;
+  Logger::ptr                 root_;
 };
 
 class StdoutLogAppender : public LogAppender {
@@ -258,9 +258,9 @@ class FileLogAppender : public LogAppender {
   bool reopen();
 
  private:
-  std::string   m_filename;
-  std::ofstream m_filestream;
-  uint64_t      m_last_time = 0;
+  std::string   filename_;
+  std::ofstream filestream_;
+  uint64_t      last_time_ = 0;
 };
 
 class LoggerManager {
@@ -268,17 +268,17 @@ class LoggerManager {
   using MutexType = Spinlock;
 
   LoggerManager();
-  Logger::ptr getLogger(const std::string& name);
+  Logger::ptr GetLogger(const std::string& name);
 
   void        Init();
-  Logger::ptr getRoot() const { return m_root; }
+  Logger::ptr GetRoot() const { return root_; }
 
   std::string toYamlString();
 
  private:
   MutexType                          mutex_;
-  std::map<std::string, Logger::ptr> m_loggers;
-  Logger::ptr                        m_root;
+  std::map<std::string, Logger::ptr> loggers_;
+  Logger::ptr                        root_;
 };
 
 using LoggerMgr = gudov::Singleton<LoggerManager>;

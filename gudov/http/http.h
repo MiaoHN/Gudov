@@ -157,7 +157,7 @@ bool checkGetAs(const MapType& m, const std::string& key, T& val, const T& def =
 }
 
 template <class MapType, class T>
-T getAs(const MapType& m, const std::string& key, const T& def = T()) {
+T GetAs(const MapType& m, const std::string& key, const T& def = T()) {
   auto it = m.find(key);
   if (it == m.end()) {
     return def;
@@ -176,36 +176,36 @@ class HttpRequest {
 
   HttpRequest(uint8_t version = 0x11, bool close = true);
 
-  HttpMethod         getMethod() const { return m_method; }
-  uint8_t            getVersion() const { return m_version; }
-  const std::string& getPath() const { return m_path; }
-  const std::string& getQuery() const { return m_query; }
-  const std::string& getBody() const { return m_body; }
-  const MapType&     getHeaders() const { return m_headers; }
-  const MapType&     getParams() const { return m_params; }
-  const MapType&     getCookies() const { return m_cookies; }
+  HttpMethod         GetMethod() const { return method_; }
+  uint8_t            GetVersion() const { return version_; }
+  const std::string& GetPath() const { return path_; }
+  const std::string& GetQuery() const { return query_; }
+  const std::string& GetBody() const { return body_; }
+  const MapType&     GetHeaders() const { return headers_; }
+  const MapType&     GetParams() const { return params_; }
+  const MapType&     GetCookies() const { return cookies_; }
 
-  void setMethod(HttpMethod v) { m_method = v; }
-  void setVersion(uint8_t v) { m_version = v; }
-  void setPath(const std::string& v) { m_path = v; }
-  void setQuery(const std::string& v) { m_query = v; }
-  void setFragment(const std::string& v) { m_fragment = v; }
-  void setBody(const std::string& v) { m_body = v; }
+  void SetMethod(HttpMethod v) { method_ = v; }
+  void SetVersion(uint8_t v) { version_ = v; }
+  void SetPath(const std::string& v) { path_ = v; }
+  void SetQuery(const std::string& v) { query_ = v; }
+  void SetFragment(const std::string& v) { fragment_ = v; }
+  void SetBody(const std::string& v) { body_ = v; }
 
-  bool IsClose() const { return m_close; }
-  void setClose(bool v) { m_close = v; }
+  bool IsClose() const { return close_; }
+  void SetClose(bool v) { close_ = v; }
 
-  void setHeaders(const MapType& v) { m_headers = v; }
-  void setParams(const MapType& v) { m_params = v; }
-  void setCookies(const MapType& v) { m_cookies = v; }
+  void SetHeaders(const MapType& v) { headers_ = v; }
+  void SetParams(const MapType& v) { params_ = v; }
+  void SetCookies(const MapType& v) { cookies_ = v; }
 
-  std::string getHeader(const std::string& key, const std::string& def = "") const;
-  std::string getParam(const std::string& key, const std::string& def = "") const;
-  std::string getCookie(const std::string& key, const std::string& def = "") const;
+  std::string GetHeader(const std::string& key, const std::string& def = "") const;
+  std::string GetParam(const std::string& key, const std::string& def = "") const;
+  std::string GetCookie(const std::string& key, const std::string& def = "") const;
 
-  void setHeader(const std::string& key, const std::string& val);
-  void setParam(const std::string& key, const std::string& val);
-  void setCookie(const std::string& key, const std::string& val);
+  void SetHeader(const std::string& key, const std::string& val);
+  void SetParam(const std::string& key, const std::string& val);
+  void SetCookie(const std::string& key, const std::string& val);
 
   void delHeader(const std::string& key);
   void delParam(const std::string& key);
@@ -217,51 +217,51 @@ class HttpRequest {
 
   template <class T>
   bool checkGetHeaderAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(m_headers, key, val, def);
+    return checkGetAs(headers_, key, val, def);
   }
 
   template <class T>
-  T getHeaderAs(const std::string& key, const T& def = T()) {
-    return getAs(m_headers, key, def);
+  T GetHeaderAs(const std::string& key, const T& def = T()) {
+    return GetAs(headers_, key, def);
   }
 
   template <class T>
   bool checkGetParamAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(m_params, key, val, def);
+    return checkGetAs(params_, key, val, def);
   }
 
   template <class T>
-  T getParamAs(const std::string& key, const T& def = T()) {
-    return getAs(m_params, key, def);
+  T GetParamAs(const std::string& key, const T& def = T()) {
+    return GetAs(params_, key, def);
   }
 
   template <class T>
   bool checkGetCookieAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(m_cookies, key, val, def);
+    return checkGetAs(cookies_, key, val, def);
   }
 
   template <class T>
-  T getCookieAs(const std::string& key, const T& def = T()) {
-    return getAs(m_cookies, key, def);
+  T GetCookieAs(const std::string& key, const T& def = T()) {
+    return GetAs(cookies_, key, def);
   }
 
   std::ostream& Dump(std::ostream& os) const;
   std::string   ToString() const;
 
  private:
-  HttpMethod m_method;
-  HttpStatus m_status;
-  uint8_t    m_version;
-  bool       m_close;
+  HttpMethod method_;
+  HttpStatus status_;
+  uint8_t    version_;
+  bool       close_;
 
-  std::string m_path;
-  std::string m_query;
-  std::string m_fragment;
-  std::string m_body;
+  std::string path_;
+  std::string query_;
+  std::string fragment_;
+  std::string body_;
 
-  MapType m_headers;
-  MapType m_params;
-  MapType m_cookies;
+  MapType headers_;
+  MapType params_;
+  MapType cookies_;
 };
 
 class HttpResponse {
@@ -270,45 +270,45 @@ class HttpResponse {
   using MapType = std::map<std::string, std::string, CaseInsensitiveLess>;
   HttpResponse(uint8_t version = 0x11, bool close = true);
 
-  HttpStatus         getStatus() const { return m_status; }
-  uint8_t            getVersion() const { return m_version; }
-  const std::string& getBody() const { return m_body; }
-  const std::string& getReason() const { return m_reason; }
-  const MapType&     getHeaders() const { return m_headers; }
+  HttpStatus         GetStatus() const { return status_; }
+  uint8_t            GetVersion() const { return version_; }
+  const std::string& GetBody() const { return body_; }
+  const std::string& GetReason() const { return reason_; }
+  const MapType&     GetHeaders() const { return headers_; }
 
-  void setStatus(HttpStatus v) { m_status = v; }
-  void setVersion(uint8_t v) { m_version = v; }
-  void setBody(const std::string& v) { m_body = v; }
-  void setReason(const std::string& v) { m_reason = v; }
-  void setHeaders(const MapType& v) { m_headers = v; }
+  void SetStatus(HttpStatus v) { status_ = v; }
+  void SetVersion(uint8_t v) { version_ = v; }
+  void SetBody(const std::string& v) { body_ = v; }
+  void SetReason(const std::string& v) { reason_ = v; }
+  void SetHeaders(const MapType& v) { headers_ = v; }
 
-  bool IsClose() const { return m_close; }
-  void setClose(bool v) { m_close = v; }
+  bool IsClose() const { return close_; }
+  void SetClose(bool v) { close_ = v; }
 
-  std::string getHeader(const std::string& key, const std::string& def = "") const;
-  void        setHeader(const std::string& key, const std::string& val);
+  std::string GetHeader(const std::string& key, const std::string& def = "") const;
+  void        SetHeader(const std::string& key, const std::string& val);
   void        delHeader(const std::string& key);
 
   template <class T>
   bool checkGetHeaderAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(m_headers, key, val, def);
+    return checkGetAs(headers_, key, val, def);
   }
 
   template <class T>
-  T getHeaderAs(const std::string& key, const T& def = T()) {
-    return getAs(m_headers, key, def);
+  T GetHeaderAs(const std::string& key, const T& def = T()) {
+    return GetAs(headers_, key, def);
   }
 
   std::ostream& Dump(std::ostream& os) const;
   std::string   ToString() const;
 
  private:
-  HttpStatus  m_status;
-  uint8_t     m_version;
-  bool        m_close;
-  std::string m_body;
-  std::string m_reason;
-  MapType     m_headers;
+  HttpStatus  status_;
+  uint8_t     version_;
+  bool        close_;
+  std::string body_;
+  std::string reason_;
+  MapType     headers_;
 };
 
 std::ostream& operator<<(std::ostream& os, const HttpRequest& req);

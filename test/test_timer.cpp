@@ -144,7 +144,7 @@ TEST(TimerManagerTest, RefreshTimerTest) {
 }
 
 // 测试重置定时器
-TEST(TimerManagerTest, ResetTimerTest) {
+TEST(TimerManagerTest, ReSetTimerTest) {
   TimerManagerTest timerManager;
 
   // 定义一个原子计数器用于回调测试

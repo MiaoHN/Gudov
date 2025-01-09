@@ -9,7 +9,7 @@ static gudov::Logger::ptr g_logger = LOG_ROOT();
 class EchoServer : public gudov::TcpServer {
  public:
   EchoServer(int type);
-  void handleClient(gudov::Socket::ptr client) override;
+  void HandleClient(gudov::Socket::ptr client) override;
 
  private:
   int type_ = 0;
@@ -17,8 +17,8 @@ class EchoServer : public gudov::TcpServer {
 
 EchoServer::EchoServer(int type) : type_(type) {}
 
-void EchoServer::handleClient(gudov::Socket::ptr client) {
-  LOG_INFO(g_logger) << "handleClient " << *client;
+void EchoServer::HandleClient(gudov::Socket::ptr client) {
+  LOG_INFO(g_logger) << "HandleClient " << *client;
   gudov::ByteArray::ptr ba(new gudov::ByteArray);
   while (true) {
     ba->Clear();
@@ -51,19 +51,19 @@ void run() {
   LOG_INFO(g_logger) << "server type=" << type;
   EchoServer::ptr es(new EchoServer(type));
   auto            addr = gudov::Address::LookupAny("0.0.0.0:8020");
-  while (!es->bind(addr)) {
+  while (!es->Bind(addr)) {
     sleep(2);
   }
-  es->start();
+  es->Start();
 }
 
 int main(int argc, char const *argv[]) {
-  if (argc < 2) {
-    LOG_INFO(g_logger) << "used as[" << argv[0] << " -t] or [" << argv[0] << " -b]";
-    return 0;
-  }
+  // if (argc < 2) {
+  //   LOG_INFO(g_logger) << "used as[" << argv[0] << " -t] or [" << argv[0] << " -b]";
+  //   return 0;
+  // }
 
-  if (!strcmp(argv[1], "-b")) {
+  if (argc >= 2 && !strcmp(argv[1], "-b")) {
     type = 2;
   }
 

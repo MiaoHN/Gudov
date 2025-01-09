@@ -14,10 +14,10 @@ void test_request() {
   std::string                    tmp = test_request_data;
   size_t                         s   = parser.execute(&tmp[0], tmp.size());
   LOG_ERROR(g_logger) << "execute rt=" << s << "has_error=" << parser.hasError()
-                      << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
-                      << " content_length=" << parser.getContentLength();
+                      << " is_finished=" << parser.IsFinished() << " total=" << tmp.size()
+                      << " content_length=" << parser.GetContentLength();
   tmp.resize(tmp.size() - s);
-  LOG_INFO(g_logger) << parser.getData()->ToString();
+  LOG_INFO(g_logger) << parser.GetData()->ToString();
   LOG_INFO(g_logger) << tmp;
 }
 
@@ -42,12 +42,12 @@ void test_response() {
   std::string                     tmp = test_response_data;
   size_t                          s   = parser.execute(&tmp[0], tmp.size(), true);
   LOG_ERROR(g_logger) << "execute rt=" << s << " has_error=" << parser.hasError()
-                      << " is_finished=" << parser.isFinished() << " total=" << tmp.size()
-                      << " content_length=" << parser.getContentLength() << " tmp[s]=" << tmp[s];
+                      << " is_finished=" << parser.IsFinished() << " total=" << tmp.size()
+                      << " content_length=" << parser.GetContentLength() << " tmp[s]=" << tmp[s];
 
   tmp.resize(tmp.size() - s);
 
-  LOG_INFO(g_logger) << parser.getData()->ToString();
+  LOG_INFO(g_logger) << parser.GetData()->ToString();
   LOG_INFO(g_logger) << tmp;
 }
 

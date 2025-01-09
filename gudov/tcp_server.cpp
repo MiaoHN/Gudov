@@ -10,28 +10,28 @@ static ConfigVar<uint64_t>::ptr g_tcp_server_read_timeout =
 
 static Logger::ptr g_logger = LOG_NAME("system");
 
-TcpServer::TcpServer(IOManager* woker, IOManager* accept_woker)
-    : m_worker(woker),
-      m_accept_worker(accept_woker),
-      m_recv_timeout(g_tcp_server_read_timeout->GetValue()),
+TcpServer::TcpServer(IOManager* worker, IOManager* accept_worker)
+    : io_worker_(worker),
+      accept_worker_(accept_worker),
+      recv_timeout_(g_tcp_server_read_timeout->GetValue()),
       name_("gudov/1.0.0"),
-      m_is_stop(true) {}
+      is_stop_(true) {}
 
 TcpServer::~TcpServer() {
-  for (auto& i : m_socks) {
+  for (auto& i : socks_) {
     i->Close();
   }
-  m_socks.clear();
+  socks_.clear();
 }
 
-bool TcpServer::bind(Address::ptr addr) {
+bool TcpServer::Bind(Address::ptr addr) {
   std::vector<Address::ptr> addrs;
   std::vector<Address::ptr> fails;
   addrs.push_back(addr);
-  return bind(addrs, fails);
+  return Bind(addrs, fails);
 }
 
-bool TcpServer::bind(const std::vector<Address::ptr>& addrs, std::vector<Address::ptr>& fails) {
+bool TcpServer::Bind(const std::vector<Address::ptr>& addrs, std::vector<Address::ptr>& fails) {
   for (auto& addr : addrs) {
     Socket::ptr sock = Socket::CreateTCP(addr);
     if (!sock->Bind(addr)) {
@@ -46,55 +46,67 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs, std::vector<Address
       fails.push_back(addr);
       continue;
     }
-    m_socks.push_back(sock);
+    socks_.push_back(sock);
   }
 
   if (!fails.empty()) {
-    m_socks.clear();
+    socks_.clear();
     return false;
   }
 
-  for (auto& i : m_socks) {
+  for (auto& i : socks_) {
     LOG_DEBUG(g_logger) << "server bind success: " << *i;
   }
   return true;
 }
 
-void TcpServer::startAccept(Socket::ptr sock) {
-  while (!m_is_stop) {
+void TcpServer::StartAccept(Socket::ptr sock) {
+  while (!is_stop_) {
     Socket::ptr client = sock->Accept();
     if (client) {
-      client->SetRecvTimeout(m_recv_timeout);
-      m_worker->Schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
+      client->SetRecvTimeout(recv_timeout_);
+      io_worker_->Schedule(std::bind(&TcpServer::HandleClient, shared_from_this(), client));
     } else {
       LOG_ERROR(g_logger) << "accept errno=" << errno << " errstr=" << strerror(errno);
     }
   }
 }
 
-bool TcpServer::start() {
-  if (!m_is_stop) {
+bool TcpServer::Start() {
+  if (!is_stop_) {
     return true;
   }
-  m_is_stop = false;
-  for (auto& sock : m_socks) {
-    m_accept_worker->Schedule(std::bind(&TcpServer::startAccept, shared_from_this(), sock));
+  is_stop_ = false;
+  for (auto& sock : socks_) {
+    accept_worker_->Schedule(std::bind(&TcpServer::StartAccept, shared_from_this(), sock));
   }
   return true;
 }
 
-void TcpServer::stop() {
-  m_is_stop = true;
+void TcpServer::Stop() {
+  is_stop_  = true;
   auto self = shared_from_this();
-  m_accept_worker->Schedule([this, self]() {
-    for (auto& sock : m_socks) {
+  accept_worker_->Schedule([this, self]() {
+    for (auto& sock : socks_) {
       sock->CancelAll();
       sock->Close();
     }
-    m_socks.clear();
+    socks_.clear();
   });
 }
 
-void TcpServer::handleClient(Socket::ptr client) { LOG_INFO(g_logger) << "handleClient: " << *client; }
+void TcpServer::HandleClient(Socket::ptr client) { LOG_INFO(g_logger) << "HandleClient: " << *client; }
+
+std::string TcpServer::ToString(const std::string& prefix) {
+  std::stringstream ss;
+  ss << prefix << "[type=" << type_ << " name=" << name_ << " io_worker=" << (io_worker_ ? io_worker_->GetName() : "")
+     << " accept=" << (accept_worker_ ? accept_worker_->GetName() : "") << " recv_timeout=" << recv_timeout_ << "]"
+     << std::endl;
+  std::string pfx = prefix.empty() ? "    " : prefix;
+  for (auto& i : socks_) {
+    ss << pfx << pfx << *i << std::endl;
+  }
+  return ss.str();
+}
 
 }  // namespace gudov

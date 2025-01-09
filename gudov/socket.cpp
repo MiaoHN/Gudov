@@ -64,7 +64,7 @@ Socket::Socket(int family, int type, int protocol)
 Socket::~Socket() { Close(); }
 
 int64_t Socket::GetSendTimeout() {
-  FdContext::ptr ctx = FdMgr::getInstance()->Get(sock_);
+  FdContext::ptr ctx = FdMgr::GetInstance()->Get(sock_);
   if (ctx) {
     return ctx->GetTimeout(SO_SNDTIMEO);
   }
@@ -79,7 +79,7 @@ void Socket::SetSendTimeout(int64_t v) {
 }
 
 int64_t Socket::GetRecvTimeout() {
-  FdContext::ptr ctx = FdMgr::getInstance()->Get(sock_);
+  FdContext::ptr ctx = FdMgr::GetInstance()->Get(sock_);
   if (ctx) {
     return ctx->GetTimeout(SO_RCVTIMEO);
   }
@@ -310,7 +310,7 @@ Address::ptr Socket::GetRemoteAddress() {
   }
   if (family_ == AF_UNIX) {
     UnixAddress::ptr addr = std::dynamic_pointer_cast<UnixAddress>(result);
-    addr->setAddrLen(addrlen);
+    addr->SetAddrLen(addrlen);
   }
   remote_address_ = result;
   return remote_address_;
@@ -343,7 +343,7 @@ Address::ptr Socket::GetLocalAddress() {
   }
   if (family_ == AF_UNIX) {
     UnixAddress::ptr addr = std::dynamic_pointer_cast<UnixAddress>(result);
-    addr->setAddrLen(addrlen);
+    addr->SetAddrLen(addrlen);
   }
   local_address_ = result;
   return local_address_;
@@ -400,7 +400,7 @@ void Socket::NewSock() {
 }
 
 bool Socket::Init(int sock) {
-  FdContext::ptr ctx = FdMgr::getInstance()->Get(sock);
+  FdContext::ptr ctx = FdMgr::GetInstance()->Get(sock);
   if (ctx && ctx->IsSocket() && !ctx->IsClose()) {
     sock_         = sock;
     is_connected_ = true;

@@ -8,9 +8,9 @@ void run() {
   gudov::IPAddress::ptr addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8050");
   gudov::Socket::ptr    sock = gudov::Socket::CreateUDP(addr);
   if (sock->Bind(addr)) {
-    LOG_INFO(g_logger) << "udp bind : " << *addr;
+    LOG_INFO(g_logger) << "udp Bind : " << *addr;
   } else {
-    LOG_ERROR(g_logger) << "udp bind : " << *addr << " fail";
+    LOG_ERROR(g_logger) << "udp Bind : " << *addr << " fail";
     return;
   }
   while (true) {

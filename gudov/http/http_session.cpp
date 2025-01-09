@@ -30,11 +30,11 @@ HttpRequest::ptr HttpSession::recvRequest() {
       close();
       return nullptr;
     }
-    if (parser->isFinished()) {
+    if (parser->IsFinished()) {
       break;
     }
   } while (true);
-  int64_t length = parser->getContentLength();
+  int64_t length = parser->GetContentLength();
   if (length > 0) {
     std::string body;
     body.resize(length);
@@ -53,13 +53,13 @@ HttpRequest::ptr HttpSession::recvRequest() {
         return nullptr;
       }
     }
-    parser->getData()->setBody(body);
+    parser->GetData()->SetBody(body);
   }
-  std::string keep_alive = parser->getData()->getHeader("Connection");
+  std::string keep_alive = parser->GetData()->GetHeader("Connection");
   if (!strcasecmp(keep_alive.c_str(), "keep-alive")) {
-    parser->getData()->setClose(false);
+    parser->GetData()->SetClose(false);
   }
-  return parser->getData();
+  return parser->GetData();
 }
 
 int HttpSession::sendResponse(HttpResponse::ptr rsp) {

@@ -45,11 +45,11 @@ HttpResponse::ptr HttpConnection::recvResponse() {
       close();
       return nullptr;
     }
-    if (parser->isFinished()) {
+    if (parser->IsFinished()) {
       break;
     }
   } while (true);
-  auto& client_parser = parser->getParser();
+  auto& client_parser = parser->GetParser();
   if (client_parser.chunked) {
     std::string body;
     int         len = offset;
@@ -72,7 +72,7 @@ HttpResponse::ptr HttpConnection::recvResponse() {
           close();
           return nullptr;
         }
-      } while (!parser->isFinished());
+      } while (!parser->IsFinished());
       len -= 2;
 
       LOG_INFO(g_logger) << "content_len=" << client_parser.content_len;
@@ -95,9 +95,9 @@ HttpResponse::ptr HttpConnection::recvResponse() {
         len = 0;
       }
     } while (!client_parser.chunks_done);
-    parser->getData()->setBody(body);
+    parser->GetData()->SetBody(body);
   } else {
-    int64_t length = parser->getContentLength();
+    int64_t length = parser->GetContentLength();
     if (length > 0) {
       std::string body;
       body.resize(length);
@@ -117,10 +117,10 @@ HttpResponse::ptr HttpConnection::recvResponse() {
           return nullptr;
         }
       }
-      parser->getData()->setBody(body);
+      parser->GetData()->SetBody(body);
     }
   }
-  return parser->getData();
+  return parser->GetData();
 }
 
 int HttpConnection::sendRequest(HttpRequest::ptr rsp) {
@@ -170,15 +170,15 @@ HttpResult::ptr HttpConnection::DoRequest(HttpMethod method, const std::string& 
 HttpResult::ptr HttpConnection::DoRequest(HttpMethod method, Uri::ptr uri, uint64_t timeout_ms,
                                           const std::map<std::string, std::string>& headers, const std::string& body) {
   HttpRequest::ptr req = std::make_shared<HttpRequest>();
-  req->setPath(uri->getPath());
-  req->setQuery(uri->getQuery());
-  req->setFragment(uri->getFragment());
-  req->setMethod(method);
+  req->SetPath(uri->GetPath());
+  req->SetQuery(uri->GetQuery());
+  req->SetFragment(uri->GetFragment());
+  req->SetMethod(method);
   bool has_host = false;
   for (auto& i : headers) {
     if (strcasecmp(i.first.c_str(), "connection") == 0) {
       if (strcasecmp(i.second.c_str(), "keep-alive") == 0) {
-        req->setClose(false);
+        req->SetClose(false);
       }
       continue;
     }
@@ -187,20 +187,20 @@ HttpResult::ptr HttpConnection::DoRequest(HttpMethod method, Uri::ptr uri, uint6
       has_host = !i.second.empty();
     }
 
-    req->setHeader(i.first, i.second);
+    req->SetHeader(i.first, i.second);
   }
   if (!has_host) {
-    req->setHeader("Host", uri->getHost());
+    req->SetHeader("Host", uri->GetHost());
   }
-  req->setBody(body);
+  req->SetBody(body);
   return DoRequest(req, uri, timeout_ms);
 }
 
 HttpResult::ptr HttpConnection::DoRequest(HttpRequest::ptr req, Uri::ptr uri, uint64_t timeout_ms) {
-  Address::ptr addr = uri->createAddress();
+  Address::ptr addr = uri->CreateAddress();
   if (!addr) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::INVALID_HOST, nullptr,
-                                        "invalid host: " + uri->getHost());
+                                        "invalid host: " + uri->GetHost());
   }
   Socket::ptr sock = Socket::CreateTCP(addr);
   if (!sock) {
@@ -235,26 +235,26 @@ HttpResult::ptr HttpConnection::DoRequest(HttpRequest::ptr req, Uri::ptr uri, ui
 
 HttpConnectionPool::HttpConnectionPool(const std::string& host, const std::string& vhost, uint32_t port,
                                        uint32_t max_size, uint32_t max_alive_time, uint32_t max_request)
-    : m_host(host),
-      m_vhost(vhost),
-      m_port(port),
-      m_max_size(max_size),
-      m_max_alive_time(max_alive_time),
-      m_max_request(max_request) {}
+    : host_(host),
+      vhost_(vhost),
+      port_(port),
+      max_size_(max_size),
+      max_alive_time_(max_alive_time),
+      max_request_(max_request) {}
 
-HttpConnection::ptr HttpConnectionPool::getConnection() {
+HttpConnection::ptr HttpConnectionPool::GetConnection() {
   uint64_t                     now_ms = GetCurrentMS();
   std::vector<HttpConnection*> invalid_conns;
   HttpConnection*              ptr = nullptr;
   MutexType::Locker              lock(mutex_);
-  while (!m_conns.empty()) {
-    auto conn = *m_conns.begin();
-    m_conns.pop_front();
+  while (!conns_.empty()) {
+    auto conn = *conns_.begin();
+    conns_.pop_front();
     if (!conn->IsConnected()) {
       invalid_conns.push_back(conn);
       continue;
     }
-    if ((conn->m_create_time + m_max_alive_time) > now_ms) {
+    if ((conn->create_time_ + max_alive_time_) > now_ms) {
       invalid_conns.push_back(conn);
       continue;
     }
@@ -265,15 +265,15 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
   for (auto i : invalid_conns) {
     delete i;
   }
-  m_total -= invalid_conns.size();
+  total_ -= invalid_conns.size();
 
   if (!ptr) {
-    IPAddress::ptr addr = Address::LookupAnyIPAddress(m_host);
+    IPAddress::ptr addr = Address::LookupAnyIPAddress(host_);
     if (!addr) {
-      LOG_ERROR(g_logger) << "get addr fail: " << m_host;
+      LOG_ERROR(g_logger) << "get addr fail: " << host_;
       return nullptr;
     }
-    addr->SetPort(m_port);
+    addr->SetPort(port_);
     Socket::ptr sock = Socket::CreateTCP(addr);
     if (!sock) {
       LOG_ERROR(g_logger) << "create sock fail: " << *addr;
@@ -285,21 +285,21 @@ HttpConnection::ptr HttpConnectionPool::getConnection() {
     }
 
     ptr = new HttpConnection(sock);
-    ++m_total;
+    ++total_;
   }
   return HttpConnection::ptr(ptr, std::bind(&HttpConnectionPool::ReleasePtr, std::placeholders::_1, this));
 }
 
 void HttpConnectionPool::ReleasePtr(HttpConnection* ptr, HttpConnectionPool* pool) {
-  ++ptr->m_request;
-  if (!ptr->IsConnected() || ((ptr->m_create_time + pool->m_max_alive_time) >= GetCurrentMS()) ||
-      (ptr->m_request >= pool->m_max_request)) {
+  ++ptr->request_;
+  if (!ptr->IsConnected() || ((ptr->create_time_ + pool->max_alive_time_) >= GetCurrentMS()) ||
+      (ptr->request_ >= pool->max_request_)) {
     delete ptr;
-    --pool->m_total;
+    --pool->total_;
     return;
   }
   MutexType::Locker lock(pool->mutex_);
-  pool->m_conns.push_back(ptr);
+  pool->conns_.push_back(ptr);
 }
 
 HttpResult::ptr HttpConnectionPool::doGet(const std::string& url, uint64_t timeout_ms,
@@ -310,8 +310,8 @@ HttpResult::ptr HttpConnectionPool::doGet(const std::string& url, uint64_t timeo
 HttpResult::ptr HttpConnectionPool::doGet(Uri::ptr uri, uint64_t timeout_ms,
                                           const std::map<std::string, std::string>& headers, const std::string& body) {
   std::stringstream ss;
-  ss << uri->getPath() << (uri->getQuery().empty() ? "" : "?") << uri->getQuery()
-     << (uri->getFragment().empty() ? "" : "#") << uri->getFragment();
+  ss << uri->GetPath() << (uri->GetQuery().empty() ? "" : "?") << uri->GetQuery()
+     << (uri->GetFragment().empty() ? "" : "#") << uri->GetFragment();
   return doGet(ss.str(), timeout_ms, headers, body);
 }
 
@@ -323,8 +323,8 @@ HttpResult::ptr HttpConnectionPool::doPost(const std::string& url, uint64_t time
 HttpResult::ptr HttpConnectionPool::doPost(Uri::ptr uri, uint64_t timeout_ms,
                                            const std::map<std::string, std::string>& headers, const std::string& body) {
   std::stringstream ss;
-  ss << uri->getPath() << (uri->getQuery().empty() ? "" : "?") << uri->getQuery()
-     << (uri->getFragment().empty() ? "" : "#") << uri->getFragment();
+  ss << uri->GetPath() << (uri->GetQuery().empty() ? "" : "?") << uri->GetQuery()
+     << (uri->GetFragment().empty() ? "" : "#") << uri->GetFragment();
   return doPost(ss.str(), timeout_ms, headers, body);
 }
 
@@ -332,14 +332,14 @@ HttpResult::ptr HttpConnectionPool::doRequest(HttpMethod method, const std::stri
                                               const std::map<std::string, std::string>& headers,
                                               const std::string&                        body) {
   HttpRequest::ptr req = std::make_shared<HttpRequest>();
-  req->setPath(url);
-  req->setMethod(method);
-  req->setClose(false);
+  req->SetPath(url);
+  req->SetMethod(method);
+  req->SetClose(false);
   bool has_host = false;
   for (auto& i : headers) {
     if (strcasecmp(i.first.c_str(), "connection") == 0) {
       if (strcasecmp(i.second.c_str(), "keep-alive") == 0) {
-        req->setClose(false);
+        req->SetClose(false);
       }
       continue;
     }
@@ -348,16 +348,16 @@ HttpResult::ptr HttpConnectionPool::doRequest(HttpMethod method, const std::stri
       has_host = !i.second.empty();
     }
 
-    req->setHeader(i.first, i.second);
+    req->SetHeader(i.first, i.second);
   }
   if (!has_host) {
-    if (m_vhost.empty()) {
-      req->setHeader("Host", m_host);
+    if (vhost_.empty()) {
+      req->SetHeader("Host", host_);
     } else {
-      req->setHeader("Host", m_vhost);
+      req->SetHeader("Host", vhost_);
     }
   }
-  req->setBody(body);
+  req->SetBody(body);
   return doRequest(req, timeout_ms);
 }
 
@@ -365,21 +365,21 @@ HttpResult::ptr HttpConnectionPool::doRequest(HttpMethod method, Uri::ptr uri, u
                                               const std::map<std::string, std::string>& headers,
                                               const std::string&                        body) {
   std::stringstream ss;
-  ss << uri->getPath() << (uri->getQuery().empty() ? "" : "?") << uri->getQuery()
-     << (uri->getFragment().empty() ? "" : "#") << uri->getFragment();
+  ss << uri->GetPath() << (uri->GetQuery().empty() ? "" : "?") << uri->GetQuery()
+     << (uri->GetFragment().empty() ? "" : "#") << uri->GetFragment();
   return doRequest(method, ss.str(), timeout_ms, headers, body);
 }
 
 HttpResult::ptr HttpConnectionPool::doRequest(HttpRequest::ptr req, uint64_t timeout_ms) {
-  auto conn = getConnection();
+  auto conn = GetConnection();
   if (!conn) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::POOL_GET_CONNECTION, nullptr,
-                                        "pool host:" + m_host + " port:" + std::to_string(m_port));
+                                        "pool host:" + host_ + " port:" + std::to_string(port_));
   }
   auto sock = conn->GetSocket();
   if (!sock) {
     return std::make_shared<HttpResult>((int)HttpResult::Error::POOL_INVALID_CONNECTION, nullptr,
-                                        "pool host:" + m_host + " port:" + std::to_string(m_port));
+                                        "pool host:" + host_ + " port:" + std::to_string(port_));
   }
   sock->SetRecvTimeout(timeout_ms);
   int rt = conn->sendRequest(req);

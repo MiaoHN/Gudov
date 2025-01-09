@@ -37,8 +37,8 @@ struct HttpResult {
     POOL_INVALID_CONNECTION = 9,
   };
 
-  HttpResult(int _result, HttpResponse::ptr _response, const std::string& m_error)
-      : result(_result), response(_response), error(m_error) {}
+  HttpResult(int _result, HttpResponse::ptr _response, const std::string& error_)
+      : result(_result), response(_response), error(error_) {}
 
   std::string ToString() const;
 
@@ -84,8 +84,8 @@ class HttpConnection : public SocketStream {
   int sendRequest(HttpRequest::ptr req);
 
  private:
-  uint64_t m_create_time = 0;
-  uint64_t m_request     = 0;
+  uint64_t create_time_ = 0;
+  uint64_t request_     = 0;
 };
 
 class HttpConnectionPool {
@@ -96,7 +96,7 @@ class HttpConnectionPool {
   HttpConnectionPool(const std::string& host, const std::string& vhost, uint32_t port, uint32_t max_size,
                      uint32_t max_alive_time, uint32_t max_request);
 
-  HttpConnection::ptr getConnection();
+  HttpConnection::ptr GetConnection();
 
   HttpResult::ptr doGet(const std::string& url, uint64_t timeout_ms,
                         const std::map<std::string, std::string>& headers = {}, const std::string& body = "");
@@ -122,16 +122,16 @@ class HttpConnectionPool {
   static void ReleasePtr(HttpConnection* ptr, HttpConnectionPool* pool);
 
  private:
-  std::string m_host;
-  std::string m_vhost;
-  uint32_t    m_port;
-  uint32_t    m_max_size;
-  uint32_t    m_max_alive_time;
-  uint32_t    m_max_request;
+  std::string host_;
+  std::string vhost_;
+  uint32_t    port_;
+  uint32_t    max_size_;
+  uint32_t    max_alive_time_;
+  uint32_t    max_request_;
 
   MutexType                  mutex_;
-  std::list<HttpConnection*> m_conns;
-  std::atomic<int32_t>       m_total = {0};
+  std::list<HttpConnection*> conns_;
+  std::atomic<int32_t>       total_ = {0};
 };
 
 }  // namespace http

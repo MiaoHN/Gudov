@@ -26,51 +26,51 @@ class Uri {
 
   Uri();
 
-  const std::string& getScheme() const { return m_scheme; }
+  const std::string& GetScheme() const { return scheme_; }
 
-  const std::string& getUserinfo() const { return m_userinfo; }
+  const std::string& GetUserinfo() const { return user_info_; }
 
-  const std::string& getHost() const { return m_host; }
+  const std::string& GetHost() const { return host_; }
 
-  const std::string& getPath() const;
+  const std::string& GetPath() const;
 
-  const std::string& getQuery() const { return m_query; }
+  const std::string& GetQuery() const { return query_; }
 
-  const std::string& getFragment() const { return m_fragment; }
+  const std::string& GetFragment() const { return fragment_; }
 
   int32_t GetPort() const;
 
-  void setScheme(const std::string& v) { m_scheme = v; }
+  void SetScheme(const std::string& v) { scheme_ = v; }
 
-  void setUserinfo(const std::string& v) { m_userinfo = v; }
+  void SetUserinfo(const std::string& v) { user_info_ = v; }
 
-  void setHost(const std::string& v) { m_host = v; }
+  void SetHost(const std::string& v) { host_ = v; }
 
-  void setPath(const std::string& v) { m_path = v; }
+  void SetPath(const std::string& v) { path_ = v; }
 
-  void setQuery(const std::string& v) { m_query = v; }
+  void SetQuery(const std::string& v) { query_ = v; }
 
-  void setFragment(const std::string& v) { m_fragment = v; }
+  void SetFragment(const std::string& v) { fragment_ = v; }
 
-  void SetPort(int32_t v) { m_port = v; }
+  void SetPort(int32_t v) { port_ = v; }
 
   std::ostream& Dump(std::ostream& os) const;
 
   std::string ToString() const;
 
-  Address::ptr createAddress() const;
+  Address::ptr CreateAddress() const;
 
  private:
-  bool isDefaultPort() const;
+  bool IsDefaultPort() const;
 
  private:
-  std::string m_scheme;
-  std::string m_userinfo;
-  std::string m_host;
-  std::string m_path;
-  std::string m_query;
-  std::string m_fragment;
-  int32_t     m_port;
+  std::string scheme_;
+  std::string user_info_;
+  std::string host_;
+  std::string path_;
+  std::string query_;
+  std::string fragment_;
+  int32_t     port_;
 };
 
 }  // namespace gudov

@@ -18,7 +18,7 @@ namespace gudov {
 
     action save_scheme
     {
-        uri->setScheme(std::string(mark, fpc - mark));
+        uri->SetScheme(std::string(mark, fpc - mark));
         mark = NULL;
     }
 
@@ -35,7 +35,7 @@ namespace gudov {
     {
         if(mark) {
             //std::cout << std::string(mark, fpc - mark) << std::endl;
-            uri->setUserinfo(std::string(mark, fpc - mark));
+            uri->SetUserinfo(std::string(mark, fpc - mark));
         }
         mark = NULL;
     }
@@ -43,7 +43,7 @@ namespace gudov {
     {
         if (mark != NULL) {
             //std::cout << std::string(mark, fpc - mark) << std::endl;
-            uri->setHost(std::string(mark, fpc - mark));
+            uri->SetHost(std::string(mark, fpc - mark));
         }
     }
 
@@ -77,7 +77,7 @@ namespace gudov {
     action save_path
     {
             //std::cout << std::string(mark, fpc - mark) << std::endl;
-        uri->setPath(std::string(mark, fpc - mark));
+        uri->SetPath(std::string(mark, fpc - mark));
         mark = NULL;
     }
 
@@ -103,13 +103,13 @@ namespace gudov {
     action save_query
     {
         //std::cout << std::string(mark, fpc - mark) << std::endl;
-        uri->setQuery(std::string(mark, fpc - mark));
+        uri->SetQuery(std::string(mark, fpc - mark));
         mark = NULL;
     }
     action save_fragment
     {
         //std::cout << std::string(mark, fpc - mark) << std::endl;
-        uri->setFragment(std::string(mark, fpc - mark));
+        uri->SetFragment(std::string(mark, fpc - mark));
         mark = NULL;
     }
 
@@ -149,49 +149,49 @@ Uri::ptr Uri::Create(const std::string& uristr) {
 }
 
 Uri::Uri()
-    :m_port(0) {
+    :port_(0) {
 }
 
-bool Uri::isDefaultPort() const {
-    if(m_port == 0) {
+bool Uri::IsDefaultPort() const {
+    if(port_ == 0) {
         return true;
     }
-    if(m_scheme == "http") {
-        return m_port == 80;
-    } else if(m_scheme == "https") {
-        return m_port == 443;
+    if(scheme_ == "http") {
+        return port_ == 80;
+    } else if(scheme_ == "https") {
+        return port_ == 443;
     }
     return false;
 }
 
-const std::string& Uri::getPath() const {
+const std::string& Uri::GetPath() const {
     static std::string s_default_path = "/";
-    return m_path.empty() ? s_default_path : m_path;
+    return path_.empty() ? s_default_path : path_;
 }
 
 int32_t Uri::GetPort() const {
-    if(m_port) {
-        return m_port;
+    if(port_) {
+        return port_;
     }
-    if(m_scheme == "http") {
+    if(scheme_ == "http") {
         return 80;
-    } else if(m_scheme == "https") {
+    } else if(scheme_ == "https") {
         return 443;
     }
-    return m_port;
+    return port_;
 }
 
 std::ostream& Uri::Dump(std::ostream& os) const {
-    os << m_scheme << "://"
-       << m_userinfo
-       << (m_userinfo.empty() ? "" : "@")
-       << m_host
-       << (isDefaultPort() ? "" : ":" + std::to_string(m_port))
-       << getPath()
-       << (m_query.empty() ? "" : "?")
-       << m_query
-       << (m_fragment.empty() ? "" : "#")
-       << m_fragment;
+    os << scheme_ << "://"
+       << user_info_
+       << (user_info_.empty() ? "" : "@")
+       << host_
+       << (IsDefaultPort() ? "" : ":" + std::to_string(port_))
+       << GetPath()
+       << (query_.empty() ? "" : "?")
+       << query_
+       << (fragment_.empty() ? "" : "#")
+       << fragment_;
     return os;
 }
 
@@ -201,8 +201,8 @@ std::string Uri::ToString() const {
     return ss.str();
 }
 
-Address::ptr Uri::createAddress() const {
-    auto addr = Address::LookupAnyIPAddress(m_host);
+Address::ptr Uri::CreateAddress() const {
+    auto addr = Address::LookupAnyIPAddress(host_);
     if(addr) {
         addr->SetPort(GetPort());
     }

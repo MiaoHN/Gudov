@@ -6,28 +6,28 @@ static gudov::Logger::ptr g_logger = LOG_ROOT();
 gudov ::IOManager::ptr worker;
 
 void run() {
-  g_logger->setLevel(gudov::LogLevel::INFO);
+  g_logger->SetLevel(gudov::LogLevel::INFO);
   gudov::http::HttpServer::ptr server(new gudov::http::HttpServer(true));
   gudov::Address::ptr          addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8020");
-  while (!server->bind(addr)) {
+  while (!server->Bind(addr)) {
     sleep(2);
   }
-  auto sd = server->getServletDispatch();
+  auto sd = server->GetServletDispatch();
   sd->addServlet("/gudov/xx", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                  gudov::http::HttpSession::ptr session) {
-    rsp->setBody(req->ToString());
+    rsp->SetBody(req->ToString());
     return 0;
   });
 
   sd->addGlobServlet("/gudov/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                     gudov::http::HttpSession::ptr session) {
-    rsp->setBody("Glob:\r\n" + req->ToString());
+    rsp->SetBody("Glob:\r\n" + req->ToString());
     return 0;
   });
 
   sd->addGlobServlet("/gudovx/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                      gudov::http::HttpSession::ptr session) {
-    rsp->setBody(
+    rsp->SetBody(
         "<html>"
         "<head><title>404 Not Found</title></head>"
         "<body>"
@@ -43,7 +43,13 @@ void run() {
         "<!-- a padding to disable MSIE and Chrome friendly error page -->");
     return 0;
   });
-  server->start();
+  server->Start();
+
+  while (!server->IsStop()) {
+    sleep(2);
+  }
+
+  server->Stop();
 }
 
 int main(int argc, char** argv) {

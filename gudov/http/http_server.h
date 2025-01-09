@@ -15,15 +15,15 @@ class HttpServer : public TcpServer {
   HttpServer(bool keepalive = false, IOManager* worker = IOManager::GetThis(),
              IOManager* accept_worker = IOManager::GetThis());
 
-  ServletDispatch::ptr getServletDispatch() const { return m_dispatch; }
-  void                 setServletDispatch(ServletDispatch::ptr v) { m_dispatch = v; }
+  ServletDispatch::ptr GetServletDispatch() const { return dispatch_; }
+  void                 SetServletDispatch(ServletDispatch::ptr v) { dispatch_ = v; }
 
  protected:
-  virtual void handleClient(Socket::ptr client) override;
+  virtual void HandleClient(Socket::ptr client) override;
 
  private:
-  bool                 m_is_keep_alive;
-  ServletDispatch::ptr m_dispatch;
+  bool                 is_keep_alive_;
+  ServletDispatch::ptr dispatch_;
 };
 
 }  // namespace http

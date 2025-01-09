@@ -39,7 +39,7 @@ class FunctionServlet : public Servlet {
   virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 
  private:
-  callback m_callback;
+  callback callback_;
 };
 
 class ServletDispatch : public Servlet {
@@ -58,22 +58,22 @@ class ServletDispatch : public Servlet {
   void delServlet(const std::string& uri);
   void delGlobServlet(const std::string& uri);
 
-  Servlet::ptr getDefault() const { return m_default; }
-  void         setDefault(Servlet::ptr v) { m_default = v; }
+  Servlet::ptr GetDefault() const { return default_; }
+  void         SetDefault(Servlet::ptr v) { default_ = v; }
 
-  Servlet::ptr getServlet(const std::string& uri);
-  Servlet::ptr getGlobServlet(const std::string& uri);
+  Servlet::ptr GetServlet(const std::string& uri);
+  Servlet::ptr GetGlobServlet(const std::string& uri);
 
-  Servlet::ptr getMatchedServlet(const std::string& uri);
+  Servlet::ptr GetMatchedServlet(const std::string& uri);
 
  private:
   RWMutexType mutex_;
   // uri(/sylar/xxx) -> servlet
-  std::unordered_map<std::string, Servlet::ptr> m_datas;
+  std::unordered_map<std::string, Servlet::ptr> datas_;
   // uri(/sylar/*) -> servlet
-  std::vector<std::pair<std::string, Servlet::ptr>> m_globs;
+  std::vector<std::pair<std::string, Servlet::ptr>> globs_;
   //默认servlet，所有路径都没匹配到时使用
-  Servlet::ptr m_default;
+  Servlet::ptr default_;
 };
 
 class NotFoundServlet : public Servlet {

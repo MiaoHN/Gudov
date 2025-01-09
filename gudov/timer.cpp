@@ -173,7 +173,7 @@ void TimerManager::ListExpiredCallbacks(std::vector<std::function<void()>> &call
 void TimerManager::AddTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
   auto it = timers_.insert(val).first;
 
-  // m_timers 原本为空并且未 tickle
+  // timers_ 原本为空并且未 tickle
   bool at_front = (it == timers_.begin()) && !tickled_;
   if (at_front) {
     tickled_ = true;

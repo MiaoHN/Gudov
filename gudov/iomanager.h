@@ -35,7 +35,7 @@ class IOManager : public Scheduler, public TimerManager {
     };
 
     EventContext& GetContext(Event event);
-    void          ResetContext(EventContext& ctx);
+    void          ReSetContext(EventContext& ctx);
 
     /**
      * @brief 触发对应事件

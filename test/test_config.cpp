@@ -50,16 +50,16 @@ class Person {
  public:
   Person(){};
   std::string name_;
-  int         m_age = 0;
-  bool        m_sex = 0;
+  int         age_ = 0;
+  bool        sex_ = 0;
 
   std::string ToString() const {
     std::stringstream ss;
-    ss << "[Person name=" << name_ << " age=" << m_age << " sex=" << m_sex << "]";
+    ss << "[Person name=" << name_ << " age=" << age_ << " sex=" << sex_ << "]";
     return ss.str();
   }
 
-  bool operator==(const Person& oth) const { return name_ == oth.name_ && m_age == oth.m_age && m_sex == oth.m_sex; }
+  bool operator==(const Person& oth) const { return name_ == oth.name_ && age_ == oth.age_ && sex_ == oth.sex_; }
 };
 
 namespace gudov {
@@ -71,8 +71,8 @@ class LexicalCast<std::string, Person> {
     YAML::Node node = YAML::Load(v);
     Person     p;
     p.name_ = node["name"].as<std::string>();
-    p.m_age  = node["age"].as<int>();
-    p.m_sex  = node["sex"].as<bool>();
+    p.age_  = node["age"].as<int>();
+    p.sex_  = node["sex"].as<bool>();
     return p;
   }
 };
@@ -83,8 +83,8 @@ class LexicalCast<Person, std::string> {
   std::string operator()(const Person& p) {
     YAML::Node node;
     node["name"] = p.name_;
-    node["age"]  = p.m_age;
-    node["sex"]  = p.m_sex;
+    node["age"]  = p.age_;
+    node["sex"]  = p.sex_;
     std::stringstream ss;
     ss << node;
     return ss.str();
@@ -122,7 +122,7 @@ TEST(LogTest, LogFunctionality) {
   std::string output = testing::internal::GetCapturedStdout();
   EXPECT_FALSE(output.empty());
 
-  system_log->setFormatter("%d - %m%n");
+  system_log->SetFormatter("%d - %m%n");
   testing::internal::CaptureStdout();
   LOG_INFO(system_log) << "hello system";
   output = testing::internal::GetCapturedStdout();

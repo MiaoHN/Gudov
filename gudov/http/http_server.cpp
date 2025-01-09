@@ -9,27 +9,27 @@ namespace http {
 static gudov::Logger::ptr g_logger = LOG_NAME("system");
 
 HttpServer::HttpServer(bool keepalive, IOManager* worker, IOManager* accept_worker)
-    : TcpServer(worker, accept_worker), m_is_keep_alive(keepalive) {
-  m_dispatch.reset(new ServletDispatch);
+    : TcpServer(worker, accept_worker), is_keep_alive_(keepalive) {
+  dispatch_.reset(new ServletDispatch);
 }
 
-void HttpServer::handleClient(Socket::ptr client) {
-  LOG_DEBUG(g_logger) << "handleClient " << *client;
+void HttpServer::HandleClient(Socket::ptr client) {
+  LOG_DEBUG(g_logger) << "HandleClient " << *client;
   HttpSession::ptr session(new HttpSession(client));
   do {
     auto req = session->recvRequest();
     if (!req) {
       LOG_DEBUG(g_logger) << "recv http request fail, errno=" << errno << " errstr=" << strerror(errno)
-                          << " cliet:" << *client << " keep_alive=" << m_is_keep_alive;
+                          << " cliet:" << *client << " keep_alive=" << is_keep_alive_;
       break;
     }
 
-    HttpResponse::ptr rsp(new HttpResponse(req->getVersion(), req->IsClose() || !m_is_keep_alive));
-    rsp->setHeader("Server", GetName());
-    m_dispatch->handle(req, rsp, session);
+    HttpResponse::ptr rsp(new HttpResponse(req->GetVersion(), req->IsClose() || !is_keep_alive_));
+    rsp->SetHeader("Server", GetName());
+    dispatch_->handle(req, rsp, session);
     session->sendResponse(rsp);
 
-    if (!m_is_keep_alive || req->IsClose()) {
+    if (!is_keep_alive_ || req->IsClose()) {
       break;
     }
   } while (true);

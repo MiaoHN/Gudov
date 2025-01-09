@@ -21,12 +21,12 @@ IOManager::FdContext::EventContext& IOManager::FdContext::GetContext(IOManager::
     case IOManager::Event::Write:
       return write;
     default:
-      GUDOV_ASSERT2(false, "getContext");
+      GUDOV_ASSERT2(false, "GetContext");
   }
-  throw std::invalid_argument("getContext invalid event");
+  throw std::invalid_argument("GetContext invalid event");
 }
 
-void IOManager::FdContext::ResetContext(IOManager::FdContext::EventContext& ctx) {
+void IOManager::FdContext::ReSetContext(IOManager::FdContext::EventContext& ctx) {
   ctx.scheduler = nullptr;
   ctx.fiber.reset();
   ctx.callback = nullptr;
@@ -43,7 +43,7 @@ void IOManager::FdContext::TriggerEvent(IOManager::Event event) {
   } else {
     ctx.scheduler->Schedule(&ctx.fiber);
   }
-  ResetContext(ctx);
+  ReSetContext(ctx);
 }
 
 IOManager::IOManager(size_t threads, bool use_caller, const std::string& name) : Scheduler(threads, use_caller, name) {
@@ -189,7 +189,7 @@ bool IOManager::DelEvent(int fd, Event event) {
   fd_ctx->events                     = new_events;
   FdContext::EventContext& event_ctx = fd_ctx->GetContext(event);
 
-  fd_ctx->ResetContext(event_ctx);
+  fd_ctx->ReSetContext(event_ctx);
   return true;
 }
 

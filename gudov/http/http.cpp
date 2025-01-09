@@ -55,38 +55,38 @@ bool CaseInsensitiveLess::operator()(const std::string& lhs, const std::string& 
 }
 
 HttpRequest::HttpRequest(uint8_t version, bool close)
-    : m_method(HttpMethod::GET), m_version(version), m_close(close), m_path("/") {}
+    : method_(HttpMethod::GET), version_(version), close_(close), path_("/") {}
 
-std::string HttpRequest::getHeader(const std::string& key, const std::string& def) const {
-  auto it = m_headers.find(key);
-  return it == m_headers.end() ? def : it->second;
+std::string HttpRequest::GetHeader(const std::string& key, const std::string& def) const {
+  auto it = headers_.find(key);
+  return it == headers_.end() ? def : it->second;
 }
 
-std::string HttpRequest::getParam(const std::string& key, const std::string& def) const {
-  auto it = m_params.find(key);
-  return it == m_params.end() ? def : it->second;
+std::string HttpRequest::GetParam(const std::string& key, const std::string& def) const {
+  auto it = params_.find(key);
+  return it == params_.end() ? def : it->second;
 }
 
-std::string HttpRequest::getCookie(const std::string& key, const std::string& def) const {
-  auto it = m_cookies.find(key);
-  return it == m_cookies.end() ? def : it->second;
+std::string HttpRequest::GetCookie(const std::string& key, const std::string& def) const {
+  auto it = cookies_.find(key);
+  return it == cookies_.end() ? def : it->second;
 }
 
-void HttpRequest::setHeader(const std::string& key, const std::string& val) { m_headers[key] = val; }
+void HttpRequest::SetHeader(const std::string& key, const std::string& val) { headers_[key] = val; }
 
-void HttpRequest::setParam(const std::string& key, const std::string& val) { m_params[key] = val; }
+void HttpRequest::SetParam(const std::string& key, const std::string& val) { params_[key] = val; }
 
-void HttpRequest::setCookie(const std::string& key, const std::string& val) { m_cookies[key] = val; }
+void HttpRequest::SetCookie(const std::string& key, const std::string& val) { cookies_[key] = val; }
 
-void HttpRequest::delHeader(const std::string& key) { m_headers.erase(key); }
+void HttpRequest::delHeader(const std::string& key) { headers_.erase(key); }
 
-void HttpRequest::delParam(const std::string& key) { m_params.erase(key); }
+void HttpRequest::delParam(const std::string& key) { params_.erase(key); }
 
-void HttpRequest::delCookie(const std::string& key) { m_cookies.erase(key); }
+void HttpRequest::delCookie(const std::string& key) { cookies_.erase(key); }
 
 bool HttpRequest::hasHeader(const std::string& key, std::string* val) {
-  auto it = m_headers.find(key);
-  if (it == m_headers.end()) {
+  auto it = headers_.find(key);
+  if (it == headers_.end()) {
     return false;
   }
   if (val) {
@@ -96,8 +96,8 @@ bool HttpRequest::hasHeader(const std::string& key, std::string* val) {
 }
 
 bool HttpRequest::hasParam(const std::string& key, std::string* val) {
-  auto it = m_params.find(key);
-  if (it == m_params.end()) {
+  auto it = params_.find(key);
+  if (it == params_.end()) {
     return false;
   }
   if (val) {
@@ -107,8 +107,8 @@ bool HttpRequest::hasParam(const std::string& key, std::string* val) {
 }
 
 bool HttpRequest::hasCookie(const std::string& key, std::string* val) {
-  auto it = m_cookies.find(key);
-  if (it == m_cookies.end()) {
+  auto it = cookies_.find(key);
+  if (it == cookies_.end()) {
     return false;
   }
   if (val) {
@@ -121,19 +121,19 @@ std::ostream& HttpRequest::Dump(std::ostream& os) const {
   // GET /uri HTTP/1.1
   // Host: wwww.baidu.com
   //
-  os << HttpMethodToString(m_method) << " " << m_path << (m_query.empty() ? "" : "?") << m_query
-     << (m_fragment.empty() ? "" : "#") << m_fragment << " HTTP/" << ((uint32_t)(m_version >> 4)) << "."
-     << ((uint32_t)(m_version & 0x0F)) << "\r\n";
-  os << "connection: " << (m_close ? "close" : "keep-alive") << "\r\n";
-  for (auto& i : m_headers) {
+  os << HttpMethodToString(method_) << " " << path_ << (query_.empty() ? "" : "?") << query_
+     << (fragment_.empty() ? "" : "#") << fragment_ << " HTTP/" << ((uint32_t)(version_ >> 4)) << "."
+     << ((uint32_t)(version_ & 0x0F)) << "\r\n";
+  os << "connection: " << (close_ ? "close" : "keep-alive") << "\r\n";
+  for (auto& i : headers_) {
     if (strcasecmp(i.first.c_str(), "connection") == 0) {
       continue;
     }
     os << i.first << ":" << i.second << "\r\n";
   }
 
-  if (!m_body.empty()) {
-    os << "content-length: " << m_body.size() << "\r\n\r\n" << m_body;
+  if (!body_.empty()) {
+    os << "content-length: " << body_.size() << "\r\n\r\n" << body_;
   } else {
     os << "\r\n";
   }
@@ -147,16 +147,16 @@ std::string HttpRequest::ToString() const {
 }
 
 HttpResponse::HttpResponse(uint8_t version, bool close)
-    : m_status(HttpStatus::OK), m_version(version), m_close(close) {}
+    : status_(HttpStatus::OK), version_(version), close_(close) {}
 
-std::string HttpResponse::getHeader(const std::string& key, const std::string& def) const {
-  auto it = m_headers.find(key);
-  return it == m_headers.end() ? def : it->second;
+std::string HttpResponse::GetHeader(const std::string& key, const std::string& def) const {
+  auto it = headers_.find(key);
+  return it == headers_.end() ? def : it->second;
 }
 
-void HttpResponse::setHeader(const std::string& key, const std::string& val) { m_headers[key] = val; }
+void HttpResponse::SetHeader(const std::string& key, const std::string& val) { headers_[key] = val; }
 
-void HttpResponse::delHeader(const std::string& key) { m_headers.erase(key); }
+void HttpResponse::delHeader(const std::string& key) { headers_.erase(key); }
 
 std::string HttpResponse::ToString() const {
   std::stringstream ss;
@@ -165,19 +165,19 @@ std::string HttpResponse::ToString() const {
 }
 
 std::ostream& HttpResponse::Dump(std::ostream& os) const {
-  os << "HTTP/" << ((uint32_t)(m_version >> 4)) << "." << ((uint32_t)(m_version & 0x0F)) << " " << (uint32_t)m_status
-     << " " << (m_reason.empty() ? HttpStatusToString(m_status) : m_reason) << "\r\n";
+  os << "HTTP/" << ((uint32_t)(version_ >> 4)) << "." << ((uint32_t)(version_ & 0x0F)) << " " << (uint32_t)status_
+     << " " << (reason_.empty() ? HttpStatusToString(status_) : reason_) << "\r\n";
 
-  for (auto& i : m_headers) {
+  for (auto& i : headers_) {
     if (strcasecmp(i.first.c_str(), "connection") == 0) {
       continue;
     }
     os << i.first << ": " << i.second << "\r\n";
   }
-  os << "connection: " << (m_close ? "close" : "keep-alive") << "\r\n";
+  os << "connection: " << (close_ ? "close" : "keep-alive") << "\r\n";
 
-  if (!m_body.empty()) {
-    os << "content-length: " << m_body.size() << "\r\n\r\n" << m_body;
+  if (!body_.empty()) {
+    os << "content-length: " << body_.size() << "\r\n\r\n" << body_;
   } else {
     os << "\r\n";
   }

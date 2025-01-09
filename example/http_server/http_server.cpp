@@ -36,33 +36,33 @@ void run() {
   }
 
   gudov::http::HttpServer::ptr http_server(new gudov::http::HttpServer(true));
-  while (!http_server->bind(addr)) {
-    LOG_ERROR(g_logger) << "bind " << *addr << " fail";
+  while (!http_server->Bind(addr)) {
+    LOG_ERROR(g_logger) << "Bind " << *addr << " fail";
     sleep(1);
   }
 
-  auto servlet_dispatcher = http_server->getServletDispatch();
+  auto servlet_dispatcher = http_server->GetServletDispatch();
 
   servlet_dispatcher->addServlet("/", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                          gudov::http::HttpSession::ptr session) {
-    rsp->setBody(read_file("html/index.html"));
+    rsp->SetBody(read_file("html/index.html"));
     return 0;
   });
 
   servlet_dispatcher->addServlet(
       "/index.html",
       [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp, gudov::http::HttpSession::ptr session) {
-        rsp->setBody(read_file("html/index.html"));
+        rsp->SetBody(read_file("html/index.html"));
         return 0;
       });
 
   servlet_dispatcher->addGlobServlet("/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                               gudov::http::HttpSession::ptr session) {
-    rsp->setBody(read_file("html/404.html"));
+    rsp->SetBody(read_file("html/404.html"));
     return 0;
   });
 
-  http_server->start();
+  http_server->Start();
 }
 
 int main(int argc, char** argv) {

@@ -34,14 +34,14 @@ TEST(LogEventTest, CreateLogEvent) {
   gudov::LogEvent::ptr event =
       std::make_shared<gudov::LogEvent>(logger, gudov::LogLevel::INFO, "test_file.cpp", 10, 0, 12345, 1, 1617181920);
 
-  EXPECT_EQ(event->getFile(), std::string("test_file.cpp"));
-  EXPECT_EQ(event->getLine(), 10);
-  EXPECT_EQ(event->getThreadId(), 12345);
-  EXPECT_EQ(event->getFiberId(), 1);
-  EXPECT_EQ(event->getLevel(), gudov::LogLevel::INFO);
+  EXPECT_EQ(event->GetFile(), std::string("test_file.cpp"));
+  EXPECT_EQ(event->GetLine(), 10);
+  EXPECT_EQ(event->GetThreadId(), 12345);
+  EXPECT_EQ(event->GetFiberId(), 1);
+  EXPECT_EQ(event->GetLevel(), gudov::LogLevel::INFO);
 
-  event->getSS() << "Test message";
-  EXPECT_EQ(event->getContent(), "Test message");
+  event->GetSS() << "Test message";
+  EXPECT_EQ(event->GetContent(), "Test message");
 }
 
 // Test LogFormatter
@@ -51,7 +51,7 @@ TEST(LogFormatterTest, FormatLogEvent) {
   gudov::LogEvent::ptr event =
       std::make_shared<gudov::LogEvent>(logger, gudov::LogLevel::INFO, "test_file.cpp", 10, 0, 12345, 1, 1617181920);
 
-  event->getSS() << "Test message";
+  event->GetSS() << "Test message";
   std::string formatted = formatter->format(event);
 
   EXPECT_TRUE(formatted.find("INFO") != std::string::npos);
@@ -96,10 +96,10 @@ TEST(FileLogAppenderTest, OutputLogToFile) {
 
 // Test LoggerManager
 TEST(LoggerManagerTest, GetLoggerAndRoot) {
-  auto root_logger = gudov::LoggerMgr::getInstance()->getRoot();
+  auto root_logger = gudov::LoggerMgr::GetInstance()->GetRoot();
   EXPECT_EQ(root_logger->GetName(), "root");
 
-  auto test_logger = gudov::LoggerMgr::getInstance()->getLogger("test_logger");
+  auto test_logger = gudov::LoggerMgr::GetInstance()->GetLogger("test_logger");
   EXPECT_EQ(test_logger->GetName(), "test_logger");
 }
 
@@ -109,7 +109,7 @@ TEST(LoggerTest, LogLevelFiltering) {
   auto appender = std::make_shared<gudov::StdoutLogAppender>();
   logger->addAppender(appender);
 
-  logger->setLevel(gudov::LogLevel::ERROR);
+  logger->SetLevel(gudov::LogLevel::ERROR);
 
   auto captured_output = captureStdout([&]() {
     LOG_DEBUG(logger) << "Debug message";

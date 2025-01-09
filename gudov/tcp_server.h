@@ -13,33 +13,39 @@ namespace gudov {
 class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
  public:
   using ptr = std::shared_ptr<TcpServer>;
-  TcpServer(IOManager* woker = IOManager::GetThis(), IOManager* accept_woker = IOManager::GetThis());
+
+  TcpServer(IOManager* worker = IOManager::GetThis(), IOManager* accept_worker = IOManager::GetThis());
   virtual ~TcpServer();
 
-  virtual bool bind(Address::ptr addr);
-  virtual bool bind(const std::vector<Address::ptr>& addrs, std::vector<Address::ptr>& fails);
-  virtual bool start();
-  virtual void stop();
+  virtual bool Bind(Address::ptr addr);
+  virtual bool Bind(const std::vector<Address::ptr>& addrs, std::vector<Address::ptr>& fails);
+  virtual bool Start();
+  virtual void Stop();
 
-  uint64_t    GetRecvTimeout() const { return m_recv_timeout; }
+  uint64_t    GetRecvTimeout() const { return recv_timeout_; }
   std::string GetName() const { return name_; }
-  void        SetRecvTimeout(uint64_t v) { m_recv_timeout = v; }
-  void        setName(const std::string& v) { name_ = v; }
+  void        SetRecvTimeout(uint64_t v) { recv_timeout_ = v; }
+  void        SetName(const std::string& v) { name_ = v; }
 
-  bool isStop() const { return m_is_stop; }
+  bool IsStop() const { return is_stop_; }
+
+  virtual std::string ToString(const std::string& prefix = "");
 
  protected:
-  virtual void handleClient(Socket::ptr client);
-  virtual void startAccept(Socket::ptr sock);
+  virtual void HandleClient(Socket::ptr client);
+  virtual void StartAccept(Socket::ptr sock);
 
  private:
-  std::vector<Socket::ptr> m_socks;
+  std::vector<Socket::ptr> socks_;
 
-  IOManager*  m_worker;
-  IOManager*  m_accept_worker;
-  uint64_t    m_recv_timeout;
+  IOManager*  io_worker_;
+  IOManager*  accept_worker_;
+  uint64_t    recv_timeout_;
   std::string name_;
-  bool        m_is_stop;
+
+  std::string type_;
+
+  bool is_stop_;
 };
 
 }  // namespace gudov

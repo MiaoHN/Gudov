@@ -36,8 +36,8 @@ void run() {
 
   gudov::http::HttpConnection::ptr conn(new gudov::http::HttpConnection(sock));
   gudov::http::HttpRequest::ptr    req(new gudov::http::HttpRequest);
-  req->setPath("/archives/");
-  req->setHeader("host", "miaohn.github.io");
+  req->SetPath("/archives/");
+  req->SetHeader("host", "miaohn.github.io");
   LOG_INFO(g_logger) << "req:" << std::endl << *req;
 
   conn->sendRequest(req);

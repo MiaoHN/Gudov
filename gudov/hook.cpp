@@ -8,6 +8,7 @@
 #include "config.h"
 #include "fdmanager.h"
 #include "fiber.h"
+#include "gudov/macro.h"
 #include "iomanager.h"
 #include "log.h"
 
@@ -43,9 +44,9 @@ static thread_local bool t_hookEnable = false;
   XX(setsockopt)
 
 void hookInit() {
-  static bool isInit = false;
+  static bool IsInit = false;
 
-  if (isInit) {
+  if (IsInit) {
     return;
   }
 
@@ -104,7 +105,7 @@ static ssize_t doIO(int fd, OriginFun fun, const std::string& hookFunName, uint3
   }
 
   // 尝试在 FdManager 中获得该 fd 句柄
-  gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->Get(fd);
+  gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
   if (!ctx) {
     // 没找到则直接调用
     return fun(fd, std::forward<Args>(args)...);
@@ -161,7 +162,7 @@ retry:
 
     // 为 fd 添加一个协程并且 hold
     int rt = iom->AddEvent(fd, (gudov::IOManager::Event)(event));
-    if (rt) {
+    if (GUDOV_UNLICKLY(rt)) {
       LOG_ERROR(g_logger) << hookFunName << " addEvent(" << fd << ", " << event << ")";
       if (timer) {
         timer->Cancel();
@@ -243,7 +244,7 @@ int socket(int domain, int type, int protocol) {
   if (fd == -1) {
     return -1;
   }
-  gudov::FdMgr::getInstance()->Get(fd, true);
+  gudov::FdMgr::GetInstance()->Get(fd, true);
   return fd;
 }
 
@@ -254,7 +255,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen, u
   }
 
   // 得到对应的 Fd 信息
-  gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->Get(fd);
+  gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
   if (!ctx || ctx->IsClose()) {
     errno = EBADF;
     return -1;
@@ -334,7 +335,7 @@ int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
 int accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
   int fd = doIO(sockfd, acceptF, "accept", gudov::IOManager::Event::Read, SO_RCVTIMEO, addr, addrlen);
   if (fd >= 0) {
-    gudov::FdMgr::getInstance()->Get(fd, true);
+    gudov::FdMgr::GetInstance()->Get(fd, true);
   }
   return fd;
 }
@@ -385,13 +386,13 @@ int close(int fd) {
     return closeF(fd);
   }
 
-  gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->Get(fd);
+  gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
   if (ctx) {
     auto iom = gudov::IOManager::GetThis();
     if (iom) {
       iom->CancelAll(fd);
     }
-    gudov::FdMgr::getInstance()->Del(fd);
+    gudov::FdMgr::GetInstance()->Del(fd);
   }
   return closeF(fd);
 }
@@ -403,7 +404,7 @@ int fcntl(int fd, int cmd, ...) {
     case F_SETFL: {
       int arg = va_arg(va, int);
       va_end(va);
-      gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->Get(fd);
+      gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
       if (!ctx || ctx->IsClose() || !ctx->IsSocket()) {
         return fcntlF(fd, cmd, arg);
       }
@@ -418,7 +419,7 @@ int fcntl(int fd, int cmd, ...) {
     case F_GETFL: {
       va_end(va);
       int                   arg = fcntlF(fd, cmd);
-      gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->Get(fd);
+      gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
       if (!ctx || ctx->IsClose() || !ctx->IsSocket()) {
         return arg;
       }
@@ -482,7 +483,7 @@ int ioctl(int d, unsigned long request, ...) {
 
   if (FIONBIO == request) {
     bool                  userNonblock = !!*(int*)arg;
-    gudov::FdContext::ptr ctx          = gudov::FdMgr::getInstance()->Get(d);
+    gudov::FdContext::ptr ctx          = gudov::FdMgr::GetInstance()->Get(d);
     if (!ctx || ctx->IsClose() || !ctx->IsSocket()) {
       return ioctlF(d, request, arg);
     }
@@ -501,7 +502,7 @@ int setsockopt(int sockfd, int level, int optname, const void* optval, socklen_t
   }
   if (level == SOL_SOCKET) {
     if (optname == SO_RCVTIMEO || optname == SO_SNDTIMEO) {
-      gudov::FdContext::ptr ctx = gudov::FdMgr::getInstance()->Get(sockfd);
+      gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(sockfd);
       if (ctx) {
         const timeval* v = (const timeval*)optval;
         ctx->SetTimeout(optname, v->tv_sec * 1000 + v->tv_usec / 1000);

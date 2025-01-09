@@ -436,7 +436,7 @@ UnixAddress::UnixAddress(const std::string& path) {
   length_ += offsetof(sockaddr_un, sun_path);
 }
 
-void UnixAddress::setAddrLen(uint32_t v) { length_ = v; }
+void UnixAddress::SetAddrLen(uint32_t v) { length_ = v; }
 
 sockaddr* UnixAddress::GetAddr() { return (sockaddr*)&addr_; }
 

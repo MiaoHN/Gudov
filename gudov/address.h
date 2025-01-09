@@ -172,7 +172,7 @@ class UnixAddress : public Address {
   const sockaddr* GetAddr() const override;
   sockaddr*       GetAddr() override;
   socklen_t       GetAddrLen() const override;
-  void            setAddrLen(uint32_t v);
+  void            SetAddrLen(uint32_t v);
   std::ostream&   Insert(std::ostream& os) const override;
 
  private:

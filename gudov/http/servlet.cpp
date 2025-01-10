@@ -8,16 +8,16 @@ namespace http {
 
 FunctionServlet::FunctionServlet(callback callback) : Servlet("FunctionServlet"), callback_(callback) {}
 
-int32_t FunctionServlet::handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
+int32_t FunctionServlet::Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
   return callback_(request, response, session);
 }
 
 ServletDispatch::ServletDispatch() : Servlet("ServletDispatch") { default_.reset(new NotFoundServlet()); }
 
-int32_t ServletDispatch::handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
+int32_t ServletDispatch::Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
   auto slt = GetMatchedServlet(request->GetPath());
   if (slt) {
-    slt->handle(request, response, session);
+    slt->Handle(request, response, session);
   }
   return 0;
 }
@@ -94,7 +94,7 @@ Servlet::ptr ServletDispatch::GetMatchedServlet(const std::string& uri) {
 
 NotFoundServlet::NotFoundServlet() : Servlet("NotFoundServlet") {}
 
-int32_t NotFoundServlet::handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
+int32_t NotFoundServlet::Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) {
   static const std::string& RSP_BODY =
       "<html><head><title>404 Not Found"
       "</title></head><body><center><h1>404 Not Found</h1></center>"

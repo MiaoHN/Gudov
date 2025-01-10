@@ -20,7 +20,7 @@ class Servlet {
 
   Servlet(const std::string& name) : name_(name) {}
   virtual ~Servlet() {}
-  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) = 0;
+  virtual int32_t Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) = 0;
 
   const std::string& GetName() const { return name_; }
 
@@ -36,7 +36,7 @@ class FunctionServlet : public Servlet {
 
   FunctionServlet(callback callback);
 
-  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
+  virtual int32_t Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 
  private:
   callback callback_;
@@ -48,7 +48,7 @@ class ServletDispatch : public Servlet {
   using RWMutexType = RWMutex;
 
   ServletDispatch();
-  virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
+  virtual int32_t Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 
   void AddServlet(const std::string& uri, Servlet::ptr slt);
   void AddServlet(const std::string& uri, FunctionServlet::callback callback);
@@ -80,7 +80,7 @@ class NotFoundServlet : public Servlet {
  public:
   using ptr = std::shared_ptr<NotFoundServlet>;
   NotFoundServlet();
-  int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
+  int32_t Handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 };
 
 }  // namespace http

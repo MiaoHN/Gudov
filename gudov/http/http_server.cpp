@@ -17,7 +17,7 @@ void HttpServer::HandleClient(Socket::ptr client) {
   LOG_DEBUG(g_logger) << "HandleClient " << *client;
   HttpSession::ptr session(new HttpSession(client));
   do {
-    auto req = session->recvRequest();
+    auto req = session->RecvRequest();
     if (!req) {
       LOG_DEBUG(g_logger) << "recv http request fail, errno=" << errno << " errstr=" << strerror(errno)
                           << " cliet:" << *client << " keep_alive=" << is_keep_alive_;
@@ -27,7 +27,7 @@ void HttpServer::HandleClient(Socket::ptr client) {
     HttpResponse::ptr rsp(new HttpResponse(req->GetVersion(), req->IsClose() || !is_keep_alive_));
     rsp->SetHeader("Server", GetName());
     dispatch_->handle(req, rsp, session);
-    session->sendResponse(rsp);
+    session->SendResponse(rsp);
 
     if (!is_keep_alive_ || req->IsClose()) {
       break;

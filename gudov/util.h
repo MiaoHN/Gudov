@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -126,6 +127,11 @@ class FSUtil {
    * @return  是否打开成功
    */
   static bool OpenForWrite(std::ofstream &ofs, const std::string &filename, std::ios_base::openmode mode);
+
+  static std::string ReadFile(const std::string &filename) {
+    std::ifstream f(filename);
+    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+  }
 };
 
 }  // namespace gudov

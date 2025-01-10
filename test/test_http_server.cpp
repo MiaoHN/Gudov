@@ -13,19 +13,19 @@ void run() {
     sleep(2);
   }
   auto sd = server->GetServletDispatch();
-  sd->addServlet("/gudov/xx", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+  sd->AddServlet("/gudov/xx", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                  gudov::http::HttpSession::ptr session) {
     rsp->SetBody(req->ToString());
     return 0;
   });
 
-  sd->addGlobServlet("/gudov/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+  sd->AddGlobServlet("/gudov/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                     gudov::http::HttpSession::ptr session) {
     rsp->SetBody("Glob:\r\n" + req->ToString());
     return 0;
   });
 
-  sd->addGlobServlet("/gudovx/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
+  sd->AddGlobServlet("/gudovx/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
                                      gudov::http::HttpSession::ptr session) {
     rsp->SetBody(
         "<html>"

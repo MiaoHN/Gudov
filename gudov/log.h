@@ -202,7 +202,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
   Logger(const std::string& name = "root");
   void log(LogEvent::ptr event);
 
-  void            addAppender(LogAppender::ptr appender);
+  void            AddAppender(LogAppender::ptr appender);
   void            DelAppender(LogAppender::ptr appender);
   void            clearAppenders();
   LogLevel::Level GetLevel() const { return level_; }

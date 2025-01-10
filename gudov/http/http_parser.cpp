@@ -45,16 +45,16 @@ struct _RequestSizeIniter {
     s_http_response_buffer_size   = g_http_response_buffer_size->GetValue();
     s_http_response_max_body_size = g_http_response_max_body_size->GetValue();
 
-    g_http_request_buffer_size->addListener(
+    g_http_request_buffer_size->AddListener(
         [](const uint64_t& ov, const uint64_t& nv) { s_http_request_buffer_size = nv; });
 
-    g_http_request_max_body_size->addListener(
+    g_http_request_max_body_size->AddListener(
         [](const uint64_t& ov, const uint64_t& nv) { s_http_request_max_body_size = nv; });
 
-    g_http_response_buffer_size->addListener(
+    g_http_response_buffer_size->AddListener(
         [](const uint64_t& ov, const uint64_t& nv) { s_http_response_buffer_size = nv; });
 
-    g_http_response_max_body_size->addListener(
+    g_http_response_max_body_size->AddListener(
         [](const uint64_t& ov, const uint64_t& nv) { s_http_response_max_body_size = nv; });
   }
 };

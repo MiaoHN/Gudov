@@ -79,9 +79,9 @@ class HttpConnection : public SocketStream {
 
   static HttpResult::ptr DoRequest(HttpRequest::ptr req, Uri::ptr uri, uint64_t timeout_ms);
 
-  HttpResponse::ptr recvResponse();
+  HttpResponse::ptr RecvResponse();
 
-  int sendRequest(HttpRequest::ptr req);
+  int SendRequest(HttpRequest::ptr req);
 
  private:
   uint64_t create_time_ = 0;

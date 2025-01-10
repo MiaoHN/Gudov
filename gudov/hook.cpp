@@ -63,7 +63,7 @@ struct _HookIniter {
     hookInit();
     s_connectTimeout = g_tcpConnectTimeout->GetValue();
 
-    g_tcpConnectTimeout->addListener([](const int& oldValue, const int& newValue) {
+    g_tcpConnectTimeout->AddListener([](const int& oldValue, const int& newValue) {
       LOG_INFO(g_logger) << "tcp connect timeout changed from " << oldValue << " to " << newValue;
       s_connectTimeout = newValue;
     });
@@ -164,7 +164,7 @@ retry:
     // 为 fd 添加一个协程并且 hold
     int rt = iom->AddEvent(fd, (gudov::IOManager::Event)(event));
     if (GUDOV_UNLICKLY(rt)) {
-      LOG_ERROR(g_logger) << hook_fun_name << " addEvent(" << fd << ", " << event << ")";
+      LOG_ERROR(g_logger) << hook_fun_name << " AddEvent(" << fd << ", " << event << ")";
       if (timer) {
         timer->Cancel();
       }
@@ -313,7 +313,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen, u
     if (timer) {
       timer->Cancel();
     }
-    LOG_ERROR(g_logger) << "connect addEvent(" << fd << ", WRITE) error";
+    LOG_ERROR(g_logger) << "connect AddEvent(" << fd << ", WRITE) error";
   }
 
   int       error = 0;

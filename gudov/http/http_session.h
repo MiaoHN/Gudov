@@ -13,9 +13,9 @@ class HttpSession : public SocketStream {
 
   HttpSession(Socket::ptr sock, bool owner = true);
 
-  HttpRequest::ptr recvRequest();
+  HttpRequest::ptr RecvRequest();
 
-  int sendResponse(HttpResponse::ptr rsp);
+  int SendResponse(HttpResponse::ptr rsp);
 };
 
 }  // namespace http

@@ -8,7 +8,7 @@ namespace http {
 
 HttpSession::HttpSession(Socket::ptr sock, bool owner) : SocketStream(sock, owner) {}
 
-HttpRequest::ptr HttpSession::recvRequest() {
+HttpRequest::ptr HttpSession::RecvRequest() {
   HttpRequestParser::ptr parser(new HttpRequestParser);
   uint64_t               buff_size = HttpRequestParser::GetHttpRequestBufferSize();
   std::shared_ptr<char>  buffer(new char[buff_size], [](char* ptr) { delete[] ptr; });
@@ -62,11 +62,11 @@ HttpRequest::ptr HttpSession::recvRequest() {
   return parser->GetData();
 }
 
-int HttpSession::sendResponse(HttpResponse::ptr rsp) {
+int HttpSession::SendResponse(HttpResponse::ptr rsp) {
   std::stringstream ss;
   ss << *rsp;
   std::string data = ss.str();
-  return writeFixSize(data.c_str(), data.size());
+  return WriteFixSize(data.c_str(), data.size());
 }
 
 }  // namespace http

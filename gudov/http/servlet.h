@@ -50,10 +50,10 @@ class ServletDispatch : public Servlet {
   ServletDispatch();
   virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response, HttpSession::ptr session) override;
 
-  void addServlet(const std::string& uri, Servlet::ptr slt);
-  void addServlet(const std::string& uri, FunctionServlet::callback callback);
-  void addGlobServlet(const std::string& uri, Servlet::ptr slt);
-  void addGlobServlet(const std::string& uri, FunctionServlet::callback callback);
+  void AddServlet(const std::string& uri, Servlet::ptr slt);
+  void AddServlet(const std::string& uri, FunctionServlet::callback callback);
+  void AddGlobServlet(const std::string& uri, Servlet::ptr slt);
+  void AddGlobServlet(const std::string& uri, FunctionServlet::callback callback);
 
   void DelServlet(const std::string& uri);
   void DelGlobServlet(const std::string& uri);

@@ -234,7 +234,7 @@ LogFormatter::ptr Logger::GetFormatter() {
   return formatter_;
 }
 
-void Logger::addAppender(LogAppender::ptr appender) {
+void Logger::AddAppender(LogAppender::ptr appender) {
   MutexType::Locker lock(mutex_);
   if (!appender->GetFormatter()) {
     MutexType::Locker ll(appender->mutex_);
@@ -448,7 +448,7 @@ void LogFormatter::Init() {
 
 LoggerManager::LoggerManager() {
   root_.reset(new Logger());
-  root_->addAppender(LogAppender::ptr(new StdoutLogAppender));
+  root_->AddAppender(LogAppender::ptr(new StdoutLogAppender));
 
   loggers_[root_->name_] = root_;
 
@@ -592,7 +592,7 @@ gudov::ConfigVar<std::set<LogConfig> >::ptr g_log_defines =
 
 struct LogIniter {
   LogIniter() {
-    g_log_defines->addListener([](const std::set<LogConfig>& old_value, const std::set<LogConfig>& new_value) {
+    g_log_defines->AddListener([](const std::set<LogConfig>& old_value, const std::set<LogConfig>& new_value) {
       LOG_INFO(LOG_ROOT()) << "on_logger_conf_changed";
       for (auto& i : new_value) {
         auto               it = old_value.find(i);
@@ -629,7 +629,7 @@ struct LogIniter {
                         << " formatter=" << appender.formatter << " is invalid" << std::endl;
             }
           }
-          logger->addAppender(log_appender);
+          logger->AddAppender(log_appender);
         }
       }
 

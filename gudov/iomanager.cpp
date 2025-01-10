@@ -114,7 +114,7 @@ int IOManager::AddEvent(int fd, Event event, std::function<void()> callback) {
   FdContext::MutexType::Locker lock2(fd_ctx->mutex);
   if (fd_ctx->events & event) {
     // 已经添加过该事件
-    LOG_ERROR(g_logger) << "addEvent assert fd=" << fd << " event=" << event << " fdCtx.event=" << fd_ctx->events;
+    LOG_ERROR(g_logger) << "AddEvent assert fd=" << fd << " event=" << event << " fdCtx.event=" << fd_ctx->events;
     GUDOV_ASSERT(!(fd_ctx->events & event));
   }
 

@@ -1,72 +1,58 @@
-#include "gudov/http/http_server.h"
+#include "gudov/gudov.h"
+#include "gudov/http/http.h"
 
-#include <yaml-cpp/yaml.h>
+using gudov::Address;
+using gudov::Config;
+using gudov::EnvMgr;
+using gudov::FSUtil;
+using gudov::IOManager;
+using gudov::Logger;
+using gudov::LogLevel;
+using gudov::http::HttpRequest;
+using gudov::http::HttpResponse;
+using gudov::http::HttpServer;
+using gudov::http::HttpSession;
 
-#include <fstream>
-#include <string>
-
-#include "gudov/config.h"
-#include "gudov/log.h"
-
-gudov::Logger::ptr g_logger = LOG_ROOT();
-
-bool exist_file(const std::string& filename) {
-  std::ifstream f(filename);
-  return !f.bad();
-}
-
-std::string read_file(const std::string& filename) {
-  std::ifstream f(filename);
-  return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-}
+Logger::ptr g_logger = LOG_ROOT();
 
 void run() {
-  if (exist_file("conf/http_server.yml")) {
-    YAML::Node root = YAML::LoadFile("conf/http_server.yml");
-    gudov::Config::LoadFromYaml(root);
-    LOG_INFO(g_logger) << "Successfully load config file 'conf/http_server.yml'";
-  } else {
-    LOG_INFO(g_logger) << "config file 'conf/http_server.yml' doesn't exists, "
-                          "use default configurations";
-  }
-  gudov::Address::ptr addr = gudov::Address::LookupAnyIPAddress("0.0.0.0:8020");
-  if (!addr) {
-    LOG_ERROR(g_logger) << "get address error";
-    return;
-  }
+  g_logger->SetLevel(LogLevel::INFO);
 
-  gudov::http::HttpServer::ptr http_server(new gudov::http::HttpServer(true));
-  while (!http_server->Bind(addr)) {
+  HttpServer::ptr server(new HttpServer(true));
+  Address::ptr    addr = Address::LookupAnyIPAddress("0.0.0.0:8020");
+
+  while (!server->Bind(addr)) {
     LOG_ERROR(g_logger) << "Bind " << *addr << " fail";
-    sleep(1);
+    sleep(2);
   }
 
-  auto servlet_dispatcher = http_server->GetServletDispatch();
+  auto sd = server->GetServletDispatch();
 
-  servlet_dispatcher->addServlet("/", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
-                                         gudov::http::HttpSession::ptr session) {
-    rsp->SetBody(read_file("html/index.html"));
+  sd->AddServlet("/", [](HttpRequest::ptr req, HttpResponse::ptr rsp, HttpSession::ptr session) {
+    rsp->SetBody(FSUtil::ReadFile("html/index.html"));
     return 0;
   });
 
-  servlet_dispatcher->addServlet(
-      "/index.html",
-      [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp, gudov::http::HttpSession::ptr session) {
-        rsp->SetBody(read_file("html/index.html"));
-        return 0;
-      });
-
-  servlet_dispatcher->addGlobServlet("/*", [](gudov::http::HttpRequest::ptr req, gudov::http::HttpResponse::ptr rsp,
-                                              gudov::http::HttpSession::ptr session) {
-    rsp->SetBody(read_file("html/404.html"));
+  sd->AddServlet("/index.html", [](HttpRequest::ptr req, HttpResponse::ptr rsp, HttpSession::ptr session) {
+    rsp->SetBody(FSUtil::ReadFile("html/index.html"));
     return 0;
   });
 
-  http_server->Start();
+  sd->AddGlobServlet("/*", [](HttpRequest::ptr req, HttpResponse::ptr rsp, HttpSession::ptr session) {
+    rsp->SetBody(FSUtil::ReadFile("html/404.html"));
+    return 0;
+  });
+
+  server->Start();
 }
 
 int main(int argc, char** argv) {
-  gudov::IOManager iom(5);
+  EnvMgr::GetInstance()->Init(argc, argv);
+  Config::LoadFromConfDir(EnvMgr::GetInstance()->GetConfigPath());
+
+  IOManager iom(1, true, "http_server");
+
   iom.Schedule(run);
+
   return 0;
 }

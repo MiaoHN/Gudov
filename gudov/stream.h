@@ -18,8 +18,8 @@ class Stream {
   virtual int  readFixSize(ByteArray::ptr ba, size_t length);
   virtual int  write(const void* buffer, size_t length) = 0;
   virtual int  write(ByteArray::ptr ba, size_t length)  = 0;
-  virtual int  writeFixSize(const void* buffer, size_t length);
-  virtual int  writeFixSize(ByteArray::ptr ba, size_t length);
+  virtual int  WriteFixSize(const void* buffer, size_t length);
+  virtual int  WriteFixSize(ByteArray::ptr ba, size_t length);
   virtual void close() = 0;
 };
 

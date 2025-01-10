@@ -40,8 +40,8 @@ void run() {
   req->SetHeader("host", "miaohn.github.io");
   LOG_INFO(g_logger) << "req:" << std::endl << *req;
 
-  conn->sendRequest(req);
-  auto rsp = conn->recvResponse();
+  conn->SendRequest(req);
+  auto rsp = conn->RecvResponse();
 
   if (!rsp) {
     LOG_INFO(g_logger) << "recv response error";

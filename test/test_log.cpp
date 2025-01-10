@@ -64,7 +64,7 @@ TEST(LogFormatterTest, FormatLogEvent) {
 TEST(StdoutLogAppenderTest, OutputLog) {
   auto appender = std::make_shared<gudov::StdoutLogAppender>();
   auto logger   = std::make_shared<gudov::Logger>("test_logger");
-  logger->addAppender(appender);
+  logger->AddAppender(appender);
 
   auto captured_output = captureStdout([&]() { LOG_INFO(logger) << "Test stdout message"; });
 
@@ -77,7 +77,7 @@ TEST(FileLogAppenderTest, OutputLogToFile) {
   {
     auto appender = std::make_shared<gudov::FileLogAppender>(filename);
     auto logger   = std::make_shared<gudov::Logger>("test_logger");
-    logger->addAppender(appender);
+    logger->AddAppender(appender);
 
     LOG_INFO(logger) << "Test file message";
   }
@@ -107,7 +107,7 @@ TEST(LoggerManagerTest, GetLoggerAndRoot) {
 TEST(LoggerTest, LogLevelFiltering) {
   auto logger   = std::make_shared<gudov::Logger>("test_logger");
   auto appender = std::make_shared<gudov::StdoutLogAppender>();
-  logger->addAppender(appender);
+  logger->AddAppender(appender);
 
   logger->SetLevel(gudov::LogLevel::ERROR);
 

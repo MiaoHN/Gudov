@@ -22,17 +22,17 @@ int32_t ServletDispatch::handle(HttpRequest::ptr request, HttpResponse::ptr resp
   return 0;
 }
 
-void ServletDispatch::addServlet(const std::string& uri, Servlet::ptr slt) {
+void ServletDispatch::AddServlet(const std::string& uri, Servlet::ptr slt) {
   RWMutexType::WriteLock lock(mutex_);
   datas_[uri] = slt;
 }
 
-void ServletDispatch::addServlet(const std::string& uri, FunctionServlet::callback callback) {
+void ServletDispatch::AddServlet(const std::string& uri, FunctionServlet::callback callback) {
   RWMutexType::WriteLock lock(mutex_);
   datas_[uri].reset(new FunctionServlet(callback));
 }
 
-void ServletDispatch::addGlobServlet(const std::string& uri, Servlet::ptr slt) {
+void ServletDispatch::AddGlobServlet(const std::string& uri, Servlet::ptr slt) {
   RWMutexType::WriteLock lock(mutex_);
   for (auto it = globs_.begin(); it != globs_.end(); ++it) {
     if (it->first == uri) {
@@ -43,8 +43,8 @@ void ServletDispatch::addGlobServlet(const std::string& uri, Servlet::ptr slt) {
   globs_.push_back(std::make_pair(uri, slt));
 }
 
-void ServletDispatch::addGlobServlet(const std::string& uri, FunctionServlet::callback callback) {
-  return addGlobServlet(uri, FunctionServlet::ptr(new FunctionServlet(callback)));
+void ServletDispatch::AddGlobServlet(const std::string& uri, FunctionServlet::callback callback) {
+  return AddGlobServlet(uri, FunctionServlet::ptr(new FunctionServlet(callback)));
 }
 
 void ServletDispatch::DelServlet(const std::string& uri) {

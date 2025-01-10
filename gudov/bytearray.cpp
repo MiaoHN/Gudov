@@ -413,7 +413,7 @@ bool ByteArray::WriteToFile(const std::string& name) const {
   std::ofstream ofs;
   ofs.open(name, std::ios::trunc | std::ios::binary);
   if (!ofs) {
-    LOG_ERROR(g_logger) << "writeToFile name=" << name << " error , errno=" << errno << " errstr=" << strerror(errno);
+    LOG_ERROR(g_logger) << "WriteToFile name=" << name << " error , errno=" << errno << " errstr=" << strerror(errno);
     return false;
   }
 

@@ -55,8 +55,8 @@ class ServletDispatch : public Servlet {
   void addGlobServlet(const std::string& uri, Servlet::ptr slt);
   void addGlobServlet(const std::string& uri, FunctionServlet::callback callback);
 
-  void delServlet(const std::string& uri);
-  void delGlobServlet(const std::string& uri);
+  void DelServlet(const std::string& uri);
+  void DelGlobServlet(const std::string& uri);
 
   Servlet::ptr GetDefault() const { return default_; }
   void         SetDefault(Servlet::ptr v) { default_ = v; }

@@ -95,12 +95,6 @@ force_redefine_file_macro_for_sources(test_http_parser)
 target_link_libraries(test_http_parser gudov gtest gtest_main)
 add_test(NAME test_http_parser COMMAND test_http_parser)
 
-add_executable(test_tcp_server test_tcp_server.cpp)
-add_dependencies(test_tcp_server gudov)
-force_redefine_file_macro_for_sources(test_tcp_server)
-target_link_libraries(test_tcp_server gudov gtest gtest_main)
-add_test(NAME test_tcp_server COMMAND test_tcp_server)
-
 add_executable(test_http_connection test_http_connection.cpp)
 add_dependencies(test_http_connection gudov)
 force_redefine_file_macro_for_sources(test_http_connection)

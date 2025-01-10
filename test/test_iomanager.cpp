@@ -35,7 +35,7 @@ TEST_F(IOManagerTest, AddEventTest) {
   bool callback_executed = false;
 
   // 添加事件
-  int result = io_manager->AddEvent(efd, IOManager::Read, [&]() { callback_executed = true; });
+  int result = io_manager->AddEvent(efd, IOManager::READ, [&]() { callback_executed = true; });
   EXPECT_EQ(result, 0) << "AddEvent failed";
 
   // 模拟触发事件
@@ -57,11 +57,11 @@ TEST_F(IOManagerTest, DelEventTest) {
   bool callback_executed = false;
 
   // 添加事件
-  int result = io_manager->AddEvent(efd, IOManager::Read, [&]() { callback_executed = true; });
+  int result = io_manager->AddEvent(efd, IOManager::READ, [&]() { callback_executed = true; });
   EXPECT_EQ(result, 0) << "AddEvent failed";
 
   // 删除事件
-  bool del_result = io_manager->DelEvent(efd, IOManager::Read);
+  bool del_result = io_manager->DelEvent(efd, IOManager::READ);
   EXPECT_TRUE(del_result) << "DelEvent failed";
 
   // 模拟触发事件
@@ -83,11 +83,11 @@ TEST_F(IOManagerTest, CancelEventTest) {
   bool callback_executed = false;
 
   // 添加事件
-  int result = io_manager->AddEvent(efd, IOManager::Read, [&]() { callback_executed = true; });
+  int result = io_manager->AddEvent(efd, IOManager::READ, [&]() { callback_executed = true; });
   EXPECT_EQ(result, 0) << "AddEvent failed";
 
   // 取消事件
-  bool cancel_result = io_manager->CancelEvent(efd, IOManager::Read);
+  bool cancel_result = io_manager->CancelEvent(efd, IOManager::READ);
   EXPECT_TRUE(cancel_result) << "CancelEvent failed";
 
   // 模拟触发事件
@@ -110,11 +110,11 @@ TEST_F(IOManagerTest, CancelAllTest) {
   bool write_callback_executed = false;
 
   // 添加读事件
-  int read_result = io_manager->AddEvent(efd, IOManager::Read, [&]() { read_callback_executed = true; });
+  int read_result = io_manager->AddEvent(efd, IOManager::READ, [&]() { read_callback_executed = true; });
   EXPECT_EQ(read_result, 0) << "AddEvent (Read) failed";
 
   // 添加写事件
-  int write_result = io_manager->AddEvent(efd, IOManager::Write, [&]() { write_callback_executed = true; });
+  int write_result = io_manager->AddEvent(efd, IOManager::WRITE, [&]() { write_callback_executed = true; });
   EXPECT_EQ(write_result, 0) << "AddEvent (Write) failed";
 
   // 取消所有事件

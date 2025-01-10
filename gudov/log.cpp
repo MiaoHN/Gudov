@@ -243,7 +243,7 @@ void Logger::addAppender(LogAppender::ptr appender) {
   appenders_.push_back(appender);
 }
 
-void Logger::delAppender(LogAppender::ptr appender) {
+void Logger::DelAppender(LogAppender::ptr appender) {
   MutexType::Locker lock(mutex_);
   for (auto it = appenders_.begin(); it != appenders_.end(); ++it) {
     if (*it == appender) {

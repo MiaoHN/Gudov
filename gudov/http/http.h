@@ -141,7 +141,7 @@ struct CaseInsensitiveLess {
 };
 
 template <class MapType, class T>
-bool checkGetAs(const MapType& m, const std::string& key, T& val, const T& def = T()) {
+bool CheckGetAs(const MapType& m, const std::string& key, T& val, const T& def = T()) {
   auto it = m.find(key);
   if (it == m.end()) {
     val = def;
@@ -207,17 +207,17 @@ class HttpRequest {
   void SetParam(const std::string& key, const std::string& val);
   void SetCookie(const std::string& key, const std::string& val);
 
-  void delHeader(const std::string& key);
-  void delParam(const std::string& key);
-  void delCookie(const std::string& key);
+  void DelHeader(const std::string& key);
+  void DelParam(const std::string& key);
+  void DelCookie(const std::string& key);
 
-  bool hasHeader(const std::string& key, std::string* val = nullptr);
-  bool hasParam(const std::string& key, std::string* val = nullptr);
-  bool hasCookie(const std::string& key, std::string* val = nullptr);
+  bool HasHeader(const std::string& key, std::string* val = nullptr);
+  bool HasParam(const std::string& key, std::string* val = nullptr);
+  bool HasCookie(const std::string& key, std::string* val = nullptr);
 
   template <class T>
-  bool checkGetHeaderAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(headers_, key, val, def);
+  bool CheckGetHeaderAs(const std::string& key, T& val, const T& def = T()) {
+    return CheckGetAs(headers_, key, val, def);
   }
 
   template <class T>
@@ -226,8 +226,8 @@ class HttpRequest {
   }
 
   template <class T>
-  bool checkGetParamAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(params_, key, val, def);
+  bool CheckGetParamAs(const std::string& key, T& val, const T& def = T()) {
+    return CheckGetAs(params_, key, val, def);
   }
 
   template <class T>
@@ -236,8 +236,8 @@ class HttpRequest {
   }
 
   template <class T>
-  bool checkGetCookieAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(cookies_, key, val, def);
+  bool CheckGetCookieAs(const std::string& key, T& val, const T& def = T()) {
+    return CheckGetAs(cookies_, key, val, def);
   }
 
   template <class T>
@@ -287,11 +287,11 @@ class HttpResponse {
 
   std::string GetHeader(const std::string& key, const std::string& def = "") const;
   void        SetHeader(const std::string& key, const std::string& val);
-  void        delHeader(const std::string& key);
+  void        DelHeader(const std::string& key);
 
   template <class T>
-  bool checkGetHeaderAs(const std::string& key, T& val, const T& def = T()) {
-    return checkGetAs(headers_, key, val, def);
+  bool CheckGetHeaderAs(const std::string& key, T& val, const T& def = T()) {
+    return CheckGetAs(headers_, key, val, def);
   }
 
   template <class T>

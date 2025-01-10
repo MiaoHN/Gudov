@@ -1,11 +1,20 @@
 #include "gudov/config.h"
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <utility>
 
+#include "gudov/env.h"
+#include "gudov/log.h"
+#include "gudov/thread.h"
+
 namespace gudov {
+
+static Logger::ptr g_logger = LOG_NAME("system");
 
 ConfigVarBase::ptr Config::LookupBase(const std::string& name) {
   RWMutexType::ReadLock lock(GetMutex());
@@ -48,6 +57,36 @@ void Config::LoadFromYaml(const YAML::Node& root) {
         ss << node.second;
         var->fromString(ss.str());
       }
+    }
+  }
+}
+
+/// 记录每个文件的修改时间
+static std::map<std::string, uint64_t> s_file2modifytime;
+/// 是否强制加载配置文件，非强制加载的情况下，如果记录的文件修改时间未变化，则跳过该文件的加载
+static Mutex s_mutex;
+
+void Config::LoadFromConfDir(const std::string& path, bool force) {
+  std::string              absoulte_path = EnvMgr::GetInstance()->GetAbsolutePath(path);
+  std::vector<std::string> files;
+  FSUtil::ListAllFile(files, absoulte_path, ".yml");
+
+  for (auto& i : files) {
+    {
+      struct stat st;
+      lstat(i.c_str(), &st);
+      Mutex::Locker lock(s_mutex);
+      if (!force && s_file2modifytime[i] == (uint64_t)st.st_mtime) {
+        continue;
+      }
+      s_file2modifytime[i] = st.st_mtime;
+    }
+    try {
+      YAML::Node root = YAML::LoadFile(i);
+      LoadFromYaml(root);
+      LOG_INFO(g_logger) << "LoadConfFile file=" << i << " ok";
+    } catch (...) {
+      LOG_ERROR(g_logger) << "LoadConfFile file=" << i << " failed";
     }
   }
 }

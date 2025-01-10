@@ -36,7 +36,7 @@ HttpResponse::ptr HttpConnection::recvResponse() {
     len += offset;
     data[len]     = '\0';
     size_t nparse = parser->execute(data, len, false);
-    if (parser->hasError()) {
+    if (parser->HasError()) {
       close();
       return nullptr;
     }
@@ -63,7 +63,7 @@ HttpResponse::ptr HttpConnection::recvResponse() {
         len += rt;
         data[len]     = '\0';
         size_t nparse = parser->execute(data, len, true);
-        if (parser->hasError()) {
+        if (parser->HasError()) {
           close();
           return nullptr;
         }

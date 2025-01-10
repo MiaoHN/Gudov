@@ -5,4 +5,5 @@ cmake-build-*/
 build/
 lib/
 bin/
+__pycache__/
 *.rl.cpp

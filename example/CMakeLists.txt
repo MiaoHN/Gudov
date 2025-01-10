@@ -3,6 +3,11 @@ add_dependencies(echo_server gudov)
 force_redefine_file_macro_for_sources(echo_server)
 target_link_libraries(echo_server gudov)
 
+add_executable(tcp_server tcp_server.cpp)
+add_dependencies(tcp_server gudov)
+force_redefine_file_macro_for_sources(tcp_server)
+target_link_libraries(tcp_server gudov)
+
 add_subdirectory(http_server)
 
 add_executable(echo_server_udp echo_server_udp.cpp)
@@ -14,3 +19,4 @@ add_executable(echo_client_udp echo_client_udp.cpp)
 add_dependencies(echo_client_udp gudov)
 force_redefine_file_macro_for_sources(echo_client_udp)
 target_link_libraries(echo_client_udp gudov)
+

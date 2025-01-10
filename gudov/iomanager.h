@@ -16,9 +16,9 @@ class IOManager : public Scheduler, public TimerManager {
   using RWMutexType = RWMutex;
 
   enum Event {
-    None  = 0x0,
-    Read  = 0x1,  // EPOLLIN
-    Write = 0x4,  // EPOLLOUT
+    NONE  = 0x0,
+    READ  = 0x1,  // EPOLLIN
+    WRITE = 0x4,  // EPOLLOUT
   };
 
  private:
@@ -48,7 +48,7 @@ class IOManager : public Scheduler, public TimerManager {
     EventContext read;
     EventContext write;
     int          fd;
-    Event        events = None;
+    Event        events = NONE;
     MutexType    mutex;
   };
 

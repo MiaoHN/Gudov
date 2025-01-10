@@ -78,13 +78,13 @@ void HttpRequest::SetParam(const std::string& key, const std::string& val) { par
 
 void HttpRequest::SetCookie(const std::string& key, const std::string& val) { cookies_[key] = val; }
 
-void HttpRequest::delHeader(const std::string& key) { headers_.erase(key); }
+void HttpRequest::DelHeader(const std::string& key) { headers_.erase(key); }
 
-void HttpRequest::delParam(const std::string& key) { params_.erase(key); }
+void HttpRequest::DelParam(const std::string& key) { params_.erase(key); }
 
-void HttpRequest::delCookie(const std::string& key) { cookies_.erase(key); }
+void HttpRequest::DelCookie(const std::string& key) { cookies_.erase(key); }
 
-bool HttpRequest::hasHeader(const std::string& key, std::string* val) {
+bool HttpRequest::HasHeader(const std::string& key, std::string* val) {
   auto it = headers_.find(key);
   if (it == headers_.end()) {
     return false;
@@ -95,7 +95,7 @@ bool HttpRequest::hasHeader(const std::string& key, std::string* val) {
   return true;
 }
 
-bool HttpRequest::hasParam(const std::string& key, std::string* val) {
+bool HttpRequest::HasParam(const std::string& key, std::string* val) {
   auto it = params_.find(key);
   if (it == params_.end()) {
     return false;
@@ -106,7 +106,7 @@ bool HttpRequest::hasParam(const std::string& key, std::string* val) {
   return true;
 }
 
-bool HttpRequest::hasCookie(const std::string& key, std::string* val) {
+bool HttpRequest::HasCookie(const std::string& key, std::string* val) {
   auto it = cookies_.find(key);
   if (it == cookies_.end()) {
     return false;
@@ -156,7 +156,7 @@ std::string HttpResponse::GetHeader(const std::string& key, const std::string& d
 
 void HttpResponse::SetHeader(const std::string& key, const std::string& val) { headers_[key] = val; }
 
-void HttpResponse::delHeader(const std::string& key) { headers_.erase(key); }
+void HttpResponse::DelHeader(const std::string& key) { headers_.erase(key); }
 
 std::string HttpResponse::ToString() const {
   std::stringstream ss;

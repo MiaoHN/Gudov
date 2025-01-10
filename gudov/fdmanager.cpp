@@ -5,7 +5,7 @@
 
 namespace gudov {
 
-FdContext::FdContext(int fd)
+FdCtx::FdCtx(int fd)
     : is_init_(false),
       is_socket_(false),
       sys_nonblock_(false),
@@ -17,9 +17,9 @@ FdContext::FdContext(int fd)
   Init();
 }
 
-FdContext::~FdContext() {}
+FdCtx::~FdCtx() {}
 
-bool FdContext::Init() {
+bool FdCtx::Init() {
   if (is_init_) {
     return true;
   }
@@ -51,7 +51,7 @@ bool FdContext::Init() {
   return is_init_;
 }
 
-void FdContext::SetTimeout(int type, uint64_t v) {
+void FdCtx::SetTimeout(int type, uint64_t v) {
   if (type == SO_RCVTIMEO) {
     recv_timeout_ = v;
   } else {
@@ -59,7 +59,7 @@ void FdContext::SetTimeout(int type, uint64_t v) {
   }
 }
 
-uint64_t FdContext::GetTimeout(int type) {
+uint64_t FdCtx::GetTimeout(int type) {
   if (type == SO_RCVTIMEO) {
     return recv_timeout_;
   } else {
@@ -71,7 +71,7 @@ FdManager::FdManager() { data_.resize(64); }
 
 FdManager::~FdManager() {}
 
-FdContext::ptr FdManager::Get(int fd, bool autoCreate) {
+FdCtx::ptr FdManager::Get(int fd, bool autoCreate) {
   if (fd < 0) {
     return nullptr;
   }
@@ -89,7 +89,7 @@ FdContext::ptr FdManager::Get(int fd, bool autoCreate) {
 
   RWMutexType::WriteLock lock2(mutex_);
 
-  FdContext::ptr ctx(new FdContext(fd));
+  FdCtx::ptr ctx(new FdCtx(fd));
   if (fd >= static_cast<int>(data_.size())) {
     data_.resize(fd * 1.5);
   }

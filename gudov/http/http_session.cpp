@@ -21,7 +21,7 @@ HttpRequest::ptr HttpSession::recvRequest() {
     }
     len += offset;
     size_t nparse = parser->execute(data, len);
-    if (parser->hasError()) {
+    if (parser->HasError()) {
       close();
       return nullptr;
     }

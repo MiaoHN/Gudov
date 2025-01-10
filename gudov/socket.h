@@ -112,6 +112,8 @@ class Socket : public std::enable_shared_from_this<Socket>, NonCopyable {
 
   std::ostream& Dump(std::ostream& os) const;
 
+  virtual std::string ToString() const;
+
   int GetSocket() const { return sock_; }
 
   bool CancelRead();

@@ -27,8 +27,7 @@ namespace gudov {
 class ConfigVarBase {
  public:
   using ptr = std::shared_ptr<ConfigVarBase>;
-  ConfigVarBase(const std::string& name, const std::string& description = "")
-      : name_(name), description_(description) {
+  ConfigVarBase(const std::string& name, const std::string& description = "") : name_(name), description_(description) {
     std::transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
   }
   virtual ~ConfigVarBase() {}
@@ -305,7 +304,7 @@ class ConfigVar : public ConfigVarBase {
     return s_fun_id;
   }
 
-  void delListener(uint64_t key) {
+  void DelListener(uint64_t key) {
     RWMutexType::WriteLock lock(mutex_);
     callbacks_.erase(key);
   }
@@ -369,7 +368,13 @@ class Config {
     return std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
   }
 
-  static void               LoadFromYaml(const YAML::Node& root);
+  static void LoadFromYaml(const YAML::Node& root);
+
+  /**
+   * @brief 加载path文件夹里面的配置文件
+   */
+  static void LoadFromConfDir(const std::string& path, bool force = false);
+
   static ConfigVarBase::ptr LookupBase(const std::string& name);
 
   static void Visit(std::function<void(ConfigVarBase::ptr)> callback);

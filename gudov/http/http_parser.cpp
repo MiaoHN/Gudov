@@ -147,7 +147,7 @@ size_t HttpRequestParser::execute(char* data, size_t len) {
 
 int HttpRequestParser::IsFinished() { return http_parser_finish(&parser_); }
 
-int HttpRequestParser::hasError() { return error_ || http_parser_has_error(&parser_); }
+int HttpRequestParser::HasError() { return error_ || http_parser_has_error(&parser_); }
 
 void on_response_reason(void* data, const char* at, size_t length) {
   HttpResponseParser* parser = static_cast<HttpResponseParser*>(data);
@@ -216,7 +216,7 @@ size_t HttpResponseParser::execute(char* data, size_t len, bool chunck) {
 
 int HttpResponseParser::IsFinished() { return httpclient_parser_finish(&parser_); }
 
-int HttpResponseParser::hasError() { return error_ || httpclient_parser_has_error(&parser_); }
+int HttpResponseParser::HasError() { return error_ || httpclient_parser_has_error(&parser_); }
 
 uint64_t HttpResponseParser::GetContentLength() { return data_->GetHeaderAs<uint64_t>("content-length", 0); }
 

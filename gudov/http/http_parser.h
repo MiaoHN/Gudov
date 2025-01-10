@@ -14,7 +14,7 @@ class HttpRequestParser {
   HttpRequestParser();
   size_t execute(char* data, size_t len);
   int    IsFinished();
-  int    hasError();
+  int    HasError();
 
   HttpRequest::ptr GetData() const { return data_; }
   void             SetError(int v) { error_ = v; }
@@ -46,7 +46,7 @@ class HttpResponseParser {
   HttpResponseParser();
   size_t execute(char* data, size_t len, bool chunck);
   int    IsFinished();
-  int    hasError();
+  int    HasError();
 
   HttpResponse::ptr GetData() const { return data_; }
   void              SetError(int v) { error_ = v; }

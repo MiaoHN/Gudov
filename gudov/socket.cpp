@@ -64,7 +64,7 @@ Socket::Socket(int family, int type, int protocol)
 Socket::~Socket() { Close(); }
 
 int64_t Socket::GetSendTimeout() {
-  FdContext::ptr ctx = FdMgr::GetInstance()->Get(sock_);
+  FdCtx::ptr ctx = FdMgr::GetInstance()->Get(sock_);
   if (ctx) {
     return ctx->GetTimeout(SO_SNDTIMEO);
   }
@@ -79,7 +79,7 @@ void Socket::SetSendTimeout(int64_t v) {
 }
 
 int64_t Socket::GetRecvTimeout() {
-  FdContext::ptr ctx = FdMgr::GetInstance()->Get(sock_);
+  FdCtx::ptr ctx = FdMgr::GetInstance()->Get(sock_);
   if (ctx) {
     return ctx->GetTimeout(SO_RCVTIMEO);
   }
@@ -373,11 +373,16 @@ std::ostream& Socket::Dump(std::ostream& os) const {
   return os;
 }
 
-bool Socket::CancelRead() { return IOManager::GetThis()->CancelEvent(sock_, gudov::IOManager::Event::Read); }
+std::string Socket::ToString() const {
+  std::stringstream ss;
+  Dump(ss);
+  return ss.str();
+}
+bool Socket::CancelRead() { return IOManager::GetThis()->CancelEvent(sock_, gudov::IOManager::Event::READ); }
 
-bool Socket::CancelWrite() { return IOManager::GetThis()->CancelEvent(sock_, gudov::IOManager::Event::Write); }
+bool Socket::CancelWrite() { return IOManager::GetThis()->CancelEvent(sock_, gudov::IOManager::Event::WRITE); }
 
-bool Socket::CancelAccept() { return IOManager::GetThis()->CancelEvent(sock_, gudov::IOManager::Event::Read); }
+bool Socket::CancelAccept() { return IOManager::GetThis()->CancelEvent(sock_, gudov::IOManager::Event::READ); }
 
 bool Socket::CancelAll() { return IOManager::GetThis()->CancelAll(sock_); }
 
@@ -400,7 +405,7 @@ void Socket::NewSock() {
 }
 
 bool Socket::Init(int sock) {
-  FdContext::ptr ctx = FdMgr::GetInstance()->Get(sock);
+  FdCtx::ptr ctx = FdMgr::GetInstance()->Get(sock);
   if (ctx && ctx->IsSocket() && !ctx->IsClose()) {
     sock_         = sock;
     is_connected_ = true;

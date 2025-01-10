@@ -97,15 +97,15 @@ struct TimerInfo {
  * @return ssize_t
  */
 template <typename OriginFun, typename... Args>
-static ssize_t doIO(int fd, OriginFun fun, const std::string& hookFunName, uint32_t event, int timeoutSo,
+static ssize_t doIO(int fd, OriginFun fun, const std::string& hook_fun_name, uint32_t event, int timeout_so,
                     Args&&... args) {
-  if (!gudov::IsHookEnable()) {
+  if (!gudov::t_hookEnable) {
     // 未启用 hook 时直接调用原有函数
     return fun(fd, std::forward<Args>(args)...);
   }
 
   // 尝试在 FdManager 中获得该 fd 句柄
-  gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
+  gudov::FdCtx::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
   if (!ctx) {
     // 没找到则直接调用
     return fun(fd, std::forward<Args>(args)...);
@@ -124,7 +124,8 @@ static ssize_t doIO(int fd, OriginFun fun, const std::string& hookFunName, uint3
   }
 
   // 设置超时时间
-  uint64_t                   timeout = ctx->GetTimeout(timeoutSo);
+  uint64_t timeout = ctx->GetTimeout(timeout_so);
+
   std::shared_ptr<TimerInfo> tinfo(new TimerInfo);
 
 retry:
@@ -163,7 +164,7 @@ retry:
     // 为 fd 添加一个协程并且 hold
     int rt = iom->AddEvent(fd, (gudov::IOManager::Event)(event));
     if (GUDOV_UNLICKLY(rt)) {
-      LOG_ERROR(g_logger) << hookFunName << " addEvent(" << fd << ", " << event << ")";
+      LOG_ERROR(g_logger) << hook_fun_name << " addEvent(" << fd << ", " << event << ")";
       if (timer) {
         timer->Cancel();
       }
@@ -255,7 +256,7 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen, u
   }
 
   // 得到对应的 Fd 信息
-  gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
+  gudov::FdCtx::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
   if (!ctx || ctx->IsClose()) {
     errno = EBADF;
     return -1;
@@ -292,13 +293,13 @@ int connectWithTimeout(int fd, const struct sockaddr* addr, socklen_t addrlen, u
             return;
           }
           t->cancelled = ETIMEDOUT;
-          iom->CancelEvent(fd, gudov::IOManager::Event::Write);
+          iom->CancelEvent(fd, gudov::IOManager::Event::WRITE);
         },
         winfo);
   }
 
   // ~ 在这里将该 fd 加入 epoll 监听中
-  int rt = iom->AddEvent(fd, gudov::IOManager::Write);
+  int rt = iom->AddEvent(fd, gudov::IOManager::WRITE);
   if (rt == 0) {
     gudov::Fiber::GetRunningFiber()->Yield();
     if (timer) {
@@ -333,7 +334,7 @@ int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
 }
 
 int accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
-  int fd = doIO(sockfd, acceptF, "accept", gudov::IOManager::Event::Read, SO_RCVTIMEO, addr, addrlen);
+  int fd = doIO(sockfd, acceptF, "accept", gudov::IOManager::Event::READ, SO_RCVTIMEO, addr, addrlen);
   if (fd >= 0) {
     gudov::FdMgr::GetInstance()->Get(fd, true);
   }
@@ -341,44 +342,44 @@ int accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
 }
 
 ssize_t read(int fd, void* buf, size_t count) {
-  return doIO(fd, readF, "read", gudov::IOManager::Event::Read, SO_RCVTIMEO, buf, count);
+  return doIO(fd, readF, "read", gudov::IOManager::Event::READ, SO_RCVTIMEO, buf, count);
 }
 
 ssize_t readv(int fd, const struct iovec* iov, int iovcnt) {
-  return doIO(fd, readvF, "readv", gudov::IOManager::Event::Read, SO_RCVTIMEO, iov, iovcnt);
+  return doIO(fd, readvF, "readv", gudov::IOManager::Event::READ, SO_RCVTIMEO, iov, iovcnt);
 }
 
 ssize_t recv(int sockfd, void* buf, size_t len, int flags) {
-  return doIO(sockfd, recvF, "recv", gudov::IOManager::Event::Read, SO_RCVTIMEO, buf, len, flags);
+  return doIO(sockfd, recvF, "recv", gudov::IOManager::Event::READ, SO_RCVTIMEO, buf, len, flags);
 }
 
 ssize_t recvfrom(int sockfd, void* buf, size_t len, int flags, struct sockaddr* src_addr, socklen_t* addrlen) {
-  return doIO(sockfd, recvfromF, "recvfrom", gudov::IOManager::Event::Read, SO_RCVTIMEO, buf, len, flags, src_addr,
+  return doIO(sockfd, recvfromF, "recvfrom", gudov::IOManager::Event::READ, SO_RCVTIMEO, buf, len, flags, src_addr,
               addrlen);
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr* msg, int flags) {
-  return doIO(sockfd, recvmsgF, "recvmsg", gudov::IOManager::Event::Read, SO_RCVTIMEO, msg, flags);
+  return doIO(sockfd, recvmsgF, "recvmsg", gudov::IOManager::Event::READ, SO_RCVTIMEO, msg, flags);
 }
 
 ssize_t write(int fd, const void* buf, size_t count) {
-  return doIO(fd, writeF, "write", gudov::IOManager::Event::Write, SO_SNDTIMEO, buf, count);
+  return doIO(fd, writeF, "write", gudov::IOManager::Event::WRITE, SO_SNDTIMEO, buf, count);
 }
 
 ssize_t writev(int fd, const struct iovec* iov, int iovcnt) {
-  return doIO(fd, writevF, "writev", gudov::IOManager::Event::Write, SO_SNDTIMEO, iov, iovcnt);
+  return doIO(fd, writevF, "writev", gudov::IOManager::Event::WRITE, SO_SNDTIMEO, iov, iovcnt);
 }
 
 ssize_t send(int s, const void* msg, size_t len, int flags) {
-  return doIO(s, sendF, "send", gudov::IOManager::Event::Write, SO_SNDTIMEO, msg, len, flags);
+  return doIO(s, sendF, "send", gudov::IOManager::Event::WRITE, SO_SNDTIMEO, msg, len, flags);
 }
 
 ssize_t sendto(int s, const void* msg, size_t len, int flags, const struct sockaddr* to, socklen_t tolen) {
-  return doIO(s, sendtoF, "sendto", gudov::IOManager::Event::Write, SO_SNDTIMEO, msg, len, flags, to, tolen);
+  return doIO(s, sendtoF, "sendto", gudov::IOManager::Event::WRITE, SO_SNDTIMEO, msg, len, flags, to, tolen);
 }
 
 ssize_t sendmsg(int s, const struct msghdr* msg, int flags) {
-  return doIO(s, sendmsgF, "sendmsg", gudov::IOManager::Event::Write, SO_SNDTIMEO, msg, flags);
+  return doIO(s, sendmsgF, "sendmsg", gudov::IOManager::Event::WRITE, SO_SNDTIMEO, msg, flags);
 }
 
 int close(int fd) {
@@ -386,7 +387,7 @@ int close(int fd) {
     return closeF(fd);
   }
 
-  gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
+  gudov::FdCtx::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
   if (ctx) {
     auto iom = gudov::IOManager::GetThis();
     if (iom) {
@@ -404,7 +405,7 @@ int fcntl(int fd, int cmd, ...) {
     case F_SETFL: {
       int arg = va_arg(va, int);
       va_end(va);
-      gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
+      gudov::FdCtx::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
       if (!ctx || ctx->IsClose() || !ctx->IsSocket()) {
         return fcntlF(fd, cmd, arg);
       }
@@ -418,8 +419,8 @@ int fcntl(int fd, int cmd, ...) {
     }
     case F_GETFL: {
       va_end(va);
-      int                   arg = fcntlF(fd, cmd);
-      gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
+      int               arg = fcntlF(fd, cmd);
+      gudov::FdCtx::ptr ctx = gudov::FdMgr::GetInstance()->Get(fd);
       if (!ctx || ctx->IsClose() || !ctx->IsSocket()) {
         return arg;
       }
@@ -482,8 +483,8 @@ int ioctl(int d, unsigned long request, ...) {
   va_end(va);
 
   if (FIONBIO == request) {
-    bool                  userNonblock = !!*(int*)arg;
-    gudov::FdContext::ptr ctx          = gudov::FdMgr::GetInstance()->Get(d);
+    bool              userNonblock = !!*(int*)arg;
+    gudov::FdCtx::ptr ctx          = gudov::FdMgr::GetInstance()->Get(d);
     if (!ctx || ctx->IsClose() || !ctx->IsSocket()) {
       return ioctlF(d, request, arg);
     }
@@ -502,7 +503,7 @@ int setsockopt(int sockfd, int level, int optname, const void* optval, socklen_t
   }
   if (level == SOL_SOCKET) {
     if (optname == SO_RCVTIMEO || optname == SO_SNDTIMEO) {
-      gudov::FdContext::ptr ctx = gudov::FdMgr::GetInstance()->Get(sockfd);
+      gudov::FdCtx::ptr ctx = gudov::FdMgr::GetInstance()->Get(sockfd);
       if (ctx) {
         const timeval* v = (const timeval*)optval;
         ctx->SetTimeout(optname, v->tv_sec * 1000 + v->tv_usec / 1000);

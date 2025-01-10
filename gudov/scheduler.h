@@ -195,14 +195,16 @@ class Scheduler {
 
   std::string name_;
 
+  bool use_caller_;
+
  protected:
   // 所有线程的 id (包括主协程)
   std::vector<int> thread_ids_;
   // 待调度的线程数
-  size_t              thread_count_;
+  size_t              thread_count_ = 0;
   std::atomic<size_t> active_thread_count_ = {0};
   std::atomic<size_t> idle_thread_count_   = {0};
-  bool                stopping_            = true;
+  bool                stopping_            = false;
   // 主线程 ID
   int root_thread_ = 0;
 };

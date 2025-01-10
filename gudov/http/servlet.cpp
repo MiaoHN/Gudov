@@ -47,12 +47,12 @@ void ServletDispatch::addGlobServlet(const std::string& uri, FunctionServlet::ca
   return addGlobServlet(uri, FunctionServlet::ptr(new FunctionServlet(callback)));
 }
 
-void ServletDispatch::delServlet(const std::string& uri) {
+void ServletDispatch::DelServlet(const std::string& uri) {
   RWMutexType::WriteLock lock(mutex_);
   datas_.erase(uri);
 }
 
-void ServletDispatch::delGlobServlet(const std::string& uri) {
+void ServletDispatch::DelGlobServlet(const std::string& uri) {
   RWMutexType::WriteLock lock(mutex_);
   for (auto it = globs_.begin(); it != globs_.end(); ++it) {
     if (it->first == uri) {

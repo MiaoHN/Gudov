@@ -16,9 +16,9 @@ static Logger::ptr g_logger = LOG_NAME("system");
 
 IOManager::FdContext::EventContext& IOManager::FdContext::GetContext(IOManager::Event event) {
   switch (event) {
-    case IOManager::Event::Read:
+    case IOManager::Event::READ:
       return read;
-    case IOManager::Event::Write:
+    case IOManager::Event::WRITE:
       return write;
     default:
       GUDOV_ASSERT2(false, "GetContext");
@@ -250,12 +250,12 @@ bool IOManager::CancelAll(int fd) {
     return false;
   }
 
-  if (fd_ctx->events & Read) {
-    fd_ctx->TriggerEvent(Read);
+  if (fd_ctx->events & READ) {
+    fd_ctx->TriggerEvent(READ);
     --pending_event_cnt_;
   }
-  if (fd_ctx->events & Write) {
-    fd_ctx->TriggerEvent(Write);
+  if (fd_ctx->events & WRITE) {
+    fd_ctx->TriggerEvent(WRITE);
     --pending_event_cnt_;
   }
 
@@ -310,7 +310,7 @@ void IOManager::Idle() {
   while (true) {
     // 获取下一个定时器的超时时间，顺便判断调度器是否停止
     uint64_t next_timeout = 0;
-    if (Stopping(next_timeout)) {
+    if (GUDOV_UNLICKLY(Stopping(next_timeout))) {
       LOG_INFO(g_logger) << "name=" << GetName() << " idle stopping exit";
       break;
     }
@@ -320,14 +320,14 @@ void IOManager::Idle() {
     do {
       static const int MAX_TIMEOUT = 3000;
       if (next_timeout != ~0ull) {
-        next_timeout = (int)next_timeout > MAX_TIMEOUT ? MAX_TIMEOUT : next_timeout;
+        next_timeout = std::min((int)next_timeout, MAX_TIMEOUT);
       } else {
         next_timeout = MAX_TIMEOUT;
       }
       // 等待事件发生，即 tickle() 函数往管道写端写入数据或者
       rt = epoll_wait(epfd_, events, MAX_EVENTS, (int)next_timeout);
-      LOG_DEBUG(g_logger) << "epoll_wait...";
       if (rt < 0 && errno == EINTR) {
+        continue;
       } else {
         break;
       }
@@ -336,7 +336,6 @@ void IOManager::Idle() {
     // 收集所有已超时的定时器，执行回调函数
     std::vector<std::function<void()>> expired_callbacks;
     ListExpiredCallbacks(expired_callbacks);
-    LOG_DEBUG(g_logger) << "callback.size(): " << expired_callbacks.size() << ", rt: " << rt;
     if (!expired_callbacks.empty()) {
       // 将超时事件加入调度队列
       Schedule(expired_callbacks.begin(), expired_callbacks.end());
@@ -347,10 +346,8 @@ void IOManager::Idle() {
     for (int i = 0; i < rt; ++i) {
       epoll_event& event = events[i];
       if (event.data.fd == tickle_fds_[0]) {
-        // _ticklefd[0] 用于通知事件产生这里只需读完剩余数据
-        LOG_DEBUG(g_logger) << "tickleFds[0] have data";
-        uint8_t dummy;
-        while (read(tickle_fds_[0], &dummy, 1) == 1)
+        uint8_t dummy[256];
+        while (read(tickle_fds_[0], dummy, sizeof(dummy)) > 0)
           ;
         continue;
       }
@@ -366,18 +363,18 @@ void IOManager::Idle() {
        * 出现这两种事件，应该同时触发fd的读和写事件，否则有可能出现注册的事件永远执行不到的情况
        */
       if (event.events & (EPOLLERR | EPOLLHUP)) {
-        event.events |= EPOLLIN | EPOLLOUT;
+        event.events |= (EPOLLIN | EPOLLOUT) & fd_ctx->events;
       }
 
-      int real_events = None;
+      int real_events = NONE;
       if (event.events & EPOLLIN) {
-        real_events |= Read;
+        real_events |= READ;
       }
       if (event.events & EPOLLOUT) {
-        real_events |= Write;
+        real_events |= WRITE;
       }
 
-      if ((fd_ctx->events & real_events) == None) {
+      if ((fd_ctx->events & real_events) == NONE) {
         continue;
       }
 
@@ -394,12 +391,12 @@ void IOManager::Idle() {
       }
 
       // 处理已经发生的事件，也就是让调度器调度指定的函数或协程
-      if (real_events & Read) {
-        fd_ctx->TriggerEvent(Read);
+      if (real_events & READ) {
+        fd_ctx->TriggerEvent(READ);
         --pending_event_cnt_;
       }
-      if (real_events & Write) {
-        fd_ctx->TriggerEvent(Write);
+      if (real_events & WRITE) {
+        fd_ctx->TriggerEvent(WRITE);
         --pending_event_cnt_;
       }
     }

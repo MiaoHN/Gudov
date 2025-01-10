@@ -1,0 +1,22 @@
+language: cpp
+compiler:
+- gcc
+- clang
+
+install:
+# 安装 CMake
+- if [ "$CXX" = "g++" ]; then sudo apt-get install -y cmake; fi
+- if [ "$CXX" = "clang++" ]; then sudo apt-get install -y cmake; fi
+- apt-get install libyaml-cpp-dev libboost-dev ragel
+
+script:
+# 创建一个构建目录并进入
+- mkdir build
+- cd build
+# 运行 CMake 配置
+- cmake..
+# 构建项目
+- make
+
+# 运行测试（假设你的项目有测试可执行文件，这里以'test_executable'为例，你需要替换为实际的测试可执行文件名）
+- ctest

@@ -35,6 +35,8 @@ class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
   virtual void HandleClient(Socket::ptr client);
   virtual void StartAccept(Socket::ptr sock);
 
+  std::string type_;
+
  private:
   std::vector<Socket::ptr> socks_;
 
@@ -42,8 +44,6 @@ class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
   IOManager*  accept_worker_;
   uint64_t    recv_timeout_;
   std::string name_;
-
-  std::string type_;
 
   bool is_stop_;
 };

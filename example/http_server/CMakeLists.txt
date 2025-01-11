@@ -20,3 +20,9 @@ add_custom_command(
             $<TARGET_FILE_DIR:http_server>/html
             # ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+add_custom_target(move_http_server_conf ALL
+    COMMAND cp -r ${CMAKE_CURRENT_SOURCE_DIR}/conf $<TARGET_FILE_DIR:http_server>/conf
+    COMMENT "move conf to bin"
+    VERBATIM
+)

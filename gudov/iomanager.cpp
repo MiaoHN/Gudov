@@ -14,6 +14,10 @@ namespace gudov {
 
 static Logger::ptr g_logger = LOG_NAME("system");
 
+static const int MAX_TIMEOUT = 2000;
+
+static const uint64_t MAX_EVENTS = 256;
+
 IOManager::FdContext::EventContext& IOManager::FdContext::GetContext(IOManager::Event event) {
   switch (event) {
     case IOManager::Event::READ:
@@ -299,9 +303,6 @@ bool IOManager::Stopping() {
 void IOManager::Idle() {
   LOG_DEBUG(g_logger) << "idle";
 
-  // 一次epoll_wait最多检测256个就绪事件，如果就绪事件超过了这个数，那么会在下轮epoll_wati继续处理
-  static const uint64_t MAX_EVENTS = 64;
-
   epoll_event* events = new epoll_event[MAX_EVENTS]();
 
   // 函数结束时删除 event
@@ -318,7 +319,6 @@ void IOManager::Idle() {
     // 阻塞在epoll_wait上，等待事件发生或定时器超时
     int rt = 0;
     do {
-      static const int MAX_TIMEOUT = 3000;
       if (next_timeout != ~0ull) {
         next_timeout = std::min((int)next_timeout, MAX_TIMEOUT);
       } else {

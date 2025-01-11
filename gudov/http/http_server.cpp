@@ -11,6 +11,8 @@ static gudov::Logger::ptr g_logger = LOG_NAME("system");
 HttpServer::HttpServer(bool keepalive, IOManager* worker, IOManager* accept_worker)
     : TcpServer(worker, accept_worker), is_keep_alive_(keepalive) {
   dispatch_.reset(new ServletDispatch);
+
+  type_ = "http";
 }
 
 void HttpServer::HandleClient(Socket::ptr client) {
@@ -33,7 +35,6 @@ void HttpServer::HandleClient(Socket::ptr client) {
       break;
     }
   } while (true);
-  session->close();
 }
 
 }  // namespace http

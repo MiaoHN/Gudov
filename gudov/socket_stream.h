@@ -16,7 +16,7 @@ class SocketStream : public Stream {
   int  read(ByteArray::ptr ba, size_t length) override;
   int  write(const void* buffer, size_t length) override;
   int  write(ByteArray::ptr ba, size_t length) override;
-  void close() override;
+  void Close() override;
 
   Socket::ptr GetSocket() const { return sock_; }
   bool        IsConnected() const;

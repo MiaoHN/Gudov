@@ -171,9 +171,9 @@ Fiber::ptr Fiber::GetRunningFiber() {
     return t_running_fiber->shared_from_this();
   }
   // 创建主协程
-  Fiber::ptr mainFiber(new Fiber);
-  GUDOV_ASSERT(t_running_fiber == mainFiber.get());
-  t_thread_fiber = mainFiber;
+  Fiber::ptr main_fiber(new Fiber);
+  GUDOV_ASSERT(t_running_fiber == main_fiber.get());
+  t_thread_fiber = main_fiber;
   return t_running_fiber->shared_from_this();
 }
 
@@ -184,24 +184,13 @@ void Fiber::MainFunc() {
   Fiber::ptr cur = GetRunningFiber();
   GUDOV_ASSERT(cur);
 
-  try {
-    cur->callback_();
-    cur->callback_ = nullptr;
-    cur->state_    = Term;
-  } catch (std::exception& ex) {
-    LOG_ERROR(g_logger) << "Fiber exception: " << ex.what();
-    cur->state_ = Term;
-  } catch (...) {
-    LOG_ERROR(g_logger) << "Fiber unknown exception";
-    cur->state_ = Term;
-  }
+  cur->callback_();
+  cur->callback_ = nullptr;
+  cur->state_    = Term;
 
   auto raw_ptr = cur.get();
-  cur.reset();               // 销毁当前协程
-  SetRunningFiber(nullptr);  // 防止 t_running_fiber 指向已销毁的协程
+  cur.reset();  // 销毁当前协程
   raw_ptr->Yield();
-
-  GUDOV_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->GetID()));
 }
 
 };  // namespace gudov

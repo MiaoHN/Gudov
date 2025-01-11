@@ -1,5 +1,6 @@
 #include "http_connection.h"
 
+#include "gudov/bytearray.h"
 #include "gudov/log.h"
 #include "http_parser.h"
 
@@ -30,19 +31,19 @@ HttpResponse::ptr HttpConnection::RecvResponse() {
   do {
     int len = read(data + offset, buff_size - offset);
     if (len <= 0) {
-      close();
+      Close();
       return nullptr;
     }
     len += offset;
     data[len]     = '\0';
     size_t nparse = parser->execute(data, len, false);
     if (parser->HasError()) {
-      close();
+      Close();
       return nullptr;
     }
     offset = len - nparse;
     if (offset == (int)buff_size) {
-      close();
+      Close();
       return nullptr;
     }
     if (parser->IsFinished()) {
@@ -57,19 +58,19 @@ HttpResponse::ptr HttpConnection::RecvResponse() {
       do {
         int rt = read(data + len, buff_size - len);
         if (rt <= 0) {
-          close();
+          Close();
           return nullptr;
         }
         len += rt;
         data[len]     = '\0';
         size_t nparse = parser->execute(data, len, true);
         if (parser->HasError()) {
-          close();
+          Close();
           return nullptr;
         }
         len -= nparse;
         if (len == (int)buff_size) {
-          close();
+          Close();
           return nullptr;
         }
       } while (!parser->IsFinished());
@@ -86,7 +87,7 @@ HttpResponse::ptr HttpConnection::RecvResponse() {
         while (left > 0) {
           int rt = read(data, left > (int)buff_size ? (int)buff_size : left);
           if (rt <= 0) {
-            close();
+            Close();
             return nullptr;
           }
           body.append(data, rt);
@@ -112,8 +113,8 @@ HttpResponse::ptr HttpConnection::RecvResponse() {
       }
       length -= offset;
       if (length > 0) {
-        if (readFixSize(&body[len], length) <= 0) {
-          close();
+        if (ReadFixSize(&body[len], length) <= 0) {
+          Close();
           return nullptr;
         }
       }
@@ -246,7 +247,7 @@ HttpConnection::ptr HttpConnectionPool::GetConnection() {
   uint64_t                     now_ms = GetCurrentMS();
   std::vector<HttpConnection*> invalid_conns;
   HttpConnection*              ptr = nullptr;
-  MutexType::Locker              lock(mutex_);
+  MutexType::Locker            lock(mutex_);
   while (!conns_.empty()) {
     auto conn = *conns_.begin();
     conns_.pop_front();

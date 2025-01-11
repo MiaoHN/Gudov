@@ -12,6 +12,7 @@ class HttpSession : public SocketStream {
   using ptr = std::shared_ptr<HttpSession>;
 
   HttpSession(Socket::ptr sock, bool owner = true);
+  ~HttpSession();
 
   HttpRequest::ptr RecvRequest();
 

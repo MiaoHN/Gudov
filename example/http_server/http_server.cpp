@@ -7,7 +7,6 @@ using gudov::EnvMgr;
 using gudov::FSUtil;
 using gudov::IOManager;
 using gudov::Logger;
-using gudov::LogLevel;
 using gudov::http::HttpRequest;
 using gudov::http::HttpResponse;
 using gudov::http::HttpServer;
@@ -16,10 +15,8 @@ using gudov::http::HttpSession;
 Logger::ptr g_logger = LOG_ROOT();
 
 void run() {
-  g_logger->SetLevel(LogLevel::INFO);
-
   HttpServer::ptr server(new HttpServer(true));
-  Address::ptr    addr = Address::LookupAnyIPAddress("0.0.0.0:8020");
+  Address::ptr    addr = Address::LookupAnyIPAddress("0.0.0.0:8888");
 
   while (!server->Bind(addr)) {
     LOG_ERROR(g_logger) << "Bind " << *addr << " fail";
@@ -39,6 +36,7 @@ void run() {
   });
 
   sd->AddGlobServlet("/*", [](HttpRequest::ptr req, HttpResponse::ptr rsp, HttpSession::ptr session) {
+    LOG_INFO(g_logger) << "404: " << req->ToString();
     rsp->SetBody(FSUtil::ReadFile("html/404.html"));
     return 0;
   });

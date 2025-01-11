@@ -8,6 +8,8 @@ namespace http {
 
 HttpSession::HttpSession(Socket::ptr sock, bool owner) : SocketStream(sock, owner) {}
 
+HttpSession::~HttpSession() { Close(); }
+
 HttpRequest::ptr HttpSession::RecvRequest() {
   HttpRequestParser::ptr parser(new HttpRequestParser);
   uint64_t               buff_size = HttpRequestParser::GetHttpRequestBufferSize();
@@ -17,17 +19,18 @@ HttpRequest::ptr HttpSession::RecvRequest() {
   do {
     int len = read(data + offset, buff_size - offset);
     if (len <= 0) {
+      Close();
       return nullptr;
     }
     len += offset;
     size_t nparse = parser->execute(data, len);
     if (parser->HasError()) {
-      close();
+      Close();
       return nullptr;
     }
     offset = len - nparse;
     if (offset == (int)buff_size) {
-      close();
+      Close();
       return nullptr;
     }
     if (parser->IsFinished()) {
@@ -35,11 +38,19 @@ HttpRequest::ptr HttpSession::RecvRequest() {
     }
   } while (true);
   int64_t length = parser->GetContentLength();
+
+  auto v = parser->GetData()->GetHeader("Expect");
+  if (strcasecmp(v.c_str(), "100-continue") == 0) {
+    static const std::string s_data = "HTTP/1.1 100 Continue\r\n\r\n";
+    WriteFixSize(s_data.c_str(), s_data.size());
+    parser->GetData()->DelHeader("Expect");
+  }
+
   if (length > 0) {
     std::string body;
     body.resize(length);
 
-    int len = 9;
+    int len = 0;
     if (length >= offset) {
       memcpy(&body[0], data, offset);
       len = offset;
@@ -49,7 +60,7 @@ HttpRequest::ptr HttpSession::RecvRequest() {
     }
     length -= offset;
     if (length > 0) {
-      if (readFixSize(&body[len], length) <= 0) {
+      if (ReadFixSize(&body[len], length) <= 0) {
         return nullptr;
       }
     }

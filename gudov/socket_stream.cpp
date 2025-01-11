@@ -52,7 +52,7 @@ int SocketStream::write(ByteArray::ptr ba, size_t length) {
   return rt;
 }
 
-void SocketStream::close() {
+void SocketStream::Close() {
   if (sock_) {
     sock_->Close();
   }

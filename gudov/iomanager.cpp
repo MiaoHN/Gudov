@@ -16,7 +16,7 @@ static Logger::ptr g_logger = LOG_NAME("system");
 
 static const int MAX_TIMEOUT = 2000;
 
-static const uint64_t MAX_EVENTS = 256;
+static const uint64_t MAX_EVENTS = 10000;
 
 IOManager::FdContext::EventContext& IOManager::FdContext::GetContext(IOManager::Event event) {
   switch (event) {
@@ -51,7 +51,7 @@ void IOManager::FdContext::TriggerEvent(IOManager::Event event) {
 }
 
 IOManager::IOManager(size_t threads, bool use_caller, const std::string& name) : Scheduler(threads, use_caller, name) {
-  epfd_ = epoll_create(5000);
+  epfd_ = epoll_create(5);
   GUDOV_ASSERT(epfd_ > 0);
 
   int rt = pipe(tickle_fds_);

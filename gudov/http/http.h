@@ -245,6 +245,8 @@ class HttpRequest {
     return GetAs(cookies_, key, def);
   }
 
+  void Init();
+
   std::ostream& Dump(std::ostream& os) const;
   std::string   ToString() const;
 

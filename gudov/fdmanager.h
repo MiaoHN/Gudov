@@ -66,7 +66,7 @@ class FdManager {
   ~FdManager();
 
   FdCtx::ptr Get(int fd, bool autoCreate = false);
-  void           Del(int fd);
+  void       Del(int fd);
 
  private:
   RWMutexType mutex_;

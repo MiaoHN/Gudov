@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   EnvMgr::GetInstance()->Init(argc, argv);
   Config::LoadFromConfDir(EnvMgr::GetInstance()->GetConfigPath());
 
-  IOManager iom(6, true, "http_server");
+  IOManager iom(8, false, "http_server");
 
   iom.Schedule(run);
 

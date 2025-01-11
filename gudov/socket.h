@@ -67,6 +67,8 @@ class Socket : public std::enable_shared_from_this<Socket>, NonCopyable {
   int RecvFrom(void* buffer, size_t length, Address::ptr from, int flags = 0);
   int RecvFrom(iovec* buffers, size_t length, Address::ptr from, int flags = 0);
 
+  bool CheckConnected();
+
   int64_t GetSendTimeout();
   void    SetSendTimeout(int64_t v);
 

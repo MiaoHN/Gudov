@@ -117,6 +117,17 @@ bool HttpRequest::HasCookie(const std::string& key, std::string* val) {
   return true;
 }
 
+void HttpRequest::Init() {
+  std::string conn = GetHeader("connection");
+  if (!conn.empty()) {
+    if (strcasecmp(conn.c_str(), "keep-alive") == 0) {
+      close_ = false;
+    } else {
+      close_ = true;
+    }
+  }
+}
+
 std::ostream& HttpRequest::Dump(std::ostream& os) const {
   // GET /uri HTTP/1.1
   // Host: wwww.baidu.com
@@ -146,8 +157,7 @@ std::string HttpRequest::ToString() const {
   return ss.str();
 }
 
-HttpResponse::HttpResponse(uint8_t version, bool close)
-    : status_(HttpStatus::OK), version_(version), close_(close) {}
+HttpResponse::HttpResponse(uint8_t version, bool close) : status_(HttpStatus::OK), version_(version), close_(close) {}
 
 std::string HttpResponse::GetHeader(const std::string& key, const std::string& def) const {
   auto it = headers_.find(key);

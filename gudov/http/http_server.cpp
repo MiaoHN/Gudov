@@ -17,7 +17,9 @@ HttpServer::HttpServer(bool keepalive, IOManager* worker, IOManager* accept_work
 
 void HttpServer::HandleClient(Socket::ptr client) {
   LOG_DEBUG(g_logger) << "HandleClient " << *client;
-  HttpSession::ptr session(new HttpSession(client));
+
+  HttpSession::ptr session = std::make_shared<HttpSession>(client);
+
   do {
     auto req = session->RecvRequest();
     if (!req) {
@@ -26,15 +28,20 @@ void HttpServer::HandleClient(Socket::ptr client) {
       break;
     }
 
-    HttpResponse::ptr rsp(new HttpResponse(req->GetVersion(), req->IsClose() || !is_keep_alive_));
+    HttpResponse::ptr rsp = std::make_shared<HttpResponse>(req->GetVersion(), req->IsClose() || !is_keep_alive_);
+
     rsp->SetHeader("Server", GetName());
+
     dispatch_->Handle(req, rsp, session);
+
     session->SendResponse(rsp);
 
     if (!is_keep_alive_ || req->IsClose()) {
       break;
     }
   } while (true);
+
+  session->Close();
 }
 
 }  // namespace http

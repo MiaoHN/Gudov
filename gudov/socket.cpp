@@ -1,6 +1,7 @@
 #include "socket.h"
 
 #include <limits.h>
+#include <netinet/tcp.h>
 
 #include "fdmanager.h"
 #include "hook.h"
@@ -63,6 +64,14 @@ Socket::Socket(int family, int type, int protocol)
 
 Socket::~Socket() { Close(); }
 
+bool Socket::CheckConnected() {
+  struct tcp_info info;
+  int             len = sizeof(info);
+  getsockopt(sock_, IPPROTO_TCP, TCP_INFO, &info, (socklen_t*)&len);
+  is_connected_ = (info.tcpi_state == TCP_ESTABLISHED);
+  return is_connected_;
+}
+
 int64_t Socket::GetSendTimeout() {
   FdCtx::ptr ctx = FdMgr::GetInstance()->Get(sock_);
   if (ctx) {
@@ -113,8 +122,10 @@ bool Socket::SetOption(int level, int option, const void* value, socklen_t len) 
 }
 
 Socket::ptr Socket::Accept() {
-  Socket::ptr sock(new Socket(family_, type_, protocol_));
-  int         new_sock = ::accept(sock_, nullptr, nullptr);
+  Socket::ptr sock = std::make_shared<Socket>(family_, type_, protocol_);
+
+  int new_sock = ::accept(sock_, nullptr, nullptr);
+
   if (new_sock == -1) {
     LOG_ERROR(g_logger) << "accept(" << sock_ << ") errno=" << errno << " errstr=" << strerror(errno);
     return nullptr;

@@ -15,10 +15,19 @@ HttpServer::HttpServer(bool keepalive, IOManager* worker, IOManager* accept_work
   type_ = "http";
 }
 
+static std::atomic<int> handled_start_count(0);
+static std::atomic<int> handled_close_count(0);
+
 void HttpServer::HandleClient(Socket::ptr client) {
   LOG_DEBUG(g_logger) << "HandleClient " << *client;
 
   HttpSession::ptr session = std::make_shared<HttpSession>(client);
+
+  // if (handled_start_count % 1000 == 0) {
+  //   LOG_INFO(g_logger) << "HttpServer::HandleClient::START handled_start_count=" << handled_start_count
+  //                      << " handled_close_count=" << handled_close_count;
+  // }
+  handled_start_count++;
 
   do {
     auto req = session->RecvRequest();
@@ -40,6 +49,13 @@ void HttpServer::HandleClient(Socket::ptr client) {
       break;
     }
   } while (true);
+
+  handled_close_count++;
+
+  // if (handled_start_count % 1000 == 0) {
+  //   LOG_INFO(g_logger) << "HttpServer::HandleClient::END handled_start_count=" << handled_start_count
+  //                      << " handled_close_count=" << handled_close_count;
+  // }
 
   session->Close();
 }

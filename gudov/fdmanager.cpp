@@ -10,7 +10,6 @@ FdCtx::FdCtx(int fd)
       is_socket_(false),
       sys_nonblock_(false),
       user_nonblock_(false),
-      is_close_(false),
       fd_(fd),
       recv_timeout_(-1),
       send_timeout_(-1) {
@@ -18,6 +17,14 @@ FdCtx::FdCtx(int fd)
 }
 
 FdCtx::~FdCtx() {}
+
+bool FdCtx::IsClose() const {
+  int flags = fcntlF(fd_, F_GETFL, 0);
+  if (flags == -1) {
+    return true;
+  }
+  return false;
+}
 
 bool FdCtx::Init() {
   if (is_init_) {
@@ -27,13 +34,13 @@ bool FdCtx::Init() {
   recv_timeout_ = -1;
   send_timeout_ = -1;
 
-  struct stat fdStat;
-  if (-1 == fstat(fd_, &fdStat)) {
+  struct stat fd_stat;
+  if (-1 == fstat(fd_, &fd_stat)) {
     is_init_   = false;
     is_socket_ = false;
   } else {
     is_init_   = true;
-    is_socket_ = S_ISSOCK(fdStat.st_mode);
+    is_socket_ = S_ISSOCK(fd_stat.st_mode);
   }
 
   if (is_socket_) {
@@ -47,7 +54,6 @@ bool FdCtx::Init() {
   }
 
   user_nonblock_ = false;
-  is_close_      = false;
   return is_init_;
 }
 
@@ -89,7 +95,8 @@ FdCtx::ptr FdManager::Get(int fd, bool auto_create) {
 
   RWMutexType::WriteLock lock2(mutex_);
 
-  FdCtx::ptr ctx(new FdCtx(fd));
+  FdCtx::ptr ctx = std::make_shared<FdCtx>(fd);
+
   while (fd >= static_cast<int>(data_.size())) {
     data_.resize(fd * 1.5);
   }

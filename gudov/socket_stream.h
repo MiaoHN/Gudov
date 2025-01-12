@@ -10,7 +10,7 @@ class SocketStream : public Stream {
   using ptr = std::shared_ptr<SocketStream>;
 
   SocketStream(Socket::ptr sock, bool owner = true);
-  ~SocketStream();
+  virtual ~SocketStream();
 
   int  read(void* buffer, size_t length) override;
   int  read(ByteArray::ptr ba, size_t length) override;

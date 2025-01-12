@@ -113,7 +113,7 @@ void Scheduler::Stop() {
 void Scheduler::SetThis() { t_scheduler = this; }
 
 void Scheduler::Run() {
-  SetHookEnable(false);
+  SetHookEnable(true);
   SetThis();
 
   // 获得主协程
